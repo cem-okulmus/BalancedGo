@@ -1,0 +1,12 @@
+
+# go working directory
+bin/
+pkg/
+src/
+
+# ignore compiled executable
+balanced
+
+
+# ignore project files
+.sublime-*

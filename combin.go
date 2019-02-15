@@ -59,8 +59,8 @@ func (c *Combin) confirm() {
 	c.confirmed = true
 }
 
-func splitCombin(n int, k int, split int) []Combin {
-	var output []Combin
+func splitCombin(n int, k int, split int) []*Combin {
+	var output []*Combin
 	number := ExtendedBinom(n, k)
 	remainder := number % split
 	quotient := ((number - remainder) / split)
@@ -87,7 +87,7 @@ func splitCombin(n int, k int, split int) []Combin {
 		generator.previous = make([]int, k)
 		copy(generator.previous, temp.previous)
 
-		output = append(output, Combin{n: n, k: k, current: generator, combination: make([]int, k), left: splitPoints[i] - start, confirmed: true})
+		output = append(output, &Combin{n: n, k: k, current: generator, combination: make([]int, k), left: splitPoints[i] - start, confirmed: true})
 
 		if i == len(splitPoints)-1 {
 			continue // skip the compuation in the final iteration

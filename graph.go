@@ -260,7 +260,7 @@ func (g Graph) findGHD(K int) Decomp {
 	return g.findDecomp(K, g, []Special{})
 }
 
-func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators *[]Combin) {
+func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators []*Combin) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -276,7 +276,7 @@ func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators *
 	wait := make(chan bool)
 	//start workers
 	for i := 0; i < numProc; i++ {
-		go g.worker(H, Sp, found, (*generators)[i], &wg, &finished)
+		go g.worker(i, H, Sp, found, generators[i], &wg, &finished)
 	}
 
 	go func() {
@@ -286,27 +286,31 @@ func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators *
 
 	select {
 	case *result = <-found:
+		close(found) //to terminate other workers waiting on found
 	case <-wait:
 	}
 
 }
 
-func (g Graph) worker(H Graph, Sp []Special, found chan []int, gen Combin, wg *sync.WaitGroup, finished *bool) {
+func (g Graph) worker(workernum int, H Graph, Sp []Special, found chan []int, gen *Combin, wg *sync.WaitGroup, finished *bool) {
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
 			return
 		}
 	}()
 	defer wg.Done()
-	defer close(found)
 
 	for gen.hasNext() {
 		if *finished {
+			log.Printf("Worker %d told to quit", workernum)
 			return
 		}
 		j := gen.combination
 		if H.checkBalancedSep(g.getSubset(j), Sp) {
+			log.Printf("Worker %d found a bal sep", workernum)
 			found <- j
+			log.Printf("Worker %d \" won \"", workernum)
 			gen.confirm()
 			*finished = true
 			return
@@ -350,7 +354,7 @@ OUTER:
 	for !decomposed {
 		var found []int
 
-		g.parallelSearch(H, Sp, &found, &generators)
+		g.parallelSearch(H, Sp, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
@@ -439,7 +443,7 @@ OUTER:
 	for !decomposed {
 		var found []int
 
-		g.parallelSearch(H, Sp, &found, &generators)
+		g.parallelSearch(H, Sp, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
