@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -22,6 +23,48 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+// Heuristics to order the edges by
+
+func getMSCOrder(edges []Edge) []Edge {
+	var selected []Edge
+	var chosen []bool
+
+	//randomly select last edge in the ordering
+	i := rand.Intn(len(edges))
+	chosen[i] = true
+	selected = append(selected, edges[i])
+
+	for len(selected) < len(edges) {
+		var candidates []int
+		maxcard := 0
+
+		for current := range edges {
+			current_card := edges[current].numNeighbours(edges, chosen)
+			if !chosen[current] && current_card >= maxcard {
+				if current_card > maxcard {
+					candidates = []int{}
+					maxcard = current_card
+				}
+
+				candidates = append(candidates, current)
+			}
+		}
+
+		//randomly select one of the edges with equal connectivity
+		next_in_order := candidates[rand.Intn(len(candidates))]
+
+		selected = append(selected, edges[next_in_order])
+		chosen[next_in_order] = true
+	}
+
+	//reverse order of selected
+	for i, j := 0, len(selected)-1; i < j; i, j = i+1, j-1 {
+		selected[i], selected[j] = selected[j], selected[i]
+	}
+
+	return selected
 }
 
 func main() {
@@ -45,6 +88,7 @@ func main() {
 	if *choose != 0 {
 		parsedGraph := getGraph(string(dat))
 		var decomp Decomp
+		start := time.Now()
 		switch *choose {
 		case 1:
 			decomp = parsedGraph.findGHDParallelFull(*width)
@@ -55,8 +99,12 @@ func main() {
 		case 4:
 			decomp = parsedGraph.findGHD(*width)
 		}
+		d := time.Now().Sub(start)
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
 		fmt.Println("Result \n", decomp)
+		fmt.Println("Time", msec, " ms")
+		fmt.Println("Correct: ", decomp.correct(parsedGraph))
 		return
 	}
 
