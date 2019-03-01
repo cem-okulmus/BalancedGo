@@ -54,7 +54,6 @@ func (e Edge) subedges() []Edge {
 			output = append(output, Edge{nodes: []int{e.nodes[0]}})
 		} else {
 			for j := 0; j < i; j++ {
-
 				output = append(output, Edge{nodes: append(output[j].nodes, e.nodes[i])})
 			}
 		}
@@ -116,6 +115,18 @@ func (e Edge) areNeighbours(o Edge) bool {
 		}
 	}
 	return false
+}
+
+func (e Edge) numNeighbours(l []Edge, remaining []bool) int {
+	output := 0
+
+	for i := range l {
+		if remaining[i] && e.areNeighbours(l[i]) {
+			output++
+		}
+	}
+
+	return output
 }
 
 func (e Edge) areSNeighbours(o Edge, sep []int) bool {
