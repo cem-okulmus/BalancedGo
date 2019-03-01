@@ -9,4 +9,5 @@ balanced
 
 
 # ignore project files
-.sublime-*
+.sublime-workspace
+.sublime-project
