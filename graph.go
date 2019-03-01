@@ -2,13 +2,10 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"github.com/spakin/disjoint"
-	"io"
 	"log"
 	"reflect"
 	"runtime"
-	"strconv"
 	"sync"
 )
 
@@ -261,75 +258,11 @@ OUTER:
 
 }
 
-func hash(a []int) [sha1.Size]byte {
-	h := sha1.New()
-	var output [sha1.Size]byte
-	for _, e := range a {
-		io.WriteString(h, strconv.Itoa(e))
-		io.WriteString(h, " ")
-
-	}
-
-	copy(output[:], h.Sum(nil))
-	return output
-
-}
-
 func (g Graph) findGHD(K int) Decomp {
 	return g.findDecomp(K, g, []Special{})
 }
 
-// func (g Graph) startSearchSimple(result *[]int, gen *Combin, found chan []int, input chan []int, wg *sync.WaitGroup) {
-// 	// var once sync.Once
-// 	// var numProc = runtime.GOMAXPROCS(-1)
-// 	// var wg sync.WaitGroup
-// 	// wg.Add(numProc)
-
-// 	// SEARCH:
-// 	// found := make(chan []int)
-// 	// input := make(chan []int)
-// 	wait := make(chan bool)
-// 	//start workers  (DO THIS OUTSIDE OF THIS FUNCTION!)
-// 	// for i := 0; i < numProc; i++ {
-// 	// 	go g.workerSimple(H, Sp, found, input, &wg)
-// 	// }
-// 	go func() {
-// 		wg.Wait()
-// 		wait <- true
-// 	}()
-
-// 	for gen.hasNext() {
-// 		select { // wait until ...
-// 		case *result = <-found: //... a worker finshes the search
-// 			return
-// 		case input <- gen.combination: //... or a worker wants more jobs,
-// 			gen.confirm()
-
-// 		}
-// 		if !gen.hasNext() {
-// 			close(input)
-// 		}
-// 	}
-// 	//once.Do(func() { close(input) })
-// 	// in case no worker found a result during the loop
-// 	select {
-// 	case *result = <-found:
-// 	case <-wait:
-// 	}
-
-// }
-
-// func (g Graph) workerSimple(H Graph, Sp []Special, found chan []int, input chan []int, wg *sync.WaitGroup) {
-// 	defer wg.Done()
-
-// 	for j := range input {
-// 		if H.checkBalancedSep(g.getSubset(j), Sp) {
-// 			found <- j
-// 		}
-// 	}
-// }
-
-func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators []*Combin) {
+func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*Combin) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -345,7 +278,7 @@ func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators [
 	wait := make(chan bool)
 	//start workers
 	for i := 0; i < numProc; i++ {
-		go g.worker(i, H, Sp, found, generators[i], &wg, &finished)
+		go worker(i, H, Sp, edges, found, generators[i], &wg, &finished)
 	}
 
 	go func() {
@@ -361,7 +294,7 @@ func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators [
 
 }
 
-func (g Graph) worker(workernum int, H Graph, Sp []Special, found chan []int, gen *Combin, wg *sync.WaitGroup, finished *bool) {
+func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *Combin, wg *sync.WaitGroup, finished *bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
@@ -376,7 +309,7 @@ func (g Graph) worker(workernum int, H Graph, Sp []Special, found chan []int, ge
 			return
 		}
 		j := gen.combination
-		if H.checkBalancedSep(g.getSubset(j), Sp) {
+		if H.checkBalancedSep(getSubset(edges, j), Sp) {
 			log.Printf("Worker %d found a bal sep", workernum)
 			found <- j
 			log.Printf("Worker %d \" won \"", workernum)
@@ -434,7 +367,7 @@ OUTER:
 		var found []int
 
 		//g.startSearchSimple(&found, &generator, result, input, &wg)
-		g.parallelSearch(H, Sp, &found, generators)
+		parallelSearch(H, Sp, edges, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
@@ -535,7 +468,7 @@ OUTER:
 		var found []int
 
 		//g.startSearchSimple(&found, &generator, result, input, &wg)
-		g.parallelSearch(H, Sp, &found, generators)
+		parallelSearch(H, Sp, edges, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)

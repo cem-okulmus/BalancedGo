@@ -7,7 +7,9 @@ src/
 # ignore compiled executable
 balanced
 
+# ignore hypergraphs
+hypergraphs/
 
 # ignore project files
-.sublime-workspace
-.sublime-project
+*.sublime-workspace
+*.sublime-project
