@@ -38,12 +38,16 @@ func (g Graph) Vertices() []int {
 	return removeDuplicates(output)
 }
 
-func (g Graph) getSubset(s []int) []Edge {
+func getSubset(edges []Edge, s []int) []Edge {
 	var output []Edge
 	for _, i := range s {
-		output = append(output, g.edges[i])
+		output = append(output, edges[i])
 	}
 	return output
+}
+
+func (g Graph) getSubset(s []int) []Edge {
+	return getSubset(g.edges, s)
 }
 
 // Uses Disjoint Set data structure to compute connected components
@@ -121,6 +125,19 @@ func (g Graph) getComponents(sep []Edge, Sp []Special) ([]Graph, [][]Special) {
 	return outputG, outputS
 }
 
+func filterVertices(edges []Edge, vertices []int) []Edge {
+	var output []Edge
+
+	for _, e := range edges {
+		if subset(e.nodes, vertices) {
+			output = append(output, e)
+		}
+	}
+
+	return output
+
+}
+
 func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
@@ -135,12 +152,12 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 		}
 	}
 
-	// Check if subset of V(H) + Vertices of Sp
-	var allowedVertices = append(g.Vertices(), VerticesSpecial(sp)...)
-	if !subset(Vertices(sep), allowedVertices) {
-		// log.Println("Subset condition violated")
-		return false
-	}
+	// // Check if subset of V(H) + Vertices of Sp
+	// var allowedVertices = append(g.Vertices(), VerticesSpecial(sp)...)
+	// if !subset(Vertices(sep), allowedVertices) {
+	// 	// log.Println("Subset condition violated")
+	// 	return false
+	// }
 
 	// Make sure that "special seps can never be used as separators"
 	for _, s := range sp {
@@ -195,10 +212,12 @@ func (g Graph) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	}
 
 	//find a balanced separator
-	gen := getCombin(len(g.edges), K)
+	edges := filterVertices(g.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+
+	gen := getCombin(len(edges), K)
 OUTER:
 	for gen.hasNext() {
-		balsep := g.getSubset(gen.combination)
+		balsep := getSubset(edges, gen.combination)
 		gen.confirm()
 		if !H.checkBalancedSep(balsep, Sp) {
 			continue
@@ -259,6 +278,56 @@ func hash(a []int) [sha1.Size]byte {
 func (g Graph) findGHD(K int) Decomp {
 	return g.findDecomp(K, g, []Special{})
 }
+
+// func (g Graph) startSearchSimple(result *[]int, gen *Combin, found chan []int, input chan []int, wg *sync.WaitGroup) {
+// 	// var once sync.Once
+// 	// var numProc = runtime.GOMAXPROCS(-1)
+// 	// var wg sync.WaitGroup
+// 	// wg.Add(numProc)
+
+// 	// SEARCH:
+// 	// found := make(chan []int)
+// 	// input := make(chan []int)
+// 	wait := make(chan bool)
+// 	//start workers  (DO THIS OUTSIDE OF THIS FUNCTION!)
+// 	// for i := 0; i < numProc; i++ {
+// 	// 	go g.workerSimple(H, Sp, found, input, &wg)
+// 	// }
+// 	go func() {
+// 		wg.Wait()
+// 		wait <- true
+// 	}()
+
+// 	for gen.hasNext() {
+// 		select { // wait until ...
+// 		case *result = <-found: //... a worker finshes the search
+// 			return
+// 		case input <- gen.combination: //... or a worker wants more jobs,
+// 			gen.confirm()
+
+// 		}
+// 		if !gen.hasNext() {
+// 			close(input)
+// 		}
+// 	}
+// 	//once.Do(func() { close(input) })
+// 	// in case no worker found a result during the loop
+// 	select {
+// 	case *result = <-found:
+// 	case <-wait:
+// 	}
+
+// }
+
+// func (g Graph) workerSimple(H Graph, Sp []Special, found chan []int, input chan []int, wg *sync.WaitGroup) {
+// 	defer wg.Done()
+
+// 	for j := range input {
+// 		if H.checkBalancedSep(g.getSubset(j), Sp) {
+// 			found <- j
+// 		}
+// 	}
+// }
 
 func (g Graph) parallelSearch(H Graph, Sp []Special, result *[]int, generators []*Combin) {
 	defer func() {
@@ -343,17 +412,28 @@ func (g Graph) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 	var balsep []Edge
 
 	var decomposed = false
+	edges := filterVertices(g.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	generators := splitCombin(len(g.edges), K, runtime.GOMAXPROCS(-1))
+	//var numProc = runtime.GOMAXPROCS(-1)
+	//var wg sync.WaitGroup
+	// wg.Add(numProc)
+	// result := make(chan []int)
+	// input := make(chan []int)
+	// for i := 0; i < numProc; i++ {
+	// 	go g.workerSimple(H, Sp, result, input, &wg)
+	// }
+	//generator := getCombin(len(g.edges), K)
+
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
 
 	var subtrees []Decomp
-	// done := make(chan struct{})
 
 	//find a balanced separator
 OUTER:
 	for !decomposed {
 		var found []int
 
+		//g.startSearchSimple(&found, &generator, result, input, &wg)
 		g.parallelSearch(H, Sp, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
@@ -362,7 +442,7 @@ OUTER:
 		}
 
 		//wait until first worker finds a balanced sep
-		balsep = g.getSubset(found)
+		balsep = getSubset(edges, found)
 
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
 
@@ -379,7 +459,7 @@ OUTER:
 			}(K, i, comps, compsSp, SepSpecial)
 		}
 
-		for i := 0; i < len(comps); i++ {
+		for i := range comps {
 			decomp := <-ch
 			if reflect.DeepEqual(decomp, Decomp{}) {
 				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
@@ -432,8 +512,19 @@ func (g Graph) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
 	var balsep []Edge
 
 	var decomposed = false
+	edges := filterVertices(g.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	generators := splitCombin(len(g.edges), K, runtime.GOMAXPROCS(-1))
+	// var numProc = runtime.GOMAXPROCS(-1)
+	// var wg sync.WaitGroup
+	// wg.Add(numProc)
+	// result := make(chan []int)
+	// input := make(chan []int, 100)
+	// for i := 0; i < numProc; i++ {
+	// 	go g.workerSimple(H, Sp, result, input, &wg)
+	// }
+	// generator := getCombin(len(g.edges), K)
+
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
 
 	var subtrees []Decomp
 	// done := make(chan struct{})
@@ -443,6 +534,7 @@ OUTER:
 	for !decomposed {
 		var found []int
 
+		//g.startSearchSimple(&found, &generator, result, input, &wg)
 		g.parallelSearch(H, Sp, &found, generators)
 
 		if len(found) == 0 { // meaning that the search above never found anything
@@ -451,7 +543,7 @@ OUTER:
 		}
 
 		//wait until first worker finds a balanced sep
-		balsep = g.getSubset(found)
+		balsep = getSubset(edges, found)
 		// close(done) // signal to workers to stop
 
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
@@ -518,10 +610,12 @@ func (g Graph) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
 	}
 
 	//find a balanced separator
-	gen := getCombin(len(g.edges), K)
+	edges := filterVertices(g.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+
+	gen := getCombin(len(edges), K)
 OUTER:
 	for gen.hasNext() {
-		balsep := g.getSubset(gen.combination)
+		balsep := getSubset(edges, gen.combination)
 		gen.confirm()
 		if !H.checkBalancedSep(balsep, Sp) {
 			continue
