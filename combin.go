@@ -22,6 +22,9 @@ func ExtendedBinom(n int, k int) int {
 }
 
 func getCombin(n int, k int) Combin {
+	if k > n {
+		k = n
+	}
 	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: ExtendedBinom(n, k)}
 }
 
@@ -60,6 +63,9 @@ func (c *Combin) confirm() {
 }
 
 func splitCombin(n int, k int, split int) []*Combin {
+	if k > n {
+		k = n
+	}
 	var output []*Combin
 	number := ExtendedBinom(n, k)
 	remainder := number % split
