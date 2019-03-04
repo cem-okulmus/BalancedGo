@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"reflect"
+	"sort"
 )
 
 type Edge struct {
@@ -11,20 +13,46 @@ type Edge struct {
 	m     map[int]string
 }
 
-func removeDuplicatesEdges(elements []Edge) []Edge {
-	var output []Edge
+type Edges []Edge
 
-OUTER:
-	for _, e := range elements {
-		for _, o := range output {
-			if reflect.DeepEqual(o, e) {
-				continue OUTER
+func (s Edges) Len() int {
+	return len(s)
+}
+func (s Edges) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s Edges) Less(i, j int) bool {
+	if len(s[i].nodes) < len(s[j].nodes) {
+		return true
+	} else if len(s[i].nodes) > len(s[j].nodes) {
+		return false
+	} else {
+		for k := 0; k < len(s[i].nodes); k++ {
+			if s[i].nodes[k] < s[j].nodes[k] {
+				return true
 			}
 		}
-		output = append(output, e)
+	}
+	return false
+}
+
+func removeDuplicateEdges(elements []Edge) []Edge {
+	sort.Sort(Edges(elements))
+
+	j := 0
+	for i := 1; i < len(elements); i++ {
+		if reflect.DeepEqual(elements[j].nodes, elements[i].nodes) {
+			continue
+		}
+		j++
+		// preserve the original data
+		// in[i], in[j] = in[j], in[i]
+		// only set what is required
+		elements[j] = elements[i]
 	}
 
-	return output
+	return elements[:j+1]
 }
 
 func (e Edge) String() string {
@@ -46,17 +74,22 @@ func (e Edge) String() string {
 	return buffer.String()
 }
 
+//Broken, fix this
 func (e Edge) subedges() []Edge {
 	var output []Edge
 
-	for i := 0; i < len(e.nodes); i++ {
-		if i == 0 {
-			output = append(output, Edge{nodes: []int{e.nodes[0]}})
-		} else {
-			for j := 0; j < i; j++ {
-				output = append(output, Edge{nodes: append(output[j].nodes, e.nodes[i])})
+	powerSetSize := int(math.Pow(2, float64(len(e.nodes))))
+	var index int
+	for index < powerSetSize {
+		var subSet []int
+
+		for j, elem := range e.nodes {
+			if index&(1<<uint(j)) > 0 {
+				subSet = append(subSet, elem)
 			}
 		}
+		output = append(output, Edge{nodes: subSet, m: e.m})
+		index++
 	}
 
 	return output

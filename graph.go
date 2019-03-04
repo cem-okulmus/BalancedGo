@@ -171,14 +171,16 @@ func (g Graph) computeSubEdges(K int) Graph {
 	var output = g
 
 	for _, e := range g.edges {
-		graph_wihout_e := Graph{edges: diffEdges(g.edges, []Edge{e})}
-		for _, l := range Combinations(len(graph_wihout_e.edges), K) {
-			var tuple = Vertices(graph_wihout_e.getSubset(l))
-			output.edges = append(output.edges, Edge{nodes: inter(e.nodes, tuple)}.subedges()...)
+		edges_wihout_e := diffEdges(g.edges, e)
+		gen := getCombin(len(edges_wihout_e), K)
+		for gen.hasNext() {
+			var tuple = Vertices(getSubset(edges_wihout_e, gen.combination))
+			output.edges = append(output.edges, Edge{nodes: inter(e.nodes, tuple), m: e.m}.subedges()...)
+			gen.confirm()
 		}
 	}
 
-	output.edges = removeDuplicatesEdges(output.edges)
+	output.edges = removeDuplicateEdges(output.edges)
 	return output
 }
 

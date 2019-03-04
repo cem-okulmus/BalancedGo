@@ -71,6 +71,7 @@ func main() {
 	logActive(false)
 
 	//Command-Line Argument Parsing
+	compute_subedes := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
 	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Paralellism\n\t4 ... Sequential execution.")
@@ -85,8 +86,16 @@ func main() {
 	dat, err := ioutil.ReadFile(*graphPath)
 	check(err)
 
+	parsedGraph := getGraph(string(dat))
+
+	if *compute_subedes {
+		parsedGraph = parsedGraph.computeSubEdges(*width)
+
+		fmt.Println("Graph with subedges \n", parsedGraph)
+
+	}
+
 	if *choose != 0 {
-		parsedGraph := getGraph(string(dat))
 		var decomp Decomp
 		start := time.Now()
 		switch *choose {
@@ -126,7 +135,6 @@ func main() {
 	//f.WriteString(*graphPath + ";")
 	//f.WriteString(fmt.Sprintf("%v;", *width))
 
-	parsedGraph := getGraph(string(dat))
 	//fmt.Printf("parsedGraph %+v\n", parsedGraph)
 
 	output = output + fmt.Sprintf("%v;", len(parsedGraph.edges))

@@ -38,16 +38,14 @@ OUTER:
 
 }
 
-func diffEdges(a, b []Edge) []Edge {
+func diffEdges(a []Edge, e Edge) []Edge {
 	var output []Edge
-OUTER:
+
 	for _, n := range a {
-		for _, k := range b {
-			if reflect.DeepEqual(n, k) {
-				continue OUTER
-			}
+		length := len(inter(n.nodes, e.nodes))
+		if (length > 0) && (length < (len(e.nodes))) {
+			output = append(output, n)
 		}
-		output = append(output, n)
 	}
 
 	return output
