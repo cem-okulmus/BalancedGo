@@ -64,6 +64,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 func (s *SubEdges) reset() {
 	(*s).current = NewCombinationGenerator(len(s.source), s.k)
+	(*s).currrentSubset = nil
 	s.hasNext()
 }
 

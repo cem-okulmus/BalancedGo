@@ -79,7 +79,7 @@ func (e Edge) String() string {
 	return buffer.String()
 }
 
-//Broken, fix this
+// Unnessarily adds empty edge
 func (e Edge) subedges() []Edge {
 	var output []Edge
 
