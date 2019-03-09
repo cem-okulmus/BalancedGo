@@ -37,6 +37,10 @@ func (s Edges) Less(i, j int) bool {
 	return false
 }
 
+func (s *Edges) append(e Edge) {
+	*s = append(*s, e)
+}
+
 func removeDuplicateEdges(elements []Edge) []Edge {
 	sort.Sort(Edges(elements))
 
@@ -53,6 +57,7 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 	}
 
 	return elements[:j+1]
+
 }
 
 func (e Edge) String() string {
