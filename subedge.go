@@ -5,12 +5,11 @@ type Subset struct {
 	current Combin
 }
 
-func getSubsetIterator(edges Edges) Subset {
+func getSubsetIterator(edges Edges) *Subset {
 	var output Subset
-
-	output.source = Vertices(edges)
-	output.current = getCombin(len(output.source), len(output.source))
-	return output
+	vertices := removeDuplicates(Vertices(edges))
+	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices))}
+	return &output
 }
 
 func (s Subset) hasNext() bool {
@@ -22,6 +21,7 @@ func getEdge(nodes []int, s []int) Edge {
 	for _, i := range s {
 		output.nodes = append(output.nodes, nodes[i])
 	}
+	output.nodes = removeDuplicates(output.nodes)
 	return output
 }
 
@@ -36,11 +36,13 @@ func (s Subset) getCurrent() Edge {
 //   ----------------------------------------------------------------------------
 
 type SubEdges struct {
-	k              int
-	source         Edges
-	current        *CombinationGenerator
-	combination    []int
-	currrentSubset *Subset
+	k             int
+	initial       Edge
+	source        Edges
+	current       Edge
+	gen           *CombinationGenerator
+	combination   []int
+	currentSubset *Subset
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
@@ -56,43 +58,49 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	var output SubEdges
 
 	output.source = h_edges
-	output.current = NewCombinationGenerator(len(output.source), k)
+	if k > len(output.source) {
+		k = len(output.source)
+	}
+	output.gen = NewCombinationGenerator(len(output.source), k)
+	output.current = e
+	output.initial = e
 	output.k = k
 
 	return output
 }
 
 func (s *SubEdges) reset() {
-	(*s).current = NewCombinationGenerator(len(s.source), s.k)
-	(*s).currrentSubset = nil
-	s.hasNext()
+	(*s).gen = NewCombinationGenerator(len(s.source), s.k)
+	(*s).currentSubset = nil
+	(*s).current = s.initial
 }
 
 // This checks whether the current edge has a more tuples to intersect with,
 // and create a new vertex set
 func (s SubEdges) hasNextCombination() bool {
-	if !s.current.Next() {
+	if !s.gen.Next() {
 		return false
 	}
-	s.current.Combination(s.combination)
+	s.gen.Combination(s.combination)
 	return true
 }
 
 func (s SubEdges) hasNext() bool {
-	if s.currrentSubset == nil || !s.currrentSubset.hasNext() {
+	if s.currentSubset == nil || !s.currentSubset.hasNext() {
 		if s.hasNextCombination() {
-			*s.currrentSubset = getSubsetIterator(getSubset(s.source, s.combination))
-			return s.currrentSubset.hasNext()
+			s.currentSubset = getSubsetIterator(getSubset(s.source, s.combination))
+			s.currentSubset.hasNext()
 		} else {
 			return false
 		}
 	}
 
+	s.current = s.currentSubset.getCurrent()
 	return true
 }
 
 func (s SubEdges) getCurrent() Edge {
-	return s.currrentSubset.getCurrent()
+	return s.current
 }
 
 //   ----------------------------------------------------------------------------
@@ -103,26 +111,14 @@ type SepSub struct {
 	edges []SubEdges
 }
 
-func getSepSub(h Graph, Sp []Special, edges Edges, sep Edges, k int) SepSub {
+func getSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
 
-	V := append(VerticesSpecial(Sp), h.Vertices()...)
-
-	// Remove those edges that don't intersect with the current subgraph
-	// And reduce those that do to their biggest allowed subedge
-	var h_edges Edges
-	for _, j := range edges {
-		inter := inter(j.nodes, V)
-		if len(inter) > 0 {
-			h_edges.append(Edge{nodes: inter})
-		}
-	}
-
 	for _, e := range sep {
-		output.edges = append(output.edges, getSubEdgeIterator(h_edges, e, k))
+		output.edges = append(output.edges, getSubEdgeIterator(edges, e, k))
 	}
 
-	return output
+	return &output
 }
 
 func (sep SepSub) hasNext() bool {

@@ -41,6 +41,7 @@ func (s *Edges) append(e Edge) {
 	*s = append(*s, e)
 }
 
+//using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elements []Edge) []Edge {
 	sort.Sort(Edges(elements))
 
@@ -50,14 +51,12 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 			continue
 		}
 		j++
-		// preserve the original data
-		// in[i], in[j] = in[j], in[i]
+
 		// only set what is required
 		elements[j] = elements[i]
 	}
 
 	return elements[:j+1]
-
 }
 
 func (e Edge) String() string {

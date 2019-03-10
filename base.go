@@ -1,6 +1,8 @@
 package main
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func removeDuplicates(elements []int) []int {
 	// Use map to record duplicates as we find them.
@@ -21,6 +23,27 @@ func removeDuplicates(elements []int) []int {
 	return result
 }
 
+// func diff(as, bs []int) []int {
+// 	encountered_b := map[int]bool{}
+
+// 	for _, b := range bs {
+// 		encountered_b[b] = true
+// 	}
+
+// 	var output []int
+
+// 	for _, a := range as {
+// 		if _, ok := encountered_b[a]; !ok {
+// 			output = append(output, a)
+// 		}
+// 	}
+// 	// if !reflect.DeepEqual(output, diff2(as, bs)) {
+// 	// 	log.Panicf("What the hell?", output, diff2(as, bs))
+// 	// }
+// 	return output
+
+// }
+
 func diff(a, b []int) []int {
 	var output []int
 
@@ -37,6 +60,39 @@ OUTER:
 	return output
 
 }
+
+// func diff(a, b []int) []int {
+// 	var output []int
+
+// 	// a = removeDuplicates(a)
+// 	// b = removeDuplicates(b)
+
+// 	sort.Ints(a)
+// 	sort.Ints(b)
+
+// 	i, j := 0, 0
+
+// 	for i < len(a) && j < len(b) {
+// 		if b[j] > a[i] {
+// 			output = append(output, a[i])
+// 			i++
+// 		} else if b[j] < a[i] {
+// 			j++
+// 		} else {
+// 			i++
+// 		}
+
+// 	}
+
+// 	for i < len(a) {
+// 		output = append(output, a[i])
+// 		i++
+
+// 	}
+
+// 	return output
+
+// }
 
 func diffEdges(a []Edge, e Edge) []Edge {
 	var output []Edge
@@ -68,19 +124,18 @@ OUTER:
 
 }
 
-func inter(a, b []int) []int {
+func inter(as, bs []int) []int {
+	encountered_b := map[int]bool{}
+
+	for _, b := range bs {
+		encountered_b[b] = true
+	}
+
 	var output []int
 
-	for _, n := range a {
-		found := false
-		for _, k := range b {
-			if k == n {
-				found = true
-				break
-			}
-		}
-		if found {
-			output = append(output, n)
+	for _, a := range as {
+		if _, ok := encountered_b[a]; ok {
+			output = append(output, a)
 		}
 	}
 
@@ -88,16 +143,32 @@ func inter(a, b []int) []int {
 
 }
 
-func subset(a []int, b []int) bool {
+func subset(as []int, bs []int) bool {
+	encountered_b := map[int]bool{}
 
-OUTER:
-	for _, n := range a {
-		for _, k := range b {
-			if k == n {
-				continue OUTER
-			}
-		}
-		return false
+	for _, b := range bs {
+		encountered_b[b] = true
 	}
+
+	for _, a := range as {
+		if _, ok := encountered_b[a]; !ok {
+			return false
+		}
+	}
+
 	return true
 }
+
+// func subset(a []int, b []int) bool {
+
+// OUTER:
+// 	for _, n := range a {
+// 		for _, k := range b {
+// 			if k == n {
+// 				continue OUTER
+// 			}
+// 		}
+// 		return false
+// 	}
+// 	return true
+// }

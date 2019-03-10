@@ -4,35 +4,13 @@ import (
 	"log"
 	"reflect"
 	"runtime"
-	"sync"
 )
 
-type GlobalSearch struct {
+type LocalSearch struct {
 	graph Graph
 }
 
-func baseCase(g Graph, H Graph, Sp []Special) Decomp {
-	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
-	var output Decomp
-	switch len(Sp) {
-	case 0:
-		output = Decomp{graph: g} // use g here to avoid reject
-	case 1:
-		sp1 := Sp[0]
-		output = Decomp{graph: H,
-			root: Node{lambda: sp1.edges}}
-	case 2:
-		sp1 := Sp[0]
-		sp2 := Sp[1]
-		output = Decomp{graph: H,
-			root: Node{lambda: sp1.edges,
-				children: []Node{Node{lambda: sp2.edges}}}}
-
-	}
-	return output
-}
-
-func (g GlobalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
+func (g LocalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -54,37 +32,59 @@ OUTER:
 			continue
 		}
 
-		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
+		var sepSub *SepSub
+	INNER:
+		for {
+			log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
 
-		comps, compsSp := H.getComponents(balsep, Sp)
+			comps, compsSp := H.getComponents(balsep, Sp)
 
-		log.Printf("Comps of Sep: %v\n", comps)
+			log.Printf("Comps of Sep: %v\n", comps)
 
-		SepSpecial := Special{edges: balsep, vertices: Vertices(balsep)}
+			SepSpecial := Special{edges: balsep, vertices: Vertices(balsep)}
 
-		var subtrees []Decomp
-		for i := range comps {
-			decomp := g.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
-			if reflect.DeepEqual(decomp, Decomp{}) {
-				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
-				log.Printf("\n\nCurrent Subgraph: %v\n", H)
-				log.Printf("Current Special Edges: %v\n\n", Sp)
-				continue OUTER
+			var subtrees []Decomp
+			for i := range comps {
+				decomp := g.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+				if reflect.DeepEqual(decomp, Decomp{}) {
+					log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
+					// log.Printf("\n\nCurrent Subgraph: %v\n", H)
+					// log.Printf("Current Special Edges: %v\n\n", Sp)
+					if sepSub == nil {
+						sepSub = getSepSub(edges, balsep, K)
+					}
+					next_balsep_found := false
+
+					for !next_balsep_found {
+						if sepSub.hasNext() {
+							balsep = sepSub.current()
+							if !H.checkBalancedSep(balsep, Sp) {
+								next_balsep_found = true
+							}
+						} else {
+							continue OUTER
+						}
+					}
+
+					continue INNER
+				}
+
+				log.Printf("Produced Decomp: %v\n", decomp)
+
+				subtrees = append(subtrees, decomp)
 			}
 
-			log.Printf("Produced Decomp: %v\n", decomp)
+			//Create a new GHD for H
+			reroot_node := Node{lambda: balsep}
+			for _, s := range subtrees {
+				s.root = s.root.reroot(Node{lambda: balsep})
+				log.Printf("Rerooted Decomp: %v\n", s)
+				reroot_node.children = append(reroot_node.children, s.root.children...)
+			}
+			return Decomp{graph: H, root: reroot_node}
 
-			subtrees = append(subtrees, decomp)
 		}
 
-		//Create a new GHD for H
-		reroot_node := Node{lambda: balsep}
-		for _, s := range subtrees {
-			s.root = s.root.reroot(Node{lambda: balsep})
-			log.Printf("Rerooted Decomp: %v\n", s)
-			reroot_node.children = append(reroot_node.children, s.root.children...)
-		}
-		return Decomp{graph: H, root: reroot_node}
 	}
 
 	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
@@ -92,70 +92,11 @@ OUTER:
 
 }
 
-func (g GlobalSearch) findGHD(K int) Decomp {
+func (g LocalSearch) findGHD(K int) Decomp {
 	return g.findDecomp(K, g.graph, []Special{})
 }
 
-func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*Combin) {
-	defer func() {
-		if r := recover(); r != nil {
-			return
-		}
-	}()
-
-	var numProc = runtime.GOMAXPROCS(-1)
-	var wg sync.WaitGroup
-	wg.Add(numProc)
-	finished := false
-	// SEARCH:
-	found := make(chan []int)
-	wait := make(chan bool)
-	//start workers
-	for i := 0; i < numProc; i++ {
-		go worker(i, H, Sp, edges, found, generators[i], &wg, &finished)
-	}
-
-	go func() {
-		wg.Wait()
-		wait <- true
-	}()
-
-	select {
-	case *result = <-found:
-		close(found) //to terminate other workers waiting on found
-	case <-wait:
-	}
-
-}
-
-func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *Combin, wg *sync.WaitGroup, finished *bool) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
-			return
-		}
-	}()
-	defer wg.Done()
-
-	for gen.hasNext() {
-		if *finished {
-			log.Printf("Worker %d told to quit", workernum)
-			return
-		}
-		j := gen.combination
-		if H.checkBalancedSep(getSubset(edges, j), Sp) {
-			log.Printf("Worker %d found a bal sep", workernum)
-			found <- j
-			log.Printf("Worker %d \" won \"", workernum)
-			gen.confirm()
-			*finished = true
-			return
-		}
-		gen.confirm()
-	}
-}
-
-func (g GlobalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
+func (g LocalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -243,7 +184,7 @@ OUTER:
 	return Decomp{graph: H, root: reroot_node}
 }
 
-func (g GlobalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
+func (g LocalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -326,7 +267,7 @@ OUTER:
 	return Decomp{graph: H, root: reroot_node}
 }
 
-func (g GlobalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
+func (g LocalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -397,14 +338,14 @@ OUTER:
 	return Decomp{} // empty Decomp signifiyng reject
 }
 
-func (g GlobalSearch) findGHDParallelFull(K int) Decomp {
+func (g LocalSearch) findGHDParallelFull(K int) Decomp {
 	return g.findDecompParallelFull(K, g.graph, []Special{})
 }
 
-func (g GlobalSearch) findGHDParallelSearch(K int) Decomp {
+func (g LocalSearch) findGHDParallelSearch(K int) Decomp {
 	return g.findDecompParallelSearch(K, g.graph, []Special{})
 }
 
-func (g GlobalSearch) findGHDParallelComp(K int) Decomp {
+func (g LocalSearch) findGHDParallelComp(K int) Decomp {
 	return g.findDecompParallelComp(K, g.graph, []Special{})
 }

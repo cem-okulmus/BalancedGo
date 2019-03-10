@@ -95,19 +95,22 @@ func main() {
 
 	}
 
-	search := GlobalSearch{graph: parsedGraph}
+	global := GlobalSearch{graph: parsedGraph}
+	local := LocalSearch{graph: parsedGraph}
 	if *choose != 0 {
 		var decomp Decomp
 		start := time.Now()
 		switch *choose {
 		case 1:
-			decomp = search.findGHDParallelFull(*width)
+			decomp = global.findGHDParallelFull(*width)
 		case 2:
-			decomp = search.findGHDParallelSearch(*width)
+			decomp = global.findGHDParallelSearch(*width)
 		case 3:
-			decomp = search.findGHDParallelComp(*width)
+			decomp = global.findGHDParallelComp(*width)
 		case 4:
-			decomp = search.findGHD(*width)
+			decomp = global.findGHD(*width)
+		case 5:
+			decomp = local.findGHD(*width)
 		}
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
@@ -144,7 +147,7 @@ func main() {
 
 	// Parallel Execution FULL
 	start := time.Now()
-	decomp := search.findGHDParallelFull(*width)
+	decomp := global.findGHDParallelFull(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
 
@@ -157,7 +160,7 @@ func main() {
 
 	// Parallel Execution Search
 	start = time.Now()
-	decomp = search.findGHDParallelSearch(*width)
+	decomp = global.findGHDParallelSearch(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
 
@@ -170,7 +173,7 @@ func main() {
 
 	// Parallel Execution Comp
 	start = time.Now()
-	decomp = search.findGHDParallelComp(*width)
+	decomp = global.findGHDParallelComp(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
 
@@ -183,7 +186,7 @@ func main() {
 
 	// Sequential Execution
 	start = time.Now()
-	decomp = search.findGHD(*width)
+	decomp = global.findGHD(*width)
 
 	//fmt.Printf("Decomp of parsedGraph: %v\n", decomp.root)
 	d = time.Now().Sub(start)
