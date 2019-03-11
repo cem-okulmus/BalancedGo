@@ -197,4 +197,5 @@ func main() {
 	//fmt.Println("Correct decomposition:", decomp.correct())
 
 	fmt.Print(output)
+
 }

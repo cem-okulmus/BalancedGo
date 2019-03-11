@@ -21,7 +21,7 @@ func (g LocalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	}
 
 	//find a balanced separator
-	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := cutEdges(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	gen := getCombin(len(edges), K)
 OUTER:
@@ -31,12 +31,12 @@ OUTER:
 		if !H.checkBalancedSep(balsep, Sp) {
 			continue
 		}
-
 		var sepSub *SepSub
+		sepSub = nil
+		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
+		balsep_orig := balsep
 	INNER:
 		for {
-			log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
-
 			comps, compsSp := H.getComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %v\n", comps)
@@ -47,25 +47,27 @@ OUTER:
 			for i := range comps {
 				decomp := g.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
 				if reflect.DeepEqual(decomp, Decomp{}) {
+
 					log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
 					// log.Printf("\n\nCurrent Subgraph: %v\n", H)
 					// log.Printf("Current Special Edges: %v\n\n", Sp)
 					if sepSub == nil {
-						sepSub = getSepSub(edges, balsep, K)
+						sepSub = getSepSub(g.graph.edges, balsep, K)
 					}
 					next_balsep_found := false
 
 					for !next_balsep_found {
 						if sepSub.hasNext() {
-							balsep = sepSub.current()
-							if !H.checkBalancedSep(balsep, Sp) {
+							balsep = sepSub.getCurrent()
+							log.Printf("Testing Sep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+							if H.checkBalancedSep(balsep, Sp) {
 								next_balsep_found = true
 							}
 						} else {
 							continue OUTER
 						}
 					}
-
+					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
 					continue INNER
 				}
 

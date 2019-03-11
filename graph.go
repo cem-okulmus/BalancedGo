@@ -132,6 +132,20 @@ func filterVertices(edges []Edge, vertices []int) []Edge {
 
 }
 
+func cutEdges(edges []Edge, vertices []int) []Edge {
+	var output []Edge
+
+	for _, e := range edges {
+		inter := inter(e.nodes, vertices)
+		if len(inter) > 0 {
+			output = append(output, Edge{nodes: inter, m: e.m})
+		}
+	}
+
+	return output
+
+}
+
 func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
@@ -146,7 +160,7 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 		}
 	}
 
-	// // Check if subset of V(H) + Vertices of Sp
+	// Check if subset of V(H) + Vertices of Sp
 	// var allowedVertices = append(g.Vertices(), VerticesSpecial(sp)...)
 	// if !subset(Vertices(sep), allowedVertices) {
 	// 	// log.Println("Subset condition violated")

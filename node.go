@@ -47,7 +47,6 @@ func (n Node) String() string {
 }
 
 func (n Node) contains(o Node) bool {
-
 	// every node contains itself
 	if reflect.DeepEqual(n, o) {
 		return true

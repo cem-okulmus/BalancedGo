@@ -25,7 +25,7 @@ func getCombin(n int, k int) Combin {
 	if k > n {
 		k = n
 	}
-	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: ExtendedBinom(n, k)}
+	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: ExtendedBinom(n, k), confirmed: true}
 }
 
 func (c *Combin) hasNext() bool {
