@@ -6,15 +6,16 @@ import (
 
 func removeDuplicates(elements []int) []int {
 	// Use map to record duplicates as we find them.
-	encountered := map[int]bool{}
+	encountered := make(map[int]struct{})
 	result := []int{}
 
 	for v := range elements {
-		if encountered[elements[v]] == true {
+		if _, ok := encountered[elements[v]]; ok {
 			// Do not add duplicate.
 		} else {
 			// Record this element as an encountered element.
-			encountered[elements[v]] = true
+			var Empty struct{}
+			encountered[elements[v]] = Empty
 			// Append to result slice.
 			result = append(result, elements[v])
 		}
@@ -125,10 +126,10 @@ OUTER:
 }
 
 func inter(as, bs []int) []int {
-	encountered_b := map[int]bool{}
-
+	encountered_b := make(map[int]struct{})
+	var Empty struct{}
 	for _, b := range bs {
-		encountered_b[b] = true
+		encountered_b[b] = Empty
 	}
 
 	var output []int
@@ -143,11 +144,27 @@ func inter(as, bs []int) []int {
 
 }
 
-func subset(as []int, bs []int) bool {
-	encountered_b := map[int]bool{}
+// func inter(as, bs []int) []int {
+// 	var output []int
+// OUTER:
+// 	for _, a := range as {
+// 		for _, b := range bs {
+// 			if a == b {
+// 				output = append(output, a)
+// 				continue OUTER
+// 			}
+// 		}
 
+// 	}
+
+// 	return output
+// }
+
+func subset(as []int, bs []int) bool {
+	encountered_b := make(map[int]struct{})
+	var Empty struct{}
 	for _, b := range bs {
-		encountered_b[b] = true
+		encountered_b[b] = Empty
 	}
 
 	for _, a := range as {

@@ -8,9 +8,9 @@ type Subset struct {
 	m       map[int]string
 }
 
-func getSubsetIterator(edges Edges, m map[int]string) *Subset {
+func getSubsetIterator(vertices []int, m map[int]string) *Subset {
 	var output Subset
-	vertices := removeDuplicates(Vertices(edges))
+
 	//fmt.Println("Vertices", Edge{nodes: vertices, m: edges[0].m})
 	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices)), m: m}
 	return &output
@@ -102,7 +102,9 @@ func (s *SubEdges) hasNext() bool {
 		if s.hasNextCombination() {
 			// fmt.Println("We need a new subset")
 			// fmt.Println("current:", getSubset(s.source, s.combination))
-			s.currentSubset = getSubsetIterator(getSubset(s.source, s.combination), s.initial.m)
+			edges := getSubset(s.source, s.combination)
+			vertices := removeDuplicates(Vertices(edges))
+			s.currentSubset = getSubsetIterator(vertices, s.initial.m)
 			s.currentSubset.hasNext()
 		} else {
 			return false

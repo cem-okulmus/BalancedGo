@@ -237,20 +237,19 @@ func (g LocalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Deco
 	var decomposed = false
 	edges := cutEdges(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	// var numProc = runtime.GOMAXPROCS(-1)
-	// var wg sync.WaitGroup
+	//var numProc = runtime.GOMAXPROCS(-1)
+	//var wg sync.WaitGroup
 	// wg.Add(numProc)
 	// result := make(chan []int)
-	// input := make(chan []int, 100)
+	// input := make(chan []int)
 	// for i := 0; i < numProc; i++ {
 	// 	go g.workerSimple(H, Sp, result, input, &wg)
 	// }
-	// generator := getCombin(len(g.graph.edges), K)
+	//generator := getCombin(len(g.graph.edges), K)
 
 	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
 
 	var subtrees []Decomp
-	// done := make(chan struct{})
 
 	//find a balanced separator
 OUTER:
@@ -262,7 +261,7 @@ OUTER:
 
 		if len(found) == 0 { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-			break
+			return Decomp{}
 		}
 
 		//wait until first worker finds a balanced sep
@@ -279,7 +278,7 @@ OUTER:
 			SepSpecial := Special{edges: balsep, vertices: Vertices(balsep)}
 
 			for i := range comps {
-				decomp := g.findDecompParallelSearch(K, comps[i], append(compsSp[i], SepSpecial))
+				decomp := g.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
 				if reflect.DeepEqual(decomp, Decomp{}) {
 					log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
 					subtrees = []Decomp{}
@@ -311,8 +310,8 @@ OUTER:
 			}
 			decomposed = true
 		}
-	}
 
+	}
 	//Create a new GHD for H
 	reroot_node := Node{lambda: balsep}
 	for _, s := range subtrees {
@@ -376,7 +375,6 @@ OUTER:
 				if reflect.DeepEqual(decomp, Decomp{}) {
 
 					log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
-					subtrees = []Decomp{}
 					// log.Printf("\n\nCurrent Subgraph: %v\n", H)
 					// log.Printf("Current Special Edges: %v\n\n", Sp)
 					if sepSub == nil {
