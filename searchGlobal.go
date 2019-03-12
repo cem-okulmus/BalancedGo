@@ -32,6 +32,11 @@ func baseCase(g Graph, H Graph, Sp []Special) Decomp {
 	return output
 }
 
+func earlyTermination(H Graph, Sp Special) Decomp {
+	//We assume that H as less than K edges, and only one special edge
+	return Decomp{graph: H, root: Node{lambda: H.edges, children: []Node{Node{lambda: Sp.edges}}}}
+}
+
 func (g GlobalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
@@ -42,13 +47,27 @@ func (g GlobalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 		return baseCase(g.graph, H, Sp)
 	}
 
+	//Early termination
+	if len(H.edges) <= K && len(Sp) == 1 {
+		return earlyTermination(H, Sp[0])
+	}
+
 	//find a balanced separator
 	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
+	log.Printf("Starting Search: Edges: %v K: %v\n", len(edges), K)
+
 	gen := getCombin(len(edges), K)
+
+	log.Printf("Remaming combin: %v \n", gen.left)
+
+	log.Printf("Remaining combinLib: %v \n", gen.current.remaining)
+
 OUTER:
 	for gen.hasNext() {
 		balsep := getSubset(edges, gen.combination)
+
+		log.Printf("Testing: %v\n", Graph{edges: balsep})
 		gen.confirm()
 		if !H.checkBalancedSep(balsep, Sp) {
 			continue
@@ -164,6 +183,12 @@ func (g GlobalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decom
 	if len(H.edges) == 0 && len(Sp) <= 2 {
 		return baseCase(g.graph, H, Sp)
 	}
+
+	//Early termination
+	if len(H.edges) <= K && len(Sp) == 1 {
+		return earlyTermination(H, Sp[0])
+	}
+
 	var balsep []Edge
 
 	var decomposed = false
@@ -252,6 +277,12 @@ func (g GlobalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Dec
 	if len(H.edges) == 0 && len(Sp) <= 2 {
 		return baseCase(g.graph, H, Sp)
 	}
+
+	//Early termination
+	if len(H.edges) <= K && len(Sp) == 1 {
+		return earlyTermination(H, Sp[0])
+	}
+
 	var balsep []Edge
 
 	var decomposed = false
@@ -334,6 +365,11 @@ func (g GlobalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decom
 	//stop if there are at most two special edges left
 	if len(H.edges) == 0 && len(Sp) <= 2 {
 		return baseCase(g.graph, H, Sp)
+	}
+
+	//Early termination
+	if len(H.edges) <= K && len(Sp) == 1 {
+		return earlyTermination(H, Sp[0])
 	}
 
 	//find a balanced separator

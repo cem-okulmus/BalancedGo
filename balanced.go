@@ -74,7 +74,7 @@ func main() {
 	compute_subedes := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
-	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Paralellism\n\t4 ... Sequential execution.")
+	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
 	flag.Parse()
 
 	if *graphPath == "" || *width <= 0 {
@@ -110,7 +110,15 @@ func main() {
 		case 4:
 			decomp = global.findGHD(*width)
 		case 5:
+			decomp = local.findGHDParallelFull(*width)
+		case 6:
+			decomp = local.findGHDParallelSearch(*width)
+		case 7:
+			decomp = local.findGHDParallelComp(*width)
+		case 8:
 			decomp = local.findGHD(*width)
+		default:
+			panic("Not a valid choice")
 		}
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
