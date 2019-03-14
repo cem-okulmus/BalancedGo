@@ -42,7 +42,7 @@ OUTER:
 		//balsep_orig := balsep
 	INNER:
 		for {
-			comps, compsSp := H.getComponents(balsep, Sp)
+			comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %v\n", comps)
 
@@ -155,9 +155,10 @@ OUTER:
 		var sepSub *SepSub
 
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
+		balsep_orig := balsep
 	INNER:
 		for !decomposed {
-			comps, compsSp := H.getComponents(balsep, Sp)
+			comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -186,7 +187,7 @@ OUTER:
 					for !next_balsep_found {
 						if sepSub.hasNext() {
 							balsep = sepSub.getCurrent()
-							//log.Printf("Testing Sep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+							log.Printf("Testing Sep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
 							if H.checkBalancedSep(balsep, Sp) {
 								next_balsep_found = true
 							}
@@ -271,7 +272,7 @@ OUTER:
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
 	INNER:
 		for !decomposed {
-			comps, compsSp := H.getComponents(balsep, Sp)
+			comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -355,7 +356,7 @@ OUTER:
 		//balsep_orig := balsep
 	INNER:
 		for {
-			comps, compsSp := H.getComponents(balsep, Sp)
+			comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %v\n", comps)
 

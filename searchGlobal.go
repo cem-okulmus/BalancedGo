@@ -75,7 +75,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
 
-		comps, compsSp := H.getComponents(balsep, Sp)
+		comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 		log.Printf("Comps of Sep: %v\n", comps)
 
@@ -226,7 +226,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
 
-		comps, compsSp := H.getComponents(balsep, Sp)
+		comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 		log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -322,7 +322,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
 
-		comps, compsSp := H.getComponents(balsep, Sp)
+		comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 		log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -386,7 +386,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
 
-		comps, compsSp := H.getComponents(balsep, Sp)
+		comps, compsSp, _ := H.getComponents(balsep, Sp)
 
 		log.Printf("Comps of Sep: %v\n", comps)
 

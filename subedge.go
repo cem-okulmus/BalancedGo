@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	//"sort"
+)
 
 type Subset struct {
 	source  []int
@@ -48,6 +51,7 @@ type SubEdges struct {
 	gen           *CombinationGenerator
 	combination   []int
 	currentSubset *Subset
+	cache         [][]int
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
@@ -64,6 +68,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 	var output SubEdges
 
+	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].nodes) > len(h_edges[j].nodes) })
 	output.source = h_edges
 	if k > len(output.source) {
 		k = len(output.source)
@@ -97,16 +102,33 @@ func (s *SubEdges) hasNextCombination() bool {
 	return true
 }
 
+func (s SubEdges) existsSubset(b []int) bool {
+	for _, e := range s.cache {
+		if subset(b, e) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *SubEdges) hasNext() bool {
 	if s.currentSubset == nil || !s.currentSubset.hasNext() {
-		if s.hasNextCombination() {
+		for s.hasNextCombination() {
 			// fmt.Println("We need a new subset")
 			// fmt.Println("current:", getSubset(s.source, s.combination))
 			edges := getSubset(s.source, s.combination)
 			vertices := removeDuplicates(Vertices(edges))
-			s.currentSubset = getSubsetIterator(vertices, s.initial.m)
-			s.currentSubset.hasNext()
-		} else {
+			if s.existsSubset(vertices) {
+				continue //skip
+			} else {
+				s.cache = append(s.cache, vertices)
+				s.currentSubset = getSubsetIterator(vertices, s.initial.m)
+				s.currentSubset.hasNext()
+				break
+			}
+
+		}
+		if !s.hasNextCombination() {
 			return false
 		}
 	}

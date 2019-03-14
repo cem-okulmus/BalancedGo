@@ -1,8 +1,6 @@
 package main
 
-import (
-	"reflect"
-)
+import "reflect"
 
 func removeDuplicates(elements []int) []int {
 	// Use map to record duplicates as we find them.
