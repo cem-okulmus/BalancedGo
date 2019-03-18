@@ -204,7 +204,7 @@ func (g GlobalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decom
 	// }
 	//generator := getCombin(len(g.graph.edges), K)
 
-	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1), false)
 
 	var subtrees []Decomp
 
@@ -298,7 +298,7 @@ func (g GlobalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Dec
 	// }
 	// generator := getCombin(len(g.graph.edges), K)
 
-	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1), false)
 
 	var subtrees []Decomp
 	// done := make(chan struct{})

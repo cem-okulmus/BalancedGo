@@ -28,6 +28,13 @@ func getCombin(n int, k int) Combin {
 	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: ExtendedBinom(n, k), confirmed: true}
 }
 
+func getCombinUnextend(n int, k int) Combin {
+	if k > n {
+		k = n
+	}
+	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: Binomial(n, k), confirmed: true}
+}
+
 func (c *Combin) hasNext() bool {
 	if !c.confirmed {
 		return true
@@ -62,12 +69,20 @@ func (c *Combin) confirm() {
 	c.confirmed = true
 }
 
-func splitCombin(n int, k int, split int) []*Combin {
+func splitCombin(n int, k int, split int, unextended bool) []*Combin {
 	if k > n {
 		k = n
 	}
 	var output []*Combin
-	number := ExtendedBinom(n, k)
+
+	var number int
+
+	if unextended {
+		number = Binomial(n, k)
+	} else {
+		number = ExtendedBinom(n, k)
+	}
+
 	remainder := number % split
 	quotient := ((number - remainder) / split)
 

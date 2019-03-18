@@ -52,6 +52,7 @@ type SubEdges struct {
 	combination   []int
 	currentSubset *Subset
 	cache         [][]int
+	emptyReturned bool
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
@@ -88,6 +89,7 @@ func (s *SubEdges) reset() {
 	s.gen = NewCombinationGenerator(len(s.source), s.k)
 	s.currentSubset = nil
 	s.current = s.initial
+	s.emptyReturned = false
 }
 
 // This checks whether the current edge has a more tuples to intersect with,
@@ -129,6 +131,10 @@ func (s *SubEdges) hasNext() bool {
 
 		}
 		if !s.hasNextCombination() {
+			if !s.emptyReturned {
+				s.emptyReturned = true
+				return true
+			}
 			return false
 		}
 	}
@@ -138,6 +144,9 @@ func (s *SubEdges) hasNext() bool {
 }
 
 func (s SubEdges) getCurrent() Edge {
+	if s.emptyReturned {
+		return Edge{nodes: []int{}}
+	}
 	return s.current
 }
 

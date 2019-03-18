@@ -28,7 +28,7 @@ func (g LocalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	//find a balanced separator
 	edges := cutEdges(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	gen := getCombin(len(edges), K)
+	gen := getCombinUnextend(len(edges), K)
 OUTER:
 	for gen.hasNext() {
 		balsep := getSubset(edges, gen.combination)
@@ -133,7 +133,7 @@ func (g LocalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 	// }
 	//generator := getCombin(len(g.graph.edges), K)
 
-	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1), true)
 
 	var subtrees []Decomp
 
@@ -248,7 +248,7 @@ func (g LocalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Deco
 	// }
 	//generator := getCombin(len(g.graph.edges), K)
 
-	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1))
+	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1), true)
 
 	var subtrees []Decomp
 
