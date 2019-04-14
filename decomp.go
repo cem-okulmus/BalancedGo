@@ -14,6 +14,15 @@ func (d Decomp) String() string {
 	return d.root.String()
 }
 
+func (d Decomp) connected(vert int) bool {
+	var containingNodes = d.root.allChildrenContaining(vert, 0)
+	var edgesContaining = d.root.getConGraph(vert, 0)
+
+	g, _, _ := Graph{edges: edgesContaining}.getCompGeneral(containingNodes, []Edge{}, []Special{})
+
+	return len(g) == 1
+}
+
 func (d Decomp) correct(g Graph) bool {
 
 	//must be a decomp of same graph
@@ -31,7 +40,7 @@ func (d Decomp) correct(g Graph) bool {
 
 	//connectedness
 	for _, i := range Vertices(d.graph.edges) {
-		if !d.root.connected(i) {
+		if !d.connected(i) {
 			fmt.Printf("Node %v doesn't span connected subtree\n", d.graph.m[i])
 			return false
 		}

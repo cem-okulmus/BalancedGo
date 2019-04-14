@@ -62,30 +62,34 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
-func (n Node) connected(i int) bool {
-	var containingNodes = n.allChildrenContaining(i)
+// Think about how to make the contains check faster than linear
+func (n Node) getConGraph(vert, num int) Edges {
+	var output Edges
 
-	for _, k := range containingNodes {
-		for _, l := range containingNodes {
-			if !reflect.DeepEqual(n.ancestorOnI(k, i), n.ancestorOnI(l, i)) {
-				return false
+	if Contains(n.lambda, vert) {
+		for i, c := range n.children {
+			if Contains(c.lambda, vert) {
+				output.append(Edge{nodes: []int{num, (num + i + 1)}}) //using breadth-first ordering to number nodes
 			}
-
 		}
 	}
 
-	return true
-}
-
-func (n Node) allChildrenContaining(i int) []Node {
-	var output []Node
-
-	if Contains(n.lambda, i) {
-		output = append(output, n)
+	for i, c := range n.children {
+		output = append(output, c.getConGraph(vert, (num+1+i))...)
 	}
 
-	for _, c := range n.children {
-		output = append(output, c.allChildrenContaining(i)...)
+	return output
+}
+
+func (n Node) allChildrenContaining(vert, num int) []int {
+	var output []int
+
+	if Contains(n.lambda, vert) {
+		output = append(output, num)
+	}
+
+	for i, c := range n.children {
+		output = append(output, c.allChildrenContaining(vert, (num+i+1))...)
 	}
 
 	return output

@@ -11,6 +11,21 @@ type GlobalSearch struct {
 	graph Graph
 }
 
+func baseCaseSmart(g Graph, H Graph, Sp []Special) Decomp {
+	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
+	var output Decomp
+
+	if len(H.edges) == 1 {
+		sp1 := Sp[0]
+		output = Decomp{graph: H,
+			root: Node{lambda: H.edges,
+				children: []Node{Node{lambda: sp1.edges}}}}
+	} else {
+		return baseCase(g, H, Sp)
+	}
+	return output
+}
+
 func baseCase(g Graph, H Graph, Sp []Special) Decomp {
 	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var output Decomp

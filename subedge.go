@@ -29,7 +29,7 @@ func getEdge(nodes []int, s []int, m map[int]string) Edge {
 	for _, i := range s {
 		output.nodes = append(output.nodes, nodes[i])
 	}
-	output.nodes = removeDuplicates(output.nodes)
+
 	return output
 }
 

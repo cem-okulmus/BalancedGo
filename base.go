@@ -43,6 +43,15 @@ func removeDuplicates(elements []int) []int {
 
 // }
 
+func mem(as []int, b int) bool {
+	for _, a := range as {
+		if a == b {
+			return true
+		}
+	}
+	return false
+}
+
 func diff(a, b []int) []int {
 	var output []int
 

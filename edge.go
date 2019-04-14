@@ -99,6 +99,18 @@ func (e Edge) subedges() []Edge {
 	return output
 }
 
+func getDegree(edges Edges, node int) int {
+	var output int
+
+	for _, e := range edges {
+		if mem(e.nodes, node) {
+			output++
+		}
+	}
+
+	return output
+}
+
 func (e Edge) intersect(l []Edge) Edge {
 	var output Edge
 
@@ -152,6 +164,35 @@ func (e Edge) areNeighbours(o Edge) bool {
 		}
 	}
 	return false
+}
+
+func (e Edge) OWcheck(l []Edge) (bool, Edge) {
+	temp := 0
+	var parent Edge
+
+	for i := range l {
+		if e.areNeighbours(l[i]) {
+			temp++
+			parent = l[i]
+		}
+		if temp > 1 {
+			return false, Edge{}
+		}
+	}
+
+	return true, parent
+}
+
+func (e Edge) numIndicent(l []Edge) int {
+	output := 0
+
+	for i := range l {
+		if e.areNeighbours(l[i]) {
+			output++
+		}
+	}
+
+	return output
 }
 
 func (e Edge) numNeighbours(l []Edge, remaining []bool) int {

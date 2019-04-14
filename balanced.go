@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -67,15 +69,153 @@ func getMSCOrder(edges []Edge) []Edge {
 	return selected
 }
 
+//Order the edges by how much  they increase shortest paths within the hypergraph
+
+//basic Floyd-Warschall (using the primal graph)
+
+func order(a, b int) (int, int) {
+	if a < b {
+		return a, b
+	}
+	return b, a
+}
+
+func isInf(a int) bool {
+	return a == math.MaxInt64
+}
+
+func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
+
+	for _, n := range e.nodes {
+		for _, m := range e.nodes {
+			n_index, _ := order[n]
+			m_index, _ := order[m]
+			if n_index != m_index {
+				output[n_index][m_index] = 1
+			}
+		}
+	}
+
+	return output
+}
+
+func getMinDistances(edges []Edge) ([][]int, map[int]int) {
+	var output [][]int
+	order := make(map[int]int)
+	vertices := Vertices(edges)
+
+	for i, n := range vertices {
+		order[n] = i
+	}
+
+	row := make([]int, len(vertices))
+	for j := 0; j < len(vertices); j++ {
+		row[j] = math.MaxInt64
+	}
+
+	for j := 0; j < len(vertices); j++ {
+		new_row := make([]int, len(vertices))
+		copy(new_row, row)
+		output = append(output, new_row)
+	}
+
+	for _, e := range edges {
+		output = addEdgeDistances(order, output, e)
+	}
+
+	for j := 0; j < len(edges); j++ {
+		changed := false
+		for k := range vertices {
+			for l := range vertices {
+				for m := range vertices {
+					if isInf(output[k][l]) || isInf(output[l][m]) {
+						continue
+					}
+					newdist := output[k][l] + output[l][m]
+					if output[k][m] > newdist {
+						output[k][m] = newdist
+						changed = true
+					}
+				}
+			}
+		}
+		if !changed {
+			break
+		}
+
+	}
+
+	return output, order
+}
+
+//  weight of each edge = (sum of path disconnected)*SepWeight  +  (sum of each path made longer * diff)
+func diffDistances(old, new [][]int) int {
+	var output int
+
+	SepWeight := len(old) * len(old)
+
+	for j := 0; j < len(old); j++ {
+		for i := 0; i < len(old[j]); i++ {
+			if isInf(old[j][i]) && !isInf(new[j][i]) { // disconnected a path
+				output = output + SepWeight
+			} else if !isInf(old[j][i]) && !isInf(new[j][i]) { // check if parth shortened
+				diff := old[j][i] - new[j][i]
+				output = output + diff
+			}
+		}
+	}
+
+	return output
+}
+
+func getMaxSepOrder(edges []Edge) []Edge {
+	weights := make([]int, len(edges))
+
+	initialDiff, order := getMinDistances(edges)
+
+	for i, e := range edges {
+		edges_wihout_e := diffEdges(edges, e)
+		newDiff, _ := getMinDistances(edges_wihout_e)
+		newDiffPrep := addEdgeDistances(order, newDiff, e)
+		weights[i] = diffDistances(initialDiff, newDiffPrep)
+	}
+
+	sort.Slice(edges, func(i, j int) bool { return weights[i] > weights[j] })
+
+	return edges
+}
+
+func edgeDegree(edges []Edge, edge Edge) int {
+	var output int
+
+	for _, n := range edge.nodes {
+		output = output + getDegree(edges, n)
+	}
+
+	return output - len(edge.nodes)
+}
+
+func getDegreeOrder(edges []Edge) []Edge {
+	sort.Slice(edges, func(i, j int) bool { return edgeDegree(edges, edges[i]) > edgeDegree(edges, edges[j]) })
+	return edges
+}
+
+var BALANCED_FACTOR int
+
 func main() {
 	logActive(false)
 
 	//Command-Line Argument Parsing
-	compute_subedes := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
+	compute_subedes := flag.Bool("sub", false, "(optional) Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
 	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
-	flag.Parse()
+	balance_factor := flag.Int("balfactor", 2, "(optional) Determines the factor that balanced separator check uses")
+	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering")
+	// OW_optim := flag.Bool("OWremoval", false, "(optional) remove edges with single indicent edges and add them to Decomp afterwards")
+	// flag.Parse()
+
+	BALANCED_FACTOR = *balance_factor
 
 	if *graphPath == "" || *width <= 0 {
 		fmt.Fprintf(os.Stderr, "Usage of %s: \n", os.Args[0])
@@ -88,11 +228,32 @@ func main() {
 
 	parsedGraph := getGraph(string(dat))
 
+	//fmt.Println("Graph ", parsedGraph)
+	//fmt.Println("Min Distance", getMinDistances(parsedGraph))
+	//return
+
+	count := 0
+	for _, e := range parsedGraph.edges {
+		isOW, _ := e.OWcheck(parsedGraph.edges)
+		if isOW {
+			count++
+		}
+	}
+	fmt.Println("No of OW edges: ", count)
+
+	if *use_heuristic > 0 {
+		switch *use_heuristic {
+		case 1:
+			parsedGraph.edges = getDegreeOrder(parsedGraph.edges)
+		case 2:
+			parsedGraph.edges = getMaxSepOrder(parsedGraph.edges)
+		}
+	}
+
 	if *compute_subedes {
 		parsedGraph = parsedGraph.computeSubEdges(*width)
 
 		fmt.Println("Graph with subedges \n", parsedGraph)
-
 	}
 
 	global := GlobalSearch{graph: parsedGraph}
@@ -125,7 +286,8 @@ func main() {
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
-		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		fmt.Println("Width: ", *width)
+		//fmt.Println("Correct: ", decomp.correct(parsedGraph))
 		return
 	}
 

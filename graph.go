@@ -44,8 +44,14 @@ func (g Graph) getSubset(s []int) []Edge {
 	return getSubset(g.edges, s)
 }
 
-// Uses Disjoint Set data structure to compute connected components
 func (g Graph) getComponents(sep []Edge, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
+	vertices := append(Vertices(g.edges), VerticesSpecial(Sp)...)
+
+	return g.getCompGeneral(vertices, sep, Sp)
+}
+
+// Uses Disjoint Set data structure to compute connected components
+func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
 	var outputG []Graph
 	var outputS [][]Special
 
@@ -56,7 +62,7 @@ func (g Graph) getComponents(sep []Edge, Sp []Special) ([]Graph, [][]Special, ma
 	balsepVert := Vertices(sep)
 
 	//  Set up the disjoint sets for each node
-	for _, i := range append(Vertices(g.edges), VerticesSpecial(Sp)...) {
+	for _, i := range vs {
 		nodes[i] = disjoint.NewElement()
 	}
 
@@ -154,7 +160,7 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	comps, compSps, _ := g.getComponents(sep, sp)
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
-		if len(comps[i].edges)+len(compSps[i]) > ((len(g.edges) + len(sp)) / 2) {
+		if len(comps[i].edges)+len(compSps[i]) > (((len(g.edges) + len(sp)) * (BALANCED_FACTOR - 1)) / BALANCED_FACTOR) {
 			// log.Printf("Component %+v has weight%d instead of %d\n", comps[i], len(comps[i].edges)+len(compSps[i]), ((len(g.edges) + len(sp)) / 2))
 			return false
 		}
