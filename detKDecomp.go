@@ -59,7 +59,8 @@ OUTER:
 			subtrees = append(subtrees, decomp.root)
 		}
 
-		return Decomp{graph: H, root: Node{bag: Vertices(balsep), cover: balsep, children: subtrees}}
+		bag := inter(Vertices(balsep), append(Vertices(oldSep), H.Vertices()...))
+		return Decomp{graph: H, root: Node{bag: bag, cover: balsep, children: subtrees}}
 	}
 
 	return Decomp{} // Reject if no separator could be found
