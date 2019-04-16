@@ -30,6 +30,12 @@ func (d Decomp) correct(g Graph) bool {
 		return false
 	}
 
+	//Every bag must be subset of the lambda label
+	if !d.root.bagSubsets() {
+		fmt.Printf("Bags not subsets of edge labels")
+		return false
+	}
+
 	// Every edge has to be covered
 	for _, e := range d.graph.edges {
 		if !d.root.coversEdge(e) {

@@ -9,8 +9,8 @@ import (
 )
 
 type Edge struct {
-	nodes []int // use integers for nodes
-	m     map[int]string
+	vertices []int // use integers for vertices
+	m        map[int]string
 }
 
 type Edges []Edge
@@ -23,13 +23,13 @@ func (s Edges) Swap(i, j int) {
 }
 
 func (s Edges) Less(i, j int) bool {
-	if len(s[i].nodes) < len(s[j].nodes) {
+	if len(s[i].vertices) < len(s[j].vertices) {
 		return true
-	} else if len(s[i].nodes) > len(s[j].nodes) {
+	} else if len(s[i].vertices) > len(s[j].vertices) {
 		return false
 	} else {
-		for k := 0; k < len(s[i].nodes); k++ {
-			if s[i].nodes[k] < s[j].nodes[k] {
+		for k := 0; k < len(s[i].vertices); k++ {
+			if s[i].vertices[k] < s[j].vertices[k] {
 				return true
 			}
 		}
@@ -47,7 +47,7 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 
 	j := 0
 	for i := 1; i < len(elements); i++ {
-		if reflect.DeepEqual(elements[j].nodes, elements[i].nodes) {
+		if reflect.DeepEqual(elements[j].vertices, elements[i].vertices) {
 			continue
 		}
 		j++
@@ -62,7 +62,7 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 func (e Edge) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("(")
-	for i, n := range e.nodes {
+	for i, n := range e.vertices {
 		var s string
 		if e.m == nil {
 			s = fmt.Sprintf("%v", n)
@@ -70,7 +70,7 @@ func (e Edge) String() string {
 			s = e.m[n]
 		}
 		buffer.WriteString(s)
-		if i != len(e.nodes)-1 {
+		if i != len(e.vertices)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -82,17 +82,17 @@ func (e Edge) String() string {
 func (e Edge) subedges() []Edge {
 	var output []Edge
 
-	powerSetSize := int(math.Pow(2, float64(len(e.nodes))))
+	powerSetSize := int(math.Pow(2, float64(len(e.vertices))))
 	var index int
 	for index < powerSetSize {
 		var subSet []int
 
-		for j, elem := range e.nodes {
+		for j, elem := range e.vertices {
 			if index&(1<<uint(j)) > 0 {
 				subSet = append(subSet, elem)
 			}
 		}
-		output = append(output, Edge{nodes: subSet, m: e.m})
+		output = append(output, Edge{vertices: subSet, m: e.m})
 		index++
 	}
 
@@ -103,7 +103,7 @@ func getDegree(edges Edges, node int) int {
 	var output int
 
 	for _, e := range edges {
-		if mem(e.nodes, node) {
+		if mem(e.vertices, node) {
 			output++
 		}
 	}
@@ -115,13 +115,13 @@ func (e Edge) intersect(l []Edge) Edge {
 	var output Edge
 
 OUTER:
-	for _, n := range e.nodes {
-		for _, o := range l { // skip all nodes n that are not conained in ALL edges of l
+	for _, n := range e.vertices {
+		for _, o := range l { // skip all vertices n that are not conained in ALL edges of l
 			if !o.contains(n) {
 				continue OUTER
 			}
 		}
-		output.nodes = append(output.nodes, n)
+		output.vertices = append(output.vertices, n)
 	}
 
 	return output
@@ -130,7 +130,7 @@ OUTER:
 func Contains(l []Edge, v int) bool {
 
 	for _, e := range l {
-		for _, a := range e.nodes {
+		for _, a := range e.vertices {
 			if a == v {
 				return true
 			}
@@ -140,7 +140,7 @@ func Contains(l []Edge, v int) bool {
 }
 
 func (e Edge) contains(v int) bool {
-	for _, a := range e.nodes {
+	for _, a := range e.vertices {
 		if a == v {
 			return true
 		}
@@ -158,7 +158,7 @@ func (e Edge) containedIn(l []Edge) bool {
 }
 
 func (e Edge) areNeighbours(o Edge) bool {
-	for _, a := range o.nodes {
+	for _, a := range o.vertices {
 		if e.contains(a) {
 			return true
 		}
@@ -213,7 +213,7 @@ func (e Edge) areSNeighbours(o Edge, sep []int) bool {
 	}
 
 OUTER:
-	for _, a := range o.nodes {
+	for _, a := range o.vertices {
 		for _, s := range sep { // don't consider sep vertices for neighbouring edges
 			if s == a {
 				continue OUTER
@@ -229,7 +229,7 @@ OUTER:
 func Vertices(e []Edge) []int {
 	var output []int
 	for _, otherE := range e {
-		output = append(output, otherE.nodes...)
+		output = append(output, otherE.vertices...)
 	}
 	return removeDuplicates(output)
 }

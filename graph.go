@@ -27,7 +27,7 @@ func (g Graph) String() string {
 func (g Graph) Vertices() []int {
 	var output []int
 	for _, otherE := range g.edges {
-		output = append(output, otherE.nodes...)
+		output = append(output, otherE.vertices...)
 	}
 	return removeDuplicates(output)
 }
@@ -55,7 +55,7 @@ func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]
 	var outputG []Graph
 	var outputS [][]Special
 
-	var nodes = make(map[int]*disjoint.Element)
+	var vertices = make(map[int]*disjoint.Element)
 	var comps = make(map[*disjoint.Element][]Edge)
 	var compsSp = make(map[*disjoint.Element][]Special)
 
@@ -63,36 +63,36 @@ func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]
 
 	//  Set up the disjoint sets for each node
 	for _, i := range vs {
-		nodes[i] = disjoint.NewElement()
+		vertices[i] = disjoint.NewElement()
 	}
 
 	// Merge together the connected components
 	for _, e := range g.edges {
-		actualNodes := diff(e.nodes, balsepVert)
-		for i := 0; i < len(actualNodes)-1; i++ {
-			disjoint.Union(nodes[actualNodes[i]], nodes[actualNodes[i+1]])
+		actualVertices := diff(e.vertices, balsepVert)
+		for i := 0; i < len(actualVertices)-1; i++ {
+			disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		}
 	}
 
 	for _, s := range Sp {
-		actualNodes := diff(s.vertices, balsepVert)
-		for i := 0; i < len(actualNodes)-1; i++ {
-			disjoint.Union(nodes[actualNodes[i]], nodes[actualNodes[i+1]])
+		actualVertices := diff(s.vertices, balsepVert)
+		for i := 0; i < len(actualVertices)-1; i++ {
+			disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		}
 	}
 
 	//sort each edge and special edge to a corresponding component
 	for _, e := range g.edges {
-		actualNodes := diff(e.nodes, balsepVert)
-		if len(actualNodes) > 0 {
-			comps[nodes[actualNodes[0]].Find()] = append(comps[nodes[actualNodes[0]].Find()], e)
+		actualVertices := diff(e.vertices, balsepVert)
+		if len(actualVertices) > 0 {
+			comps[vertices[actualVertices[0]].Find()] = append(comps[vertices[actualVertices[0]].Find()], e)
 		}
 	}
 	var isolatedSp []Special
 	for _, s := range Sp {
-		actualNodes := diff(s.vertices, balsepVert)
-		if len(actualNodes) > 0 {
-			compsSp[nodes[actualNodes[0]].Find()] = append(compsSp[nodes[actualNodes[0]].Find()], s)
+		actualVertices := diff(s.vertices, balsepVert)
+		if len(actualVertices) > 0 {
+			compsSp[vertices[actualVertices[0]].Find()] = append(compsSp[vertices[actualVertices[0]].Find()], s)
 		} else {
 			isolatedSp = append(isolatedSp, s)
 		}
@@ -122,14 +122,27 @@ func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]
 		outputS = append(outputS, []Special{s})
 	}
 
-	return outputG, outputS, nodes
+	return outputG, outputS, vertices
 }
 
 func filterVertices(edges []Edge, vertices []int) []Edge {
 	var output []Edge
 
 	for _, e := range edges {
-		if subset(e.nodes, vertices) {
+		if len(inter(e.vertices, vertices)) > 0 {
+			output = append(output, e)
+		}
+	}
+
+	return output
+
+}
+
+func filterVerticesStrict(edges []Edge, vertices []int) []Edge {
+	var output []Edge
+
+	for _, e := range edges {
+		if subset(e.vertices, vertices) {
 			output = append(output, e)
 		}
 	}
@@ -142,9 +155,9 @@ func cutEdges(edges []Edge, vertices []int) []Edge {
 	var output []Edge
 
 	for _, e := range edges {
-		inter := inter(e.nodes, vertices)
+		inter := inter(e.vertices, vertices)
 		if len(inter) > 0 {
-			output = append(output, Edge{nodes: inter, m: e.m})
+			output = append(output, Edge{vertices: inter, m: e.m})
 		}
 	}
 
@@ -192,7 +205,7 @@ func (g Graph) computeSubEdges(K int) Graph {
 		gen := getCombin(len(edges_wihout_e), K)
 		for gen.hasNext() {
 			var tuple = Vertices(getSubset(edges_wihout_e, gen.combination))
-			output.edges = append(output.edges, Edge{nodes: inter(e.nodes, tuple), m: e.m}.subedges()...)
+			output.edges = append(output.edges, Edge{vertices: inter(e.vertices, tuple), m: e.m}.subedges()...)
 			gen.confirm()
 		}
 	}

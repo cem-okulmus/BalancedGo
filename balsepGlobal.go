@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type GlobalSearch struct {
+type balsepGlobal struct {
 	graph Graph
 }
 
@@ -18,8 +18,8 @@ func baseCaseSmart(g Graph, H Graph, Sp []Special) Decomp {
 	if len(H.edges) == 1 {
 		sp1 := Sp[0]
 		output = Decomp{graph: H,
-			root: Node{lambda: H.edges,
-				children: []Node{Node{lambda: sp1.edges}}}}
+			root: Node{bag: H.Vertices(), cover: H.edges,
+				children: []Node{Node{bag: sp1.vertices, cover: sp1.edges}}}}
 	} else {
 		return baseCase(g, H, Sp)
 	}
@@ -35,24 +35,38 @@ func baseCase(g Graph, H Graph, Sp []Special) Decomp {
 	case 1:
 		sp1 := Sp[0]
 		output = Decomp{graph: H,
-			root: Node{lambda: sp1.edges}}
+			root: Node{bag: sp1.vertices, cover: sp1.edges}}
 	case 2:
 		sp1 := Sp[0]
 		sp2 := Sp[1]
 		output = Decomp{graph: H,
-			root: Node{lambda: sp1.edges,
-				children: []Node{Node{lambda: sp2.edges}}}}
+			root: Node{bag: sp1.vertices, cover: sp1.edges,
+				children: []Node{Node{bag: sp1.vertices, cover: sp2.edges}}}}
 
 	}
 	return output
 }
 
-func earlyTermination(H Graph, Sp Special) Decomp {
+func earlyTermination(H Graph, sp Special) Decomp {
 	//We assume that H as less than K edges, and only one special edge
-	return Decomp{graph: H, root: Node{lambda: H.edges, children: []Node{Node{lambda: Sp.edges}}}}
+	return Decomp{graph: H,
+		root: Node{bag: H.Vertices(), cover: H.edges,
+			children: []Node{Node{bag: sp.vertices, cover: sp.edges}}}}
 }
 
-func (g GlobalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
+func rerooting(H Graph, balsep []Edge, subtrees []Decomp) Decomp {
+
+	//Create a new GHD for H
+	reroot_node := Node{bag: Vertices(balsep), cover: balsep}
+	for _, s := range subtrees {
+		s.root = s.root.reroot(reroot_node) // TODO: check if this works
+		log.Printf("Rerooted Decomp: %v\n", s)
+		reroot_node.children = append(reroot_node.children, s.root.children...)
+	}
+	return Decomp{graph: H, root: reroot_node}
+}
+
+func (g balsepGlobal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -68,7 +82,7 @@ func (g GlobalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	}
 
 	//find a balanced separator
-	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := filterVerticesStrict(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	log.Printf("Starting Search: Edges: %v K: %v\n", len(edges), K)
 
@@ -111,14 +125,7 @@ OUTER:
 			subtrees = append(subtrees, decomp)
 		}
 
-		//Create a new GHD for H
-		reroot_node := Node{lambda: balsep}
-		for _, s := range subtrees {
-			s.root = s.root.reroot(Node{lambda: balsep})
-			log.Printf("Rerooted Decomp: %v\n", s)
-			reroot_node.children = append(reroot_node.children, s.root.children...)
-		}
-		return Decomp{graph: H, root: reroot_node}
+		return rerooting(H, balsep, subtrees)
 	}
 
 	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
@@ -126,7 +133,7 @@ OUTER:
 
 }
 
-func (g GlobalSearch) findGHD(K int) Decomp {
+func (g balsepGlobal) findGHD(K int) Decomp {
 	return g.findDecomp(K, g.graph, []Special{})
 }
 
@@ -189,7 +196,7 @@ func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int
 	}
 }
 
-func (g GlobalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
+func (g balsepGlobal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -207,7 +214,7 @@ func (g GlobalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decom
 	var balsep []Edge
 
 	var decomposed = false
-	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := filterVerticesStrict(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	//var numProc = runtime.GOMAXPROCS(-1)
 	//var wg sync.WaitGroup
@@ -272,18 +279,10 @@ OUTER:
 		decomposed = true
 	}
 
-	//Create a new GHD for H
-	reroot_node := Node{lambda: balsep}
-	for _, s := range subtrees {
-		s.root = s.root.reroot(Node{lambda: balsep})
-		log.Printf("Rerooted Decomp: %+v\n", s)
-		reroot_node.children = append(reroot_node.children, s.root.children...)
-	}
-
-	return Decomp{graph: H, root: reroot_node}
+	return rerooting(H, balsep, subtrees)
 }
 
-func (g GlobalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
+func (g balsepGlobal) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -301,7 +300,7 @@ func (g GlobalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Dec
 	var balsep []Edge
 
 	var decomposed = false
-	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := filterVerticesStrict(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	// var numProc = runtime.GOMAXPROCS(-1)
 	// var wg sync.WaitGroup
@@ -361,18 +360,10 @@ OUTER:
 		decomposed = true
 	}
 
-	//Create a new GHD for H
-	reroot_node := Node{lambda: balsep}
-	for _, s := range subtrees {
-		s.root = s.root.reroot(Node{lambda: balsep})
-		log.Printf("Rerooted Decomp: %+v\n", s)
-		reroot_node.children = append(reroot_node.children, s.root.children...)
-	}
-
-	return Decomp{graph: H, root: reroot_node}
+	return rerooting(H, balsep, subtrees)
 }
 
-func (g GlobalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
+func (g balsepGlobal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -388,7 +379,7 @@ func (g GlobalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decom
 	}
 
 	//find a balanced separator
-	edges := filterVertices(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := filterVerticesStrict(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	gen := getCombin(len(edges), K)
 OUTER:
@@ -432,15 +423,7 @@ OUTER:
 			subtrees = append(subtrees, decomp)
 		}
 
-		//Create a new GHD for H
-		reroot_node := Node{lambda: balsep}
-		for _, s := range subtrees {
-			s.root = s.root.reroot(Node{lambda: balsep})
-			log.Printf("Rerooted Decomp: %v\n", s)
-			reroot_node.children = append(reroot_node.children, s.root.children...)
-		}
-
-		return Decomp{graph: H, root: reroot_node}
+		return rerooting(H, balsep, subtrees)
 
 	}
 
@@ -448,14 +431,14 @@ OUTER:
 	return Decomp{} // empty Decomp signifiyng reject
 }
 
-func (g GlobalSearch) findGHDParallelFull(K int) Decomp {
+func (g balsepGlobal) findGHDParallelFull(K int) Decomp {
 	return g.findDecompParallelFull(K, g.graph, []Special{})
 }
 
-func (g GlobalSearch) findGHDParallelSearch(K int) Decomp {
+func (g balsepGlobal) findGHDParallelSearch(K int) Decomp {
 	return g.findDecompParallelSearch(K, g.graph, []Special{})
 }
 
-func (g GlobalSearch) findGHDParallelComp(K int) Decomp {
+func (g balsepGlobal) findGHDParallelComp(K int) Decomp {
 	return g.findDecompParallelComp(K, g.graph, []Special{})
 }

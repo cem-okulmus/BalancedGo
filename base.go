@@ -106,8 +106,8 @@ func diffEdges(a []Edge, e Edge) []Edge {
 	var output []Edge
 
 	for _, n := range a {
-		length := len(inter(n.nodes, e.nodes))
-		if (length > 0) && (length < (len(e.nodes))) {
+		length := len(inter(n.vertices, e.vertices))
+		if (length > 0) && (length < (len(e.vertices))) {
 			output = append(output, n)
 		}
 	}

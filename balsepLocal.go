@@ -6,11 +6,11 @@ import (
 	"runtime"
 )
 
-type LocalSearch struct {
+type balsepLocal struct {
 	graph Graph
 }
 
-func (g LocalSearch) findDecomp(K int, H Graph, Sp []Special) Decomp {
+func (g balsepLocal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -82,14 +82,7 @@ OUTER:
 				subtrees = append(subtrees, decomp)
 			}
 
-			//Create a new GHD for H
-			reroot_node := Node{lambda: balsep}
-			for _, s := range subtrees {
-				s.root = s.root.reroot(Node{lambda: balsep})
-				log.Printf("Rerooted Decomp: %v\n", s)
-				reroot_node.children = append(reroot_node.children, s.root.children...)
-			}
-			return Decomp{graph: H, root: reroot_node}
+			return rerooting(H, balsep, subtrees)
 
 		}
 
@@ -100,11 +93,11 @@ OUTER:
 
 }
 
-func (g LocalSearch) findGHD(K int) Decomp {
+func (g balsepLocal) findGHD(K int) Decomp {
 	return g.findDecomp(K, g.graph, []Special{})
 }
 
-func (g LocalSearch) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
+func (g balsepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -208,18 +201,11 @@ OUTER:
 		}
 
 	}
-	//Create a new GHD for H
-	reroot_node := Node{lambda: balsep}
-	for _, s := range subtrees {
-		s.root = s.root.reroot(Node{lambda: balsep})
-		log.Printf("Rerooted Decomp: %+v\n", s)
-		reroot_node.children = append(reroot_node.children, s.root.children...)
-	}
 
-	return Decomp{graph: H, root: reroot_node}
+	return rerooting(H, balsep, subtrees)
 }
 
-func (g LocalSearch) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
+func (g balsepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -313,18 +299,11 @@ OUTER:
 		}
 
 	}
-	//Create a new GHD for H
-	reroot_node := Node{lambda: balsep}
-	for _, s := range subtrees {
-		s.root = s.root.reroot(Node{lambda: balsep})
-		log.Printf("Rerooted Decomp: %+v\n", s)
-		reroot_node.children = append(reroot_node.children, s.root.children...)
-	}
 
-	return Decomp{graph: H, root: reroot_node}
+	return rerooting(H, balsep, subtrees)
 }
 
-func (g LocalSearch) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
+func (g balsepLocal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -403,15 +382,7 @@ OUTER:
 				subtrees = append(subtrees, decomp)
 			}
 
-			//Create a new GHD for H
-			reroot_node := Node{lambda: balsep}
-			for _, s := range subtrees {
-				s.root = s.root.reroot(Node{lambda: balsep})
-				log.Printf("Rerooted Decomp: %v\n", s)
-				reroot_node.children = append(reroot_node.children, s.root.children...)
-			}
-
-			return Decomp{graph: H, root: reroot_node}
+			return rerooting(H, balsep, subtrees)
 		}
 	}
 
@@ -419,14 +390,14 @@ OUTER:
 	return Decomp{} // empty Decomp signifiyng reject
 }
 
-func (g LocalSearch) findGHDParallelFull(K int) Decomp {
+func (g balsepLocal) findGHDParallelFull(K int) Decomp {
 	return g.findDecompParallelFull(K, g.graph, []Special{})
 }
 
-func (g LocalSearch) findGHDParallelSearch(K int) Decomp {
+func (g balsepLocal) findGHDParallelSearch(K int) Decomp {
 	return g.findDecompParallelSearch(K, g.graph, []Special{})
 }
 
-func (g LocalSearch) findGHDParallelComp(K int) Decomp {
+func (g balsepLocal) findGHDParallelComp(K int) Decomp {
 	return g.findDecompParallelComp(K, g.graph, []Special{})
 }

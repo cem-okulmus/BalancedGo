@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"log"
 	"reflect"
+	"strconv"
 )
 
 type Node struct {
-	lambda   []Edge
+	bag      []int
+	cover    []Edge
 	children []Node
 }
 
@@ -23,10 +25,17 @@ func indent(i int) string {
 func (n Node) StringIdent(i int) string {
 	var buffer bytes.Buffer
 
-	buffer.WriteString("\n" + indent(i) + "Lambda: {")
-	for i, e := range n.lambda {
+	buffer.WriteString("\n" + indent(i) + "Bag: {")
+	for i, v := range n.bag {
+		buffer.WriteString(strconv.Itoa(v))
+		if i != len(n.bag)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString("}\n" + indent(i) + "Cover: {")
+	for i, e := range n.cover {
 		buffer.WriteString(e.String())
-		if i != len(n.lambda)-1 {
+		if i != len(n.cover)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -62,14 +71,28 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
+func (n Node) bagSubsets() bool {
+	if !subset(n.bag, Vertices(n.cover)) {
+		return false
+	}
+
+	for _, c := range n.children {
+		if !c.bagSubsets() {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Think about how to make the contains check faster than linear
 func (n Node) getConGraph(vert, num int) Edges {
 	var output Edges
 
-	if Contains(n.lambda, vert) {
+	if Contains(n.cover, vert) {
 		for i, c := range n.children {
-			if Contains(c.lambda, vert) {
-				output.append(Edge{nodes: []int{num, (num + i + 1)}}) //using breadth-first ordering to number nodes
+			if Contains(c.cover, vert) {
+				output.append(Edge{vertices: []int{num, (num + i + 1)}}) //using breadth-first ordering to number nodes
 			}
 		}
 	}
@@ -84,7 +107,7 @@ func (n Node) getConGraph(vert, num int) Edges {
 func (n Node) allChildrenContaining(vert, num int) []int {
 	var output []int
 
-	if Contains(n.lambda, vert) {
+	if Contains(n.cover, vert) {
 		output = append(output, num)
 	}
 
@@ -97,7 +120,7 @@ func (n Node) allChildrenContaining(vert, num int) []int {
 
 func (n Node) coversEdge(e Edge) bool {
 	// edge contained in current node
-	if subset(e.nodes, Vertices(n.lambda)) {
+	if subset(e.vertices, Vertices(n.cover)) {
 		return true
 	}
 
@@ -112,10 +135,10 @@ func (n Node) coversEdge(e Edge) bool {
 }
 
 func (n Node) ancestorOnI(o Node, i int) Node {
-	if !Contains(o.lambda, i) {
+	if !Contains(o.cover, i) {
 		return o
 	}
-	if !(reflect.DeepEqual(o, n.parent(o))) && Contains(n.parent(o).lambda, i) {
+	if !(reflect.DeepEqual(o, n.parent(o))) && Contains(n.parent(o).cover, i) {
 		return n.ancestorOnI(n.parent(o), i)
 	}
 
@@ -159,5 +182,5 @@ func (n Node) reroot(child Node) Node {
 	p.children = newparentchildren
 	newchildren := append(child.children, p)
 
-	return Node{lambda: child.lambda, children: newchildren}
+	return Node{bag: child.bag, cover: child.cover, children: newchildren}
 }

@@ -3,8 +3,8 @@ package main
 import "github.com/alecthomas/participle"
 
 type ParseEdge struct {
-	Name  string   `(Int)? @Ident`
-	Nodes []string `"(" ( @(Ident|Int)  ","? )* ")"`
+	Name     string   `(Int)? @Ident`
+	Vertices []string `"(" ( @(Ident|Int)  ","? )* ")"`
 }
 
 type ParseGraph struct {
@@ -29,7 +29,7 @@ func getGraph(s string) Graph {
 	}
 	for _, e := range pgraph.Edges {
 		var outputEdges []int
-		for _, n := range e.Nodes {
+		for _, n := range e.Vertices {
 			i, ok := pgraph.m[n]
 			if ok {
 				outputEdges = append(outputEdges, i)
@@ -40,7 +40,7 @@ func getGraph(s string) Graph {
 				pgraph.count++
 			}
 		}
-		output.edges = append(output.edges, Edge{nodes: outputEdges, m: encoding})
+		output.edges = append(output.edges, Edge{vertices: outputEdges, m: encoding})
 	}
 	output.m = encoding
 	return output

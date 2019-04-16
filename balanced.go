@@ -86,8 +86,8 @@ func isInf(a int) bool {
 
 func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
 
-	for _, n := range e.nodes {
-		for _, m := range e.nodes {
+	for _, n := range e.vertices {
+		for _, m := range e.vertices {
 			n_index, _ := order[n]
 			m_index, _ := order[m]
 			if n_index != m_index {
@@ -188,11 +188,11 @@ func getMaxSepOrder(edges []Edge) []Edge {
 func edgeDegree(edges []Edge, edge Edge) int {
 	var output int
 
-	for _, n := range edge.nodes {
-		output = output + getDegree(edges, n)
+	for _, v := range edge.vertices {
+		output = output + getDegree(edges, v)
 	}
 
-	return output - len(edge.nodes)
+	return output - len(edge.vertices)
 }
 
 func getDegreeOrder(edges []Edge) []Edge {
@@ -256,8 +256,8 @@ func main() {
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
-	global := GlobalSearch{graph: parsedGraph}
-	local := LocalSearch{graph: parsedGraph}
+	global := balsepGlobal{graph: parsedGraph}
+	local := balsepLocal{graph: parsedGraph}
 	if *choose != 0 {
 		var decomp Decomp
 		start := time.Now()

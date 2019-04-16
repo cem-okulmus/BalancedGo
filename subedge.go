@@ -14,7 +14,7 @@ type Subset struct {
 func getSubsetIterator(vertices []int, m map[int]string) *Subset {
 	var output Subset
 
-	//fmt.Println("Vertices", Edge{nodes: vertices, m: edges[0].m})
+	//fmt.Println("Vertices", Edge{vertices: vertices, m: edges[0].m})
 	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices)), m: m}
 	return &output
 }
@@ -23,11 +23,11 @@ func (s *Subset) hasNext() bool {
 	return s.current.hasNext()
 }
 
-func getEdge(nodes []int, s []int, m map[int]string) Edge {
+func getEdge(vertices []int, s []int, m map[int]string) Edge {
 	var output Edge
 	output.m = m
 	for _, i := range s {
-		output.nodes = append(output.nodes, nodes[i])
+		output.vertices = append(output.vertices, vertices[i])
 	}
 
 	return output
@@ -59,9 +59,9 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	var h_edges Edges
 
 	for _, j := range edges {
-		inter := inter(j.nodes, e.nodes)
-		if len(inter) > 0 && len(inter) < len(e.nodes) {
-			h_edges.append(Edge{nodes: inter, m: e.m})
+		inter := inter(j.vertices, e.vertices)
+		if len(inter) > 0 && len(inter) < len(e.vertices) {
+			h_edges.append(Edge{vertices: inter, m: e.m})
 		}
 	}
 	// TODO: Sort h_edges by size
@@ -69,7 +69,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 	var output SubEdges
 
-	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].nodes) > len(h_edges[j].nodes) })
+	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].vertices) > len(h_edges[j].vertices) })
 	output.source = h_edges
 	if k > len(output.source) {
 		k = len(output.source)
@@ -145,7 +145,7 @@ func (s *SubEdges) hasNext() bool {
 
 func (s SubEdges) getCurrent() Edge {
 	if s.emptyReturned {
-		return Edge{nodes: []int{}}
+		return Edge{vertices: []int{}}
 	}
 	return s.current
 }
@@ -204,7 +204,7 @@ func test() {
 	// fmt.Println("Subset test: ")
 	// fmt.Println("========================================")
 
-	// test := getSubsetIterator([]Edge{Edge{nodes: []int{1, 2, 3, 4}}})
+	// test := getSubsetIterator([]Edge{Edge{vertices: []int{1, 2, 3, 4}}})
 
 	// for test.hasNext() {
 	// 	fmt.Println(test.getCurrent())
@@ -213,7 +213,7 @@ func test() {
 	// fmt.Println("Subegde test: ")
 	// fmt.Println("========================================")
 
-	// test2 := getSubEdgeIterator([]Edge{Edge{nodes: []int{1, 2, 3, 4}}, Edge{nodes: []int{1, 2, 5, 6}}}, Edge{nodes: []int{5, 8, 2, 9}}, 2)
+	// test2 := getSubEdgeIterator([]Edge{Edge{vertices: []int{1, 2, 3, 4}}, Edge{vertices: []int{1, 2, 5, 6}}}, Edge{vertices: []int{5, 8, 2, 9}}, 2)
 
 	// fmt.Println("begin", test2.getCurrent())
 	// for test2.hasNext() {
@@ -228,7 +228,7 @@ func test() {
 	fmt.Println("SepSub test: ")
 	fmt.Println("========================================")
 
-	test3 := getSepSub([]Edge{Edge{nodes: []int{5, 8, 2, 9}}, Edge{nodes: []int{1, 2, 3, 4}}, Edge{nodes: []int{1, 2, 5, 6}}, Edge{nodes: []int{9, 12, 15, 16}}, Edge{nodes: []int{16, 112, 115, 116}}}, []Edge{Edge{nodes: []int{5, 8, 2, 9}}, Edge{nodes: []int{9, 12, 15, 16}}}, 2)
+	test3 := getSepSub([]Edge{Edge{vertices: []int{5, 8, 2, 9}}, Edge{vertices: []int{1, 2, 3, 4}}, Edge{vertices: []int{1, 2, 5, 6}}, Edge{vertices: []int{9, 12, 15, 16}}, Edge{vertices: []int{16, 112, 115, 116}}}, []Edge{Edge{vertices: []int{5, 8, 2, 9}}, Edge{vertices: []int{9, 12, 15, 16}}}, 2)
 
 	fmt.Println("begin", test3.getCurrent())
 	for test3.hasNext() {

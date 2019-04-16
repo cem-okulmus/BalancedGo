@@ -40,7 +40,7 @@ func VerticesSpecial(sp []Special) []int {
 func (s Special) areSNeighbours(o Edge, sep []int) bool {
 
 OUTER:
-	for _, a := range o.nodes {
+	for _, a := range o.vertices {
 		for _, ss := range sep { // don't consider sep vertices for neighbouring edges
 			if ss == a {
 				continue OUTER
