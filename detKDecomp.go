@@ -34,12 +34,13 @@ OUTER:
 		gen.confirm()
 		balsep := getSubset(edges, gen.combination)
 
+		verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 		// check if balsep covers the intersection of oldsep and H
-		if !subset(inter(Vertices(oldSep), H.Vertices()), Vertices(balsep)) {
+		if !subset(inter(Vertices(oldSep), verticesCurrent), Vertices(balsep)) {
 			continue
 		}
 		//check if balsep "makes some progress" into separating H
-		if len(inter(Vertices(balsep), diff(H.Vertices(), Vertices(oldSep)))) == 0 {
+		if len(inter(Vertices(balsep), diff(verticesCurrent, Vertices(oldSep)))) == 0 {
 			continue
 		}
 

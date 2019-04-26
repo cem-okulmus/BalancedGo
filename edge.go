@@ -167,16 +167,18 @@ func (e Edge) areNeighbours(o Edge) bool {
 }
 
 func (e Edge) OWcheck(l []Edge) (bool, Edge) {
-	temp := 0
 	var parent Edge
+	var intersect []int
 
-	for i := range l {
-		if e.areNeighbours(l[i]) {
-			temp++
-			parent = l[i]
-		}
-		if temp > 1 {
-			return false, Edge{}
+	for _, o := range l {
+		temp_intersect := inter(o.vertices, e.vertices)
+		if len(intersect) == 0 && len(temp_intersect) != 0 {
+			intersect = temp_intersect
+			parent = o
+		} else {
+			if !reflect.DeepEqual(temp_intersect, intersect) {
+				return false, e
+			}
 		}
 	}
 
@@ -195,7 +197,7 @@ func (e Edge) numIndicent(l []Edge) int {
 	return output
 }
 
-func (e Edge) numNeighbours(l []Edge, remaining []bool) int {
+func (e Edge) numNeighboursOrder(l []Edge, remaining []bool) int {
 	output := 0
 
 	for i := range l {

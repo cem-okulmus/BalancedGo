@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"github.com/spakin/disjoint"
+	"math/big"
 	"reflect"
 )
 
@@ -212,4 +213,49 @@ func (g Graph) computeSubEdges(K int) Graph {
 
 	output.edges = removeDuplicateEdges(output.edges)
 	return output
+}
+
+func (g Graph) getType(vertex int) *big.Int {
+	output := new(big.Int)
+
+	for i := range g.edges {
+		if mem(g.edges[i].vertices, vertex) {
+			output.SetBit(output, i, 1)
+		}
+	}
+	return output
+}
+
+// Possible optimization: When computing the distances, use the matrix to speed up type detection
+func (g Graph) typeCollapse() Graph {
+
+	substituteMap := make(map[int]int) // to keep track of which vertices to collapse
+	//	restorationMap := make(map[int][]int) // used to restore "full" edges from simplified one
+
+	// identify vertices to replace
+	encountered := make(map[string]int)
+
+	for _, v := range g.Vertices() {
+		typeString := g.getType(v).String()
+
+		if _, ok := encountered[typeString]; ok {
+			// already seen this type before
+			substituteMap[v] = encountered[typeString]
+			//	restorationMap[encountered[typeString]] = append(restorationMap[encountered[typeString]],v)
+		} else {
+			// Record thie type as a new element
+			encountered[typeString] = v
+		}
+	}
+
+	newEdges := g.edges
+
+	for _, e := range newEdges {
+		for _, v := range e.vertices {
+			v, _ = substituteMap[v]
+		}
+		e.vertices = removeDuplicates(e.vertices)
+	}
+
+	return Graph{edges: newEdges, m: g.m}
 }
