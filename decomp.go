@@ -47,7 +47,7 @@ func (d Decomp) correct(g Graph) bool {
 	//connectedness
 	for _, i := range Vertices(d.graph.edges) {
 		if !d.connected(i) {
-			fmt.Printf("Node %v doesn't span connected subtree\n", d.graph.m[i])
+			fmt.Printf("Node %v doesn't span connected subtree\n", m[i])
 			return false
 		}
 	}

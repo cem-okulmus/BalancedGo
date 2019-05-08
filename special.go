@@ -13,11 +13,11 @@ type Special struct {
 func (s Special) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
-	for i, e := range s.vertices {
-		if s.edges[0].m == nil {
-			buffer.WriteString(fmt.Sprintf("%d", e))
+	for i, v := range s.vertices {
+		if m == nil {
+			buffer.WriteString(fmt.Sprintf("%d", v))
 		} else {
-			buffer.WriteString(s.edges[0].m[e])
+			buffer.WriteString(m[v])
 		}
 		if i != len(s.vertices)-1 {
 			buffer.WriteString(", ")

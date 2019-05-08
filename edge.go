@@ -10,7 +10,25 @@ import (
 
 type Edge struct {
 	vertices []int // use integers for vertices
-	m        map[int]string
+}
+
+func (e Edge) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(")
+	for i, n := range e.vertices {
+		var s string
+		if m == nil {
+			s = fmt.Sprintf("%v", n)
+		} else {
+			s = m[n]
+		}
+		buffer.WriteString(s)
+		if i != len(e.vertices)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString(")")
+	return buffer.String()
 }
 
 type Edges []Edge
@@ -59,25 +77,6 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 	return elements[:j+1]
 }
 
-func (e Edge) String() string {
-	var buffer bytes.Buffer
-	buffer.WriteString("(")
-	for i, n := range e.vertices {
-		var s string
-		if e.m == nil {
-			s = fmt.Sprintf("%v", n)
-		} else {
-			s = e.m[n]
-		}
-		buffer.WriteString(s)
-		if i != len(e.vertices)-1 {
-			buffer.WriteString(", ")
-		}
-	}
-	buffer.WriteString(")")
-	return buffer.String()
-}
-
 // Unnessarily adds empty edge
 func (e Edge) subedges() []Edge {
 	var output []Edge
@@ -92,7 +91,7 @@ func (e Edge) subedges() []Edge {
 				subSet = append(subSet, elem)
 			}
 		}
-		output = append(output, Edge{vertices: subSet, m: e.m})
+		output = append(output, Edge{vertices: subSet})
 		index++
 	}
 
@@ -164,25 +163,6 @@ func (e Edge) areNeighbours(o Edge) bool {
 		}
 	}
 	return false
-}
-
-func (e Edge) OWcheck(l []Edge) (bool, Edge) {
-	var parent Edge
-	var intersect []int
-
-	for _, o := range l {
-		temp_intersect := inter(o.vertices, e.vertices)
-		if len(intersect) == 0 && len(temp_intersect) != 0 {
-			intersect = temp_intersect
-			parent = o
-		} else {
-			if !reflect.DeepEqual(temp_intersect, intersect) {
-				return false, e
-			}
-		}
-	}
-
-	return true, parent
 }
 
 func (e Edge) numIndicent(l []Edge) int {

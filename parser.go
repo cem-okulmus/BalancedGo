@@ -40,8 +40,8 @@ func getGraph(s string) Graph {
 				pgraph.count++
 			}
 		}
-		output.edges = append(output.edges, Edge{vertices: outputEdges, m: encoding})
+		output.edges = append(output.edges, Edge{vertices: outputEdges})
 	}
-	output.m = encoding
+	m = encoding
 	return output
 }

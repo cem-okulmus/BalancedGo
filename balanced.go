@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
+
 func logActive(b bool) {
 	log.SetFlags(0)
 	if b {
@@ -26,14 +28,11 @@ func check(e error) {
 
 var BALANCED_FACTOR int
 
-// func checkDupTypes (g Graph) int {
-// 	encountered := make(map[[]int]struct{})
-// }
-
 func main() {
-	logActive(false)
+	m = make(map[int]string)
 
 	//Command-Line Argument Parsing
+	log := flag.Bool("log", false, "(optional) turn on extensive logs")
 	compute_subedes := flag.Bool("sub", false, "(optional) Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
@@ -41,7 +40,9 @@ func main() {
 	balance_factor := flag.Int("balfactor", 2, "(optional) Determines the factor that balanced separator check uses")
 	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering")
 	// OW_optim := flag.Bool("OWremoval", false, "(optional) remove edges with single indicent edges and add them to Decomp afterwards")
-	// flag.Parse()
+	flag.Parse()
+
+	logActive(*log)
 
 	BALANCED_FACTOR = *balance_factor
 
@@ -60,14 +61,18 @@ func main() {
 	//fmt.Println("Min Distance", getMinDistances(parsedGraph))
 	//return
 
-	count := 0
-	for _, e := range parsedGraph.edges {
-		isOW, _ := e.OWcheck(parsedGraph.edges)
-		if isOW {
-			count++
-		}
-	}
-	fmt.Println("No of OW edges: ", count)
+	// count := 0
+	// for _, e := range parsedGraph.edges {
+	// 	isOW, _ := e.OWcheck(parsedGraph.edges)
+	// 	if isOW {
+	// 		count++
+	// 	}
+	// }
+	// fmt.Println("No of OW edges: ", count)
+
+	// collapsedGraph, _ := parsedGraph.typeCollapse()
+
+	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
 
 	if *use_heuristic > 0 {
 		switch *use_heuristic {

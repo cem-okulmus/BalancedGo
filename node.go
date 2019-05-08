@@ -4,13 +4,24 @@ import (
 	"bytes"
 	"log"
 	"reflect"
-	"strconv"
 )
 
 type Node struct {
 	bag      []int
 	cover    []Edge
 	children []Node
+}
+
+func (n Node) printBag() string {
+	var buffer bytes.Buffer
+	for i, v := range n.bag {
+		buffer.WriteString(m[v])
+		if i != len(n.bag)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	return buffer.String()
 }
 
 func indent(i int) string {
@@ -26,12 +37,8 @@ func (n Node) StringIdent(i int) string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("\n" + indent(i) + "Bag: {")
-	for i, v := range n.bag {
-		buffer.WriteString(strconv.Itoa(v))
-		if i != len(n.bag)-1 {
-			buffer.WriteString(", ")
-		}
-	}
+	buffer.WriteString(n.printBag())
+
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
 	for i, e := range n.cover {
 		buffer.WriteString(e.String())

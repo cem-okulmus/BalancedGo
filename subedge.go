@@ -8,14 +8,13 @@ import (
 type Subset struct {
 	source  []int
 	current Combin
-	m       map[int]string
 }
 
-func getSubsetIterator(vertices []int, m map[int]string) *Subset {
+func getSubsetIterator(vertices []int) *Subset {
 	var output Subset
 
 	//fmt.Println("Vertices", Edge{vertices: vertices, m: edges[0].m})
-	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices)), m: m}
+	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices))}
 	return &output
 }
 
@@ -23,9 +22,9 @@ func (s *Subset) hasNext() bool {
 	return s.current.hasNext()
 }
 
-func getEdge(vertices []int, s []int, m map[int]string) Edge {
+func getEdge(vertices []int, s []int) Edge {
 	var output Edge
-	output.m = m
+
 	for _, i := range s {
 		output.vertices = append(output.vertices, vertices[i])
 	}
@@ -36,7 +35,7 @@ func getEdge(vertices []int, s []int, m map[int]string) Edge {
 func (s *Subset) getCurrent() Edge {
 	s.current.confirm()
 
-	return getEdge(s.source, s.current.combination, s.m)
+	return getEdge(s.source, s.current.combination)
 }
 
 //   ----------------------------------------------------------------------------
@@ -61,7 +60,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	for _, j := range edges {
 		inter := inter(j.vertices, e.vertices)
 		if len(inter) > 0 && len(inter) < len(e.vertices) {
-			h_edges.append(Edge{vertices: inter, m: e.m})
+			h_edges.append(Edge{vertices: inter})
 		}
 	}
 	// TODO: Sort h_edges by size
@@ -124,7 +123,7 @@ func (s *SubEdges) hasNext() bool {
 				continue //skip
 			} else {
 				s.cache = append(s.cache, vertices)
-				s.currentSubset = getSubsetIterator(vertices, s.initial.m)
+				s.currentSubset = getSubsetIterator(vertices)
 				s.currentSubset.hasNext()
 				break
 			}
