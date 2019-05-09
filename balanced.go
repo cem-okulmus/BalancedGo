@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
-
 func logActive(b bool) {
 	log.SetFlags(0)
 	if b {
@@ -120,7 +118,7 @@ func main() {
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
 		fmt.Println("Width: ", *width)
-		//fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		fmt.Println("Correct: ", decomp.correct(parsedGraph))
 		return
 	}
 

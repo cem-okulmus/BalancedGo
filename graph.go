@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"github.com/spakin/disjoint"
+	"log"
 	"reflect"
 )
 
@@ -43,14 +44,8 @@ func (g Graph) getSubset(s []int) []Edge {
 	return getSubset(g.edges, s)
 }
 
-func (g Graph) getComponents(sep []Edge, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
-	vertices := append(Vertices(g.edges), VerticesSpecial(Sp)...)
-
-	return g.getCompGeneral(vertices, sep, Sp)
-}
-
 // Uses Disjoint Set data structure to compute connected components
-func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
+func (g Graph) getComponents(sep []Edge, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
 	var outputG []Graph
 	var outputS [][]Special
 
@@ -61,21 +56,21 @@ func (g Graph) getCompGeneral(vs []int, sep []Edge, Sp []Special) ([]Graph, [][]
 	balsepVert := Vertices(sep)
 
 	//  Set up the disjoint sets for each node
-	for _, i := range vs {
+	for _, i := range append(Vertices(g.edges), VerticesSpecial(Sp)...) {
 		vertices[i] = disjoint.NewElement()
 	}
 
 	// Merge together the connected components
 	for _, e := range g.edges {
 		actualVertices := diff(e.vertices, balsepVert)
-		for i := 0; i < len(actualVertices)-1; i++ {
+		for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
 			disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		}
 	}
 
 	for _, s := range Sp {
 		actualVertices := diff(s.vertices, balsepVert)
-		for i := 0; i < len(actualVertices)-1; i++ {
+		for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
 			disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		}
 	}
@@ -173,7 +168,7 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
 		if len(comps[i].edges)+len(compSps[i]) > (((len(g.edges) + len(sp)) * (BALANCED_FACTOR - 1)) / BALANCED_FACTOR) {
-			// log.Printf("Component %+v has weight%d instead of %d\n", comps[i], len(comps[i].edges)+len(compSps[i]), ((len(g.edges) + len(sp)) / 2))
+			log.Printf("Component %+v has weight %d instead of %d\n", comps[i], len(comps[i].edges)+len(compSps[i]), ((len(g.edges) + len(sp)) / 2))
 			return false
 		}
 	}
@@ -188,7 +183,7 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	// Make sure that "special seps can never be used as separators"
 	for _, s := range sp {
 		if reflect.DeepEqual(s.vertices, Vertices(sep)) {
-			// log.Println("Special edge %+v\n used again", s)
+			log.Println("Special edge %+v\n used again", s)
 			return false
 		}
 	}

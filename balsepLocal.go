@@ -16,8 +16,8 @@ func (g balsepLocal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination
@@ -103,8 +103,8 @@ func (g balsepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination
@@ -211,8 +211,8 @@ func (g balsepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Deco
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination
@@ -309,8 +309,8 @@ func (g balsepLocal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination

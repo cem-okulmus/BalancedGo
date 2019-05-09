@@ -41,7 +41,7 @@ func baseCase(g Graph, H Graph, Sp []Special) Decomp {
 		sp2 := Sp[1]
 		output = Decomp{graph: H,
 			root: Node{bag: sp1.vertices, cover: sp1.edges,
-				children: []Node{Node{bag: sp1.vertices, cover: sp2.edges}}}}
+				children: []Node{Node{bag: sp2.vertices, cover: sp2.edges}}}}
 
 	}
 	return output
@@ -58,12 +58,19 @@ func rerooting(H Graph, balsep []Edge, subtrees []Decomp) Decomp {
 
 	//Create a new GHD for H
 	reroot_node := Node{bag: Vertices(balsep), cover: balsep}
+	output := Node{bag: Vertices(balsep), cover: balsep}
+
+	// log.Printf("Node to reroot: %v\n", reroot_node)
+	// log.Printf("My subtrees: \n")
+	// for _, s := range subtrees {
+	// 	log.Printf("%v \n", s)
+	// }
 	for _, s := range subtrees {
 		s.root = s.root.reroot(reroot_node) // TODO: check if this works
 		log.Printf("Rerooted Decomp: %v\n", s)
-		reroot_node.children = append(reroot_node.children, s.root.children...)
+		output.children = append(output.children, s.root.children...)
 	}
-	return Decomp{graph: H, root: reroot_node}
+	return Decomp{graph: H, root: output}
 }
 
 func (g balsepGlobal) findDecomp(K int, H Graph, Sp []Special) Decomp {
@@ -72,14 +79,14 @@ func (g balsepGlobal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
-	//Early termination
-	if len(H.edges) <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
-	}
+	// //Early termination
+	// if len(H.edges) <= K && len(Sp) == 1 {
+	// 	return earlyTermination(H, Sp[0])
+	// }
 
 	//find a balanced separator
 	edges := filterVerticesStrict(g.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
@@ -197,13 +204,12 @@ func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int
 }
 
 func (g balsepGlobal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
-
 	log.Printf("Current Subgraph: %+v\n", H)
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination
@@ -288,8 +294,8 @@ func (g balsepGlobal) findDecompParallelSearch(K int, H Graph, Sp []Special) Dec
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination
@@ -369,8 +375,8 @@ func (g balsepGlobal) findDecompParallelComp(K int, H Graph, Sp []Special) Decom
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.edges) == 0 && len(Sp) <= 2 {
-		return baseCase(g.graph, H, Sp)
+	if len(H.edges)+len(Sp) <= 2 {
+		return baseCaseSmart(g.graph, H, Sp)
 	}
 
 	//Early termination

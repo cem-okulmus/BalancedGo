@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"reflect"
+	//	"strconv"
 )
 
 type Node struct {
@@ -93,19 +94,15 @@ func (n Node) bagSubsets() bool {
 }
 
 // Think about how to make the contains check faster than linear
-func (n Node) getConGraph(vert, num int) Edges {
+func (n Node) getConGraph(num int) Edges {
 	var output Edges
 
-	if Contains(n.cover, vert) {
-		for i, c := range n.children {
-			if Contains(c.cover, vert) {
-				output.append(Edge{vertices: []int{num, (num + i + 1)}}) //using breadth-first ordering to number nodes
-			}
-		}
+	for i, _ := range n.children {
+		output.append(Edge{vertices: []int{num + encode + 1, (num + i + encode + 2)}}) //using breadth-first ordering to number nodes
 	}
 
 	for i, c := range n.children {
-		output = append(output, c.getConGraph(vert, (num+1+i))...)
+		output = append(output, c.getConGraph((num + 1 + i))...)
 	}
 
 	return output
@@ -113,9 +110,10 @@ func (n Node) getConGraph(vert, num int) Edges {
 
 func (n Node) allChildrenContaining(vert, num int) []int {
 	var output []int
+	//m[num+encode+1] = strconv.Itoa(num)
 
 	if Contains(n.cover, vert) {
-		output = append(output, num)
+		output = append(output, num+encode+1)
 	}
 
 	for i, c := range n.children {

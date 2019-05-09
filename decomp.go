@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	//	"log"
 	"reflect"
 )
 
@@ -16,9 +17,24 @@ func (d Decomp) String() string {
 
 func (d Decomp) connected(vert int) bool {
 	var containingNodes = d.root.allChildrenContaining(vert, 0)
-	var edgesContaining = d.root.getConGraph(vert, 0)
+	var edgesContaining = filterVertices(d.root.getConGraph(0), containingNodes)
 
-	g, _, _ := Graph{edges: edgesContaining}.getCompGeneral(containingNodes, []Edge{}, []Special{})
+	// log.Printf("All nodes containing %s\n", m[vert])
+	// for _, n := range containingNodes {
+	// 	log.Printf("%v ,", m[n])
+	// }
+
+	// log.Printf("All edges")
+	// for _, e := range edgesContaining {
+	// 	log.Printf("%v ,", e)
+	// }
+
+	g, _, _ := Graph{edges: edgesContaining}.getComponents([]Edge{}, []Special{})
+
+	// log.Printf("Components of Node %s\n", m[vert])
+	// for _, c := range g {
+	// 	log.Printf("%v \n\n", c)
+	// }
 
 	return len(g) == 1
 }

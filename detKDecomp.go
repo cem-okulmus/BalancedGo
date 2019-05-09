@@ -26,7 +26,8 @@ func (d detKDecomp) findDecomp(K int, H Graph, oldSep []Edge, Sp []Special) Deco
 		return Decomp{graph: H, root: Node{bag: H.Vertices(), cover: H.edges, children: children}}
 	}
 
-	edges := filterVertices(d.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	//TODO: think about whether filtering here is allowed, and if it should be strict or not
+	edges := filterVerticesStrict(d.graph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 	gen := getCombin(len(edges), K)
 
 OUTER:
