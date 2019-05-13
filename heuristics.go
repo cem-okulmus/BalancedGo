@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"sort"
@@ -10,7 +11,7 @@ import (
 
 func getMSCOrder(edges []Edge) []Edge {
 	var selected []Edge
-	var chosen []bool
+	chosen := make([]bool, len(edges))
 
 	//randomly select last edge in the ordering
 	i := rand.Intn(len(edges))
@@ -35,15 +36,16 @@ func getMSCOrder(edges []Edge) []Edge {
 
 		//randomly select one of the edges with equal connectivity
 		next_in_order := candidates[rand.Intn(len(candidates))]
+		//next_in_order := candidates[0]
 
 		selected = append(selected, edges[next_in_order])
 		chosen[next_in_order] = true
 	}
 
-	//reverse order of selected
-	for i, j := 0, len(selected)-1; i < j; i, j = i+1, j-1 {
-		selected[i], selected[j] = selected[j], selected[i]
-	}
+	// //reverse order of selected
+	// for i, j := 0, len(selected)-1; i < j; i, j = i+1, j-1 {
+	// 	selected[i], selected[j] = selected[j], selected[i]
+	// }
 
 	return selected
 }
@@ -78,10 +80,11 @@ func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
 	return output
 }
 
-func getMinDistances(edges []Edge) ([][]int, map[int]int) {
+func getMinDistances(vertices []int, edges []Edge) ([][]int, map[int]int) {
 	var output [][]int
 	order := make(map[int]int)
-	vertices := Vertices(edges)
+
+	log.Println("Vertices: ", len(vertices))
 
 	for i, n := range vertices {
 		order[n] = i
@@ -148,13 +151,14 @@ func diffDistances(old, new [][]int) int {
 }
 
 func getMaxSepOrder(edges []Edge) []Edge {
+	vertices := Vertices(edges)
 	weights := make([]int, len(edges))
 
-	initialDiff, order := getMinDistances(edges)
+	initialDiff, order := getMinDistances(vertices, edges)
 
 	for i, e := range edges {
 		edges_wihout_e := diffEdges(edges, e)
-		newDiff, _ := getMinDistances(edges_wihout_e)
+		newDiff, _ := getMinDistances(vertices, edges_wihout_e)
 		newDiffPrep := addEdgeDistances(order, newDiff, e)
 		weights[i] = diffDistances(initialDiff, newDiffPrep)
 	}

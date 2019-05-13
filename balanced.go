@@ -30,17 +30,17 @@ func main() {
 	m = make(map[int]string)
 
 	//Command-Line Argument Parsing
-	log := flag.Bool("log", false, "(optional) turn on extensive logs")
+	logging := flag.Bool("log", false, "(optional) turn on extensive logs")
 	compute_subedes := flag.Bool("sub", false, "(optional) Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
 	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
 	balance_factor := flag.Int("balfactor", 2, "(optional) Determines the factor that balanced separator check uses")
-	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering")
+	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
 	// OW_optim := flag.Bool("OWremoval", false, "(optional) remove edges with single indicent edges and add them to Decomp afterwards")
 	flag.Parse()
 
-	logActive(*log)
+	logActive(*logging)
 
 	BALANCED_FACTOR = *balance_factor
 
@@ -71,14 +71,26 @@ func main() {
 	// collapsedGraph, _ := parsedGraph.typeCollapse()
 
 	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
+	start := time.Now()
+	switch *use_heuristic {
+	case 1:
+		fmt.Print("Using degree ordering")
+		parsedGraph.edges = getDegreeOrder(parsedGraph.edges)
+	case 2:
+		fmt.Print("Using max seperator ordering")
+		parsedGraph.edges = getMaxSepOrder(parsedGraph.edges)
+	case 3:
+		fmt.Print("Using MSC ordering")
+		parsedGraph.edges = getMSCOrder(parsedGraph.edges)
+	}
+	d := time.Now().Sub(start)
 
 	if *use_heuristic > 0 {
-		switch *use_heuristic {
-		case 1:
-			parsedGraph.edges = getDegreeOrder(parsedGraph.edges)
-		case 2:
-			parsedGraph.edges = getMaxSepOrder(parsedGraph.edges)
-		}
+		fmt.Println(" as a heuristic\n")
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
+		log.Printf("Ordering: %v", parsedGraph.String())
+
 	}
 
 	if *compute_subedes {
@@ -147,14 +159,14 @@ func main() {
 	output = output + fmt.Sprintf("%v;", *width)
 
 	// Parallel Execution FULL
-	start := time.Now()
+	start = time.Now()
 	decomp := global.findGHDParallelFull(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
 
 	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
 	//fmt.Println("Correct decomposition:", decomp.correct())
-	d := time.Now().Sub(start)
+	d = time.Now().Sub(start)
 	msec := d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
 	output = output + fmt.Sprintf("%v;", decomp.correct(parsedGraph))
