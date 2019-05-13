@@ -42,7 +42,7 @@ func getGraph(s string) Graph {
 				encode++
 			}
 		}
-		output.edges = append(output.edges, Edge{vertices: outputEdges})
+		output.edges = append(output.edges, Edge{name: e.Name, vertices: outputEdges})
 	}
 	m = encoding
 	return output

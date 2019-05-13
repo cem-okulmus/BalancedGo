@@ -9,10 +9,14 @@ import (
 )
 
 type Edge struct {
+	name     string
 	vertices []int // use integers for vertices
 }
 
 func (e Edge) String() string {
+	if e.name != "" {
+		return e.name
+	}
 	var buffer bytes.Buffer
 	buffer.WriteString("(")
 	for i, n := range e.vertices {
