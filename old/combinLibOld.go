@@ -4,12 +4,9 @@
 
 // Package combin implements routines involving combinatorics (permutations,
 // combinations, etc.).
-package main
+package old
 
-import (
-	"github.com/cem-okulmus/BalancedGo/old"
-	"math"
-)
+import "math"
 
 const (
 	badNegInput = "combin: negative input"
@@ -28,8 +25,6 @@ const (
 // n and k must be non-negative with n >= k, otherwise Binomial will panic.
 // No check is made for overflow.
 func Binomial(n, k int) int {
-	return old.Binomial(n, k)
-
 	if n < 0 || k < 0 {
 		panic(badNegInput)
 	}
