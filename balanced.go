@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -29,19 +30,21 @@ var BALANCED_FACTOR int
 var hinge bool
 
 func main() {
+	runtime.GOMAXPROCS(4)
+
 	m = make(map[int]string)
 
 	//Command-Line Argument Parsing
-	logging := flag.Bool("log", false, "(optional) turn on extensive logs")
-	compute_subedes := flag.Bool("sub", false, "(optional) Compute the subedges of the graph and print it out")
+	logging := flag.Bool("log", false, "turn on extensive logs")
+	compute_subedes := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
-	graphPath := flag.String("graph", "", "the file path to a hypergraph \n(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
-	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
-	balance_factor := flag.Int("balfactor", 2, "(optional) Determines the factor that balanced separator check uses")
-	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
-	gyö := flag.Bool("gyö", false, "(optional) perform a GYÖ reduct and show the resulting graph")
-	typeC := flag.Bool("type", false, "(optional) perform a Type Collapse and show the resulting graph")
-	hingeFlag := flag.Bool("hinge", false, "(optional) adsfasdfasdf")
+	graphPath := flag.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
+	choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
+	balance_factor := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
+	use_heuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
+	gyö := flag.Bool("gyö", false, "perform a GYÖ reduct and show the resulting graph")
+	typeC := flag.Bool("type", false, "perform a Type Collapse and show the resulting graph")
+	hingeFlag := flag.Bool("hinge", false, "adsfasdfasdf")
 	hinge = *hingeFlag
 	flag.Parse()
 
@@ -51,7 +54,23 @@ func main() {
 
 	if *graphPath == "" || *width <= 0 {
 		fmt.Fprintf(os.Stderr, "Usage of %s: \n", os.Args[0])
-		flag.PrintDefaults()
+		flag.VisitAll(func(f *flag.Flag) {
+			if f.Name != "width" && f.Name != "graph" {
+				return
+			}
+			fmt.Println("  -" + f.Name)
+			fmt.Println("\t" + f.Usage)
+		})
+
+		fmt.Println("\nOptional Arguments: \n")
+		flag.VisitAll(func(f *flag.Flag) {
+			if f.Name == "width" || f.Name == "graph" {
+				return
+			}
+			fmt.Println("  -" + f.Name)
+			fmt.Println("\t" + f.Usage)
+		})
+
 		return
 	}
 
@@ -105,6 +124,13 @@ func main() {
 	// collapsedGraph, _ := parsedGraph.typeCollapse()
 
 	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
+
+	if *compute_subedes {
+		parsedGraph = parsedGraph.computeSubEdges(*width)
+
+		fmt.Println("Graph with subedges \n", parsedGraph)
+	}
+
 	start := time.Now()
 	switch *use_heuristic {
 	case 1:
@@ -125,12 +151,6 @@ func main() {
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
 		log.Printf("Ordering: %v", parsedGraph.String())
 
-	}
-
-	if *compute_subedes {
-		parsedGraph = parsedGraph.computeSubEdges(*width)
-
-		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
 	global := balsepGlobal{graph: parsedGraph}

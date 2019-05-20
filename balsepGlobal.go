@@ -110,10 +110,6 @@ func (g balsepGlobal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
 	gen := getCombin(len(edges), K)
 
-	log.Printf("Remaming combin: %v \n", gen.left)
-
-	log.Printf("Remaining combinLib: %v \n", gen.current.remaining)
-
 OUTER:
 	for gen.hasNext() {
 		balsep := getSubset(edges, gen.combination)
@@ -159,7 +155,7 @@ func (g balsepGlobal) findGHD(K int) Decomp {
 	return g.findDecomp(K, g.graph, []Special{})
 }
 
-func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*Combin) {
+func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*CombinIterator) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -191,7 +187,7 @@ func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generato
 
 }
 
-func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *Combin, wg *sync.WaitGroup, finished *bool) {
+func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *CombinIterator, wg *sync.WaitGroup, finished *bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)

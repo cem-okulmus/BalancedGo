@@ -1,0 +1,7 @@
+github.com/alecthomas/participle v0.2.1 h1:4AVLj1viSGa4LG5HDXKXrm5xRx19SB/rS/skPQB1Grw=
+github.com/alecthomas/participle v0.2.1/go.mod h1:SW6HZGeZgSIpcUWX3fXpfZhuaWHnmoD5KCVaqSaNTkk=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/spakin/disjoint v0.0.0-20170506060253-925e67a26b59 h1:WXIGODNpYrroHXcn28J3u4XA0Fa3vwxw27uJZVwCrAI=
+github.com/spakin/disjoint v0.0.0-20170506060253-925e67a26b59/go.mod h1:847lZUtrAEz7RTzAsdAiOC8gq4kqb3lbmtQjWo6naTA=
+github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=

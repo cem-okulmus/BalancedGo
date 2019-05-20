@@ -7,7 +7,7 @@ import (
 
 type Subset struct {
 	source  []int
-	current Combin
+	current CombinIterator
 }
 
 func getSubsetIterator(vertices []int) *Subset {
@@ -94,7 +94,8 @@ func (s *SubEdges) reset() {
 // This checks whether the current edge has a more tuples to intersect with,
 // and create a new vertex set
 func (s *SubEdges) hasNextCombination() bool {
-	if !s.gen.Next() {
+	hasNext, _ := s.gen.Next(1)
+	if !hasNext {
 		return false
 	}
 

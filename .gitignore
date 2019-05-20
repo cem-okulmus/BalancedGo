@@ -1,11 +1,6 @@
 
-# go working directory
-bin/
-pkg/
-src/
-
 # ignore compiled executable
-balanced
+BalancedGo
 
 # ignore hypergraphs
 hypergraphs/

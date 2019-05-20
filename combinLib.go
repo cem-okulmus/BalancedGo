@@ -1,3 +1,4 @@
+// Based on "github.com/gonum/stat/combin" package:
 // Copyright ©2016 The gonum Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -5,11 +6,6 @@
 // Package combin implements routines involving combinatorics (permutations,
 // combinations, etc.).
 package main
-
-import (
-	"github.com/cem-okulmus/BalancedGo/old"
-	"math"
-)
 
 const (
 	badNegInput = "combin: negative input"
@@ -28,7 +24,6 @@ const (
 // n and k must be non-negative with n >= k, otherwise Binomial will panic.
 // No check is made for overflow.
 func Binomial(n, k int) int {
-	return old.Binomial(n, k)
 
 	if n < 0 || k < 0 {
 		panic(badNegInput)
@@ -47,41 +42,13 @@ func Binomial(n, k int) int {
 	return b
 }
 
-// GeneralizedBinomial returns the generalized binomial coefficient of (n, k),
-// defined as
-//  Γ(n+1) / (Γ(k+1) Γ(n-k+1))
-// where Γ is the Gamma function. GeneralizedBinomial is useful for continuous
-// relaxations of the binomial coefficient, or when the binomial coefficient value
-// may overflow int. In the latter case, one may use math/big for an exact
-// computation.
-//
-// n and k must be non-negative with n >= k, otherwise GeneralizedBinomial will panic.
-func GeneralizedBinomial(n, k float64) float64 {
-	return math.Exp(LogGeneralizedBinomial(n, k))
-}
-
-// LogGeneralizedBinomial returns the log of the generalized binomial coefficient.
-// See GeneralizedBinomial for more information.
-func LogGeneralizedBinomial(n, k float64) float64 {
-	if n < 0 || k < 0 {
-		panic(badNegInput)
-	}
-	if n < k {
-		panic(badSetSize)
-	}
-	a, _ := math.Lgamma(n + 1)
-	b, _ := math.Lgamma(k + 1)
-	c, _ := math.Lgamma(n - k + 1)
-	return a - b - c
-}
-
 // CombinationGenerator generates combinations iteratively. Combinations may be
 // called to generate all combinations collectively.
 type CombinationGenerator struct {
-	n         int
-	k         int
-	previous  []int
-	remaining int
+	n        int
+	k        int
+	previous []int
+	empty    bool
 }
 
 // NewCombinationGenerator returns a CombinationGenerator for generating the
@@ -91,27 +58,21 @@ type CombinationGenerator struct {
 // will panic.
 func NewCombinationGenerator(n, k int) *CombinationGenerator {
 	return &CombinationGenerator{
-		n:         n,
-		k:         k,
-		remaining: Binomial(n, k),
+		n: n,
+		k: k,
 	}
-}
-
-func (c CombinationGenerator) getPrevious() *[]int {
-	return &c.previous
 }
 
 // Next advances the iterator if there are combinations remaining to be generated,
 // and returns false if all combinations have been generated. Next must be called
 // to initialize the first value before calling Combination or Combination will
 // panic. The value returned by Combination is only changed during calls to Next.
-func (c *CombinationGenerator) Next() bool {
-	if c.remaining <= 0 {
-		// Next is called before combination, so c.remaining is set to zero before
-		// Combination is called. Thus, Combination cannot panic on zero, and a
-		// second sentinel value is needed.
-		c.remaining = -1
-		return false
+//
+// Step simply advances the iterator multiple steps at a time
+// Returns the number of steps perfomed
+func (c *CombinationGenerator) Next(step int) (bool, int) {
+	if c.empty {
+		return false, 0
 	}
 	if c.previous == nil {
 		c.previous = make([]int, c.k)
@@ -119,10 +80,11 @@ func (c *CombinationGenerator) Next() bool {
 			c.previous[i] = i
 		}
 	} else {
-		nextCombination(c.previous, c.n, c.k)
+		res, steps := nextCombinationStep(c.previous, c.n, c.k, step)
+		c.empty = !res
+		return res, steps
 	}
-	c.remaining--
-	return true
+	return true, step
 }
 
 // Combination generates the next combination. If next is non-nil, it must have
@@ -134,8 +96,8 @@ func (c *CombinationGenerator) Next() bool {
 // or Combination will panic. The value returned by Combination is only changed
 // during calls to Next.
 func (c *CombinationGenerator) Combination(combination []int) []int {
-	if c.remaining == -1 {
-		panic("combin: all combinations have been generated")
+	if c.empty {
+		panic("no combinations left")
 	}
 	if c.previous == nil {
 		panic("combin: Combination called before Next")
@@ -150,43 +112,34 @@ func (c *CombinationGenerator) Combination(combination []int) []int {
 	return combination
 }
 
-// Combinations generates all of the combinations of k elements from a
-// set of size n. The returned slice has length Binomial(n,k) and each inner slice
-// has length k.
-//
-// n and k must be non-negative with n >= k, otherwise Combinations will panic.
-//
-// CombinationGenerator may alternatively be used to generate the combinations
-// iteratively instead of collectively.
-func Combinations(n, k int) [][]int {
-	combins := Binomial(n, k)
-	data := make([][]int, combins)
-	if len(data) == 0 {
-		return data
-	}
-	data[0] = make([]int, k)
-	for i := range data[0] {
-		data[0][i] = i
-	}
-	for i := 1; i < combins; i++ {
-		next := make([]int, k)
-		copy(next, data[i-1])
-		nextCombination(next, n, k)
-		data[i] = next
-	}
-	return data
-}
-
 // nextCombination generates the combination after s, overwriting the input value.
-func nextCombination(s []int, n, k int) {
+func nextCombination(s []int, n, k int) bool {
 	for j := k - 1; j >= 0; j-- {
 		if s[j] == n+j-k {
 			continue
 		}
+		// for i := 0; i < 1000; i++ {
+		// 	s[j]++
+		// 	s[j]--
+		// }
+
 		s[j]++
+
 		for l := j + 1; l < k; l++ {
 			s[l] = s[j] + l - j
 		}
-		break
+		return true
 	}
+	return false
+}
+
+// returns whether the iterator could be advanced step many times, and the number of steps that were possible (useful for extended combin)
+func nextCombinationStep(s []int, n, k, step int) (bool, int) {
+	for i := 0; i < step; i++ {
+		if !nextCombination(s, n, k) {
+			return false, i
+		}
+	}
+
+	return true, step
 }
