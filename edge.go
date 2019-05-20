@@ -9,13 +9,13 @@ import (
 )
 
 type Edge struct {
-	name     string
+	name     int
 	vertices []int // use integers for vertices
 }
 
 func (e Edge) String() string {
-	if e.name != "" {
-		return e.name
+	if e.name > 0 {
+		return m[e.name]
 	}
 	var buffer bytes.Buffer
 	buffer.WriteString("(")

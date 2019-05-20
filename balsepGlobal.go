@@ -15,7 +15,10 @@ func baseCaseSmart(g Graph, H Graph, Sp []Special) Decomp {
 	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var output Decomp
 
-	if len(H.edges) == 1 {
+	if len(H.edges) == 1 && len(Sp) == 0 {
+		output = Decomp{graph: H,
+			root: Node{bag: H.Vertices(), cover: H.edges}}
+	} else if len(H.edges) == 1 && len(Sp) == 1 {
 		sp1 := Sp[0]
 		output = Decomp{graph: H,
 			root: Node{bag: H.Vertices(), cover: H.edges,
@@ -71,6 +74,18 @@ func rerooting(H Graph, balsep []Edge, subtrees []Decomp) Decomp {
 		output.children = append(output.children, s.root.children...)
 	}
 	return Decomp{graph: H, root: output}
+}
+
+func isHinge(sep Edges, comp Graph) bool {
+	inter := inter(Vertices(sep), comp.Vertices())
+
+	for _, e := range sep {
+		if subset(inter, e.vertices) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (g balsepGlobal) findDecomp(K int, H Graph, Sp []Special) Decomp {
@@ -270,6 +285,11 @@ OUTER:
 		for i := range comps {
 			decomp := <-ch
 			if reflect.DeepEqual(decomp, Decomp{}) {
+				if hinge {
+					if isHinge(balsep, decomp.graph) {
+						return Decomp{}
+					}
+				}
 				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
 				subtrees = []Decomp{}
 				log.Printf("\n\nCurrent Subgraph: %v\n", H)

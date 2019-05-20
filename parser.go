@@ -22,11 +22,13 @@ func getGraph(s string) Graph {
 	pgraph := ParseGraph{}
 	parser.ParseString(s, &pgraph)
 	encoding := make(map[int]string)
+	encode = 1 // initialize to 1
 
 	pgraph.m = make(map[string]int)
 	//fix first numbers for edge names
 	for _, e := range pgraph.Edges {
 		pgraph.m[e.Name] = encode
+		encoding[encode] = e.Name
 		encode++
 	}
 	for _, e := range pgraph.Edges {
@@ -42,7 +44,7 @@ func getGraph(s string) Graph {
 				encode++
 			}
 		}
-		output.edges = append(output.edges, Edge{name: e.Name, vertices: outputEdges})
+		output.edges = append(output.edges, Edge{name: pgraph.m[e.Name], vertices: outputEdges})
 	}
 	m = encoding
 	return output

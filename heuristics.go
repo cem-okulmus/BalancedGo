@@ -10,6 +10,9 @@ import (
 // Heuristics to order the edges by
 
 func getMSCOrder(edges []Edge) []Edge {
+	if len(edges) <= 1 {
+		return edges
+	}
 	var selected []Edge
 	chosen := make([]bool, len(edges))
 
@@ -151,6 +154,9 @@ func diffDistances(old, new [][]int) int {
 }
 
 func getMaxSepOrder(edges []Edge) []Edge {
+	if len(edges) <= 1 {
+		return edges
+	}
 	vertices := Vertices(edges)
 	weights := make([]int, len(edges))
 
@@ -179,6 +185,9 @@ func edgeDegree(edges []Edge, edge Edge) int {
 }
 
 func getDegreeOrder(edges []Edge) []Edge {
+	if len(edges) <= 1 {
+		return edges
+	}
 	sort.Slice(edges, func(i, j int) bool { return edgeDegree(edges, edges[i]) > edgeDegree(edges, edges[j]) })
 	return edges
 }

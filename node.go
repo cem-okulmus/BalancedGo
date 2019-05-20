@@ -97,6 +97,8 @@ func (n Node) bagSubsets() bool {
 func (n Node) getConGraph(num int) Edges {
 	var output Edges
 
+	output.append(Edge{vertices: []int{num + encode + 1, num + encode + 1}}) // add loop (needed )
+
 	for i, _ := range n.children {
 		output.append(Edge{vertices: []int{num + encode + 1, (num + i + encode + 2)}}) //using breadth-first ordering to number nodes
 	}

@@ -26,6 +26,8 @@ func check(e error) {
 
 var BALANCED_FACTOR int
 
+var hinge bool
+
 func main() {
 	m = make(map[int]string)
 
@@ -37,7 +39,10 @@ func main() {
 	choose := flag.Int("choice", 0, "(optional) only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
 	balance_factor := flag.Int("balfactor", 2, "(optional) Determines the factor that balanced separator check uses")
 	use_heuristic := flag.Int("heuristic", 0, "(optional) turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
-	// OW_optim := flag.Bool("OWremoval", false, "(optional) remove edges with single indicent edges and add them to Decomp afterwards")
+	gyö := flag.Bool("gyö", false, "(optional) perform a GYÖ reduct and show the resulting graph")
+	typeC := flag.Bool("type", false, "(optional) perform a Type Collapse and show the resulting graph")
+	hingeFlag := flag.Bool("hinge", false, "(optional) adsfasdfasdf")
+	hinge = *hingeFlag
 	flag.Parse()
 
 	logActive(*logging)
@@ -54,7 +59,36 @@ func main() {
 	check(err)
 
 	parsedGraph := getGraph(string(dat))
+	var reducedGraph Graph
 
+	if *typeC {
+		count := 0
+		fmt.Println("\n\n", *graphPath)
+		fmt.Println("Graph after Type Collapse:")
+		reducedGraph, _, count = parsedGraph.typeCollapse()
+		for _, e := range reducedGraph.edges {
+			fmt.Printf("%v %v\n", e, Edge{vertices: e.vertices})
+		}
+		fmt.Println("Removed ", count, " vertex/vertices")
+		parsedGraph = reducedGraph
+	}
+
+	if *gyö {
+		fmt.Println("Graph after GYÖ:")
+		var ops []GYÖReduct
+		if *typeC {
+			reducedGraph, ops = reducedGraph.GYÖReduct()
+		} else {
+			reducedGraph, ops = parsedGraph.GYÖReduct()
+		}
+
+		fmt.Println(reducedGraph)
+
+		fmt.Println("Reductions:")
+		fmt.Println(ops)
+		parsedGraph = reducedGraph
+
+	}
 	//fmt.Println("Graph ", parsedGraph)
 	//fmt.Println("Min Distance", getMinDistances(parsedGraph))
 	//return
@@ -169,7 +203,6 @@ func main() {
 	d = time.Now().Sub(start)
 	msec := d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
-	output = output + fmt.Sprintf("%v;", decomp.correct(parsedGraph))
 
 	// Parallel Execution Search
 	start = time.Now()
@@ -182,7 +215,6 @@ func main() {
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
-	output = output + fmt.Sprintf("%v;", decomp.correct(parsedGraph))
 
 	// Parallel Execution Comp
 	start = time.Now()
@@ -195,8 +227,6 @@ func main() {
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
-	output = output + fmt.Sprintf("%v;", decomp.correct(parsedGraph))
-
 	// Sequential Execution
 	start = time.Now()
 	decomp = global.findGHD(*width)
