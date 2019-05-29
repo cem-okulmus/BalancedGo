@@ -25,32 +25,37 @@ func check(e error) {
 	}
 }
 
-var BALANCED_FACTOR int
+//BalancedFactor ... used by balsep algorithms to determine how strict the balancedness check should be (default 2)
+var BalancedFactor int
 
 var hinge bool
 
 func main() {
-	runtime.GOMAXPROCS(4)
 
 	m = make(map[int]string)
 
 	//Command-Line Argument Parsing
 	logging := flag.Bool("log", false, "turn on extensive logs")
-	compute_subedes := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
+	computeSubedges := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
 	choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
-	balance_factor := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
-	use_heuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
-	gyö := flag.Bool("gyö", false, "perform a GYÖ reduct and show the resulting graph")
-	typeC := flag.Bool("type", false, "perform a Type Collapse and show the resulting graph")
-	hingeFlag := flag.Bool("hinge", false, "adsfasdfasdf")
-	hinge = *hingeFlag
+	balanceFactorFlag := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
+	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
+	gyö := flag.Bool("g", false, "perform a GYÖ reduct and show the resulting graph")
+	typeC := flag.Bool("t", false, "perform a Type Collapse and show the resulting graph")
+	hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
+	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
+
 	flag.Parse()
+
+	hinge = *hingeFlag
 
 	logActive(*logging)
 
-	BALANCED_FACTOR = *balance_factor
+	BalancedFactor = *balanceFactorFlag
+
+	runtime.GOMAXPROCS(*numCPUs)
 
 	if *graphPath == "" || *width <= 0 {
 		fmt.Fprintf(os.Stderr, "Usage of %s: \n", os.Args[0])
@@ -125,14 +130,14 @@ func main() {
 
 	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
 
-	if *compute_subedes {
+	if *computeSubedges {
 		parsedGraph = parsedGraph.computeSubEdges(*width)
 
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
 	start := time.Now()
-	switch *use_heuristic {
+	switch *useHeuristic {
 	case 1:
 		fmt.Print("Using degree ordering")
 		parsedGraph.edges = getDegreeOrder(parsedGraph.edges)
@@ -145,7 +150,7 @@ func main() {
 	}
 	d := time.Now().Sub(start)
 
-	if *use_heuristic > 0 {
+	if *useHeuristic > 0 {
 		fmt.Println(" as a heuristic\n")
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)

@@ -35,7 +35,7 @@ func getCombinUnextend(n int, k int) Combin {
 	return Combin{n: n, k: k, current: *NewCombinationGenerator(n, k), combination: make([]int, k), left: Binomial(n, k), confirmed: true}
 }
 
-func (c *Combin) hasNext() bool {
+func (c *Combin) HasNext() bool {
 	if !c.confirmed {
 		return true
 	}
@@ -65,11 +65,11 @@ func (c *Combin) hasNext() bool {
 	return true
 }
 
-func (c *Combin) confirm() {
+func (c *Combin) Confirm() {
 	c.confirmed = true
 }
 
-func splitCombin(n int, k int, split int, unextended bool) []*Combin {
+func SplitCombin(n int, k int, split int, unextended bool) []*Combin {
 	if k > n {
 		k = n
 	}

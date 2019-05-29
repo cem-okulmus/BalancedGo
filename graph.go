@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"github.com/spakin/disjoint"
-	"log"
+	//"log"
 	"reflect"
 )
 
@@ -167,8 +167,8 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	comps, compSps, _ := g.getComponents(sep, sp)
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
-		if len(comps[i].edges)+len(compSps[i]) > (((len(g.edges) + len(sp)) * (BALANCED_FACTOR - 1)) / BALANCED_FACTOR) {
-			log.Printf("Component %+v has weight %d instead of %d\n", comps[i], len(comps[i].edges)+len(compSps[i]), ((len(g.edges) + len(sp)) / 2))
+		if len(comps[i].edges)+len(compSps[i]) > (((len(g.edges) + len(sp)) * (BalancedFactor - 1)) / BalancedFactor) {
+			//	log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], len(comps[i].edges)+len(compSps[i]), ((len(g.edges) + len(sp)) / 2))
 			return false
 		}
 	}
@@ -183,7 +183,7 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	// Make sure that "special seps can never be used as separators"
 	for _, s := range sp {
 		if reflect.DeepEqual(s.vertices, Vertices(sep)) {
-			log.Println("Special edge %+v\n used again", s)
+			//	log.Println("Special edge %+v\n used again", s)
 			return false
 		}
 	}

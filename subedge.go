@@ -7,13 +7,13 @@ import (
 
 type Subset struct {
 	source  []int
-	current CombinIterator
+	current CombinationIterator
 }
 
 func getSubsetIterator(vertices []int) *Subset {
 	var output Subset
 
-	//fmt.Println("Vertices", Edge{vertices: vertices, m: edges[0].m})
+	//fmt.Println("Vertices", Edge{vertices: vertices})
 	output = Subset{source: vertices, current: getCombin(len(vertices), len(vertices))}
 	return &output
 }
@@ -47,7 +47,7 @@ type SubEdges struct {
 	initial       Edge
 	source        Edges
 	current       Edge
-	gen           *CombinationGenerator
+	gen           *CombinationIterator
 	combination   []int
 	currentSubset *Subset
 	cache         [][]int
@@ -74,18 +74,22 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 		k = len(output.source)
 	}
 	// fmt.Println("k", k)
-	output.gen = NewCombinationGenerator(len(output.source), k)
+	tmp := getCombinUnextend(len(output.source), k)
+	output.gen = &tmp
 	output.current = e
 	output.initial = e
 	output.k = k
 	output.combination = make([]int, k)
+	//output.cache = append(output.cache, Vertices(edges))
 
 	return output
 }
 
 func (s *SubEdges) reset() {
 	// fmt.Println("Reset")
-	s.gen = NewCombinationGenerator(len(s.source), s.k)
+	tmp := getCombinUnextend(len(s.source), s.k)
+	s.gen = &tmp
+
 	s.currentSubset = nil
 	s.current = s.initial
 	s.emptyReturned = false
@@ -94,12 +98,12 @@ func (s *SubEdges) reset() {
 // This checks whether the current edge has a more tuples to intersect with,
 // and create a new vertex set
 func (s *SubEdges) hasNextCombination() bool {
-	hasNext, _ := s.gen.Next(1)
-	if !hasNext {
+
+	if !s.gen.hasNext() {
 		return false
 	}
-
-	s.gen.Combination(s.combination)
+	s.gen.confirm()
+	copy(s.combination, s.gen.combination)
 
 	return true
 }
@@ -120,7 +124,7 @@ func (s *SubEdges) hasNext() bool {
 			// fmt.Println("current:", getSubset(s.source, s.combination))
 			edges := getSubset(s.source, s.combination)
 			vertices := removeDuplicates(Vertices(edges))
-			if s.existsSubset(vertices) {
+			if s.existsSubset(vertices) || len(vertices) == 0 { // || len(vertices) == len(Vertices(s.source))
 				continue //skip
 			} else {
 				s.cache = append(s.cache, vertices)

@@ -155,7 +155,7 @@ func (g balsepGlobal) findGHD(K int) Decomp {
 	return g.findDecomp(K, g.graph, []Special{})
 }
 
-func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*CombinIterator) {
+func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*CombinationIterator) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -163,6 +163,7 @@ func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generato
 	}()
 
 	var numProc = runtime.GOMAXPROCS(-1)
+
 	var wg sync.WaitGroup
 	wg.Add(numProc)
 	finished := false
@@ -187,7 +188,7 @@ func parallelSearch(H Graph, Sp []Special, edges []Edge, result *[]int, generato
 
 }
 
-func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *CombinIterator, wg *sync.WaitGroup, finished *bool) {
+func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *CombinationIterator, wg *sync.WaitGroup, finished *bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
@@ -202,8 +203,8 @@ func worker(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int
 			return
 		}
 		j := gen.combination
+
 		if H.checkBalancedSep(getSubset(edges, j), Sp) {
-			log.Printf("Worker %d found a bal sep", workernum)
 			found <- j
 			log.Printf("Worker %d \" won \"", workernum)
 			gen.confirm()
@@ -263,7 +264,7 @@ OUTER:
 		//wait until first worker finds a balanced sep
 		balsep = getSubset(edges, found)
 
-		log.Printf("Balanced Sep chosen: %+v\n", balsep)
+		log.Printf("Balanced Sep chosen: %+v\n", Graph{edges: balsep})
 
 		comps, compsSp, _ := H.getComponents(balsep, Sp)
 
@@ -288,8 +289,8 @@ OUTER:
 				}
 				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
 				subtrees = []Decomp{}
-				log.Printf("\n\nCurrent Subgraph: %v\n", H)
-				log.Printf("Current Special Edges: %v\n\n", Sp)
+				//log.Printf("\n\nCurrent Subgraph: %v\n", H)
+				//log.Printf("Current Special Edges: %v\n\n", Sp)
 				continue OUTER
 			}
 
