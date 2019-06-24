@@ -36,6 +36,7 @@ func Binomial(n, k int) int {
 	return b
 }
 
+// ExtendedBinom extends Binomial by summing over all calls Binomial(n,i), where k >= i >= 1.
 func ExtendedBinom(n int, k int) int {
 	var output int
 
@@ -46,8 +47,7 @@ func ExtendedBinom(n int, k int) int {
 	return output
 }
 
-// CombinationGenerator generates combinations iteratively. Combinations may be
-// called to generate all combinations collectively.
+// A CombinationIterator generates combinations iteratively.
 type CombinationIterator struct {
 	n           int
 	k           int
@@ -72,7 +72,7 @@ func getCombinUnextend(n int, k int) CombinationIterator {
 	return CombinationIterator{n: n, k: k, stepSize: 1, extended: false, confirmed: true}
 }
 
-// nextCombination generates the combination after s, overwriting the input value.
+// nextCombination generates the combination after s, overwriting s
 func nextCombination(s []int, n, k int) bool {
 	for j := k - 1; j >= 0; j-- {
 		if s[j] == n+j-k {
@@ -93,7 +93,8 @@ func nextCombination(s []int, n, k int) bool {
 	return false
 }
 
-// returns whether the iterator could be advanced step many times, and the number of steps that were possible (useful for extended combin)
+// nextCombinationStep returns whether the iterator could be advanced step many times,
+// and the number of steps that were possible (useful for extended combin)
 func nextCombinationStep(s []int, n, k, step int) (bool, int) {
 	for i := 0; i < step; i++ {
 		if !nextCombination(s, n, k) {
@@ -104,14 +105,14 @@ func nextCombinationStep(s []int, n, k, step int) (bool, int) {
 	return true, step
 }
 
-// Next advances the iterator if there are combinations remaining to be generated,
+// advances the iterator if there are combinations remaining to be generated,
 // and returns false if all combinations have been generated. Next must be called
 // to initialize the first value before calling Combination or Combination will
 // panic. The value returned by Combination is only changed during calls to Next.
 //
 // Step simply advances the iterator multiple steps at a time
 // Returns the number of steps perfomed
-func (c *CombinationIterator) Next(step int) (bool, int) {
+func (c *CombinationIterator) advance(step int) (bool, int) {
 	if c.empty {
 		return false, 0
 	}
@@ -133,16 +134,16 @@ func (c *CombinationIterator) hasNext() bool {
 		return true
 	}
 
-	hasNext, stepsDone := c.Next(c.stepSize)
+	hasNext, stepsDone := c.advance(c.stepSize)
 	if !hasNext {
 		if c.k == 1 || !c.extended {
 			return false
-		} else {
-			c.k--
-			c.combination, c.empty = nil, false // discard old slice, reset flag
-			c.Next(0)                           // initialize the iterator
-			c.Next(c.stepSize - stepsDone - 1)  // actually advance the iterator (-1 to count starting a new iterator)
 		}
+
+		c.k--
+		c.combination, c.empty = nil, false   // discard old slice, reset flag
+		c.advance(0)                          // initialize the iterator
+		c.advance(c.stepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
 	}
 
 	c.confirmed = false
@@ -175,17 +176,17 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 	return output
 }
 
-func allCombinations(index int, c *CombinationIterator) int {
-	count := 0
+// func allCombinations(index int, c *CombinationIterator) int {
+// 	count := 0
 
-	for c.hasNext() {
-		//fmt.Println(index, " Checking combin ", c.combination)
-		c.confirm()
-		count++
-	}
+// 	for c.hasNext() {
+// 		//fmt.Println(index, " Checking combin ", c.combination)
+// 		c.confirm()
+// 		count++
+// 	}
 
-	return count
-}
+// 	return count
+// }
 
 // func main() {
 

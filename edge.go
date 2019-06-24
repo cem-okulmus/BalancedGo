@@ -8,6 +8,7 @@ import (
 	"sort"
 )
 
+// An Edge (used here for hyperedge) consists of a collection of vertices and a name
 type Edge struct {
 	name     int
 	vertices []int // use integers for vertices

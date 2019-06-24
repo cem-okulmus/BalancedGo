@@ -7,12 +7,10 @@ import (
 	"math/big"
 )
 
-/*
-
-GYÖ (Graham - Yu - Özsoyoğlu) Reduction
-
-*/
-
+// A GYÖReduct (that's short for GYÖ (Graham - Yu - Özsoyoğlu) Reduction )
+// consists of a list of operations that simplify a graph by 1) removing isolated
+// vertices or 2) removing edges fully contained in other edges (and applying
+// these two operations iteratively, until convergance)
 type GYÖReduct interface {
 	isGYÖ()
 }

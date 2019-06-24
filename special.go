@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// A Special Edge is a collection of edges, seen as one edge
 type Special struct {
 	vertices []int
 	edges    []Edge

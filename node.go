@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"log"
 	"reflect"
-	//	"strconv"
 )
 
+// A Node is the root of a labelled tree, where the labels are the bag
+// and the (edge) cover
 type Node struct {
 	bag      []int
 	cover    []Edge

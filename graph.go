@@ -2,11 +2,12 @@ package main
 
 import (
 	"bytes"
-	"github.com/spakin/disjoint"
-	//"log"
 	"reflect"
+
+	"github.com/spakin/disjoint"
 )
 
+// A Graph is a collection of edges
 type Graph struct {
 	edges []Edge
 }

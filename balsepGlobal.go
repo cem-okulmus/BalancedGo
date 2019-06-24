@@ -60,16 +60,16 @@ func earlyTermination(H Graph, sp Special) Decomp {
 func rerooting(H Graph, balsep []Edge, subtrees []Decomp) Decomp {
 
 	//Create a new GHD for H
-	reroot_node := Node{bag: Vertices(balsep), cover: balsep}
+	rerootNode := Node{bag: Vertices(balsep), cover: balsep}
 	output := Node{bag: Vertices(balsep), cover: balsep}
 
-	// log.Printf("Node to reroot: %v\n", reroot_node)
+	// log.Printf("Node to reroot: %v\n", rerootNode)
 	// log.Printf("My subtrees: \n")
 	// for _, s := range subtrees {
 	// 	log.Printf("%v \n", s)
 	// }
 	for _, s := range subtrees {
-		s.root = s.root.reroot(reroot_node) // TODO: check if this works
+		s.root = s.root.reroot(rerootNode) // TODO: check if this works
 		log.Printf("Rerooted Decomp: %v\n", s)
 		output.children = append(output.children, s.root.children...)
 	}

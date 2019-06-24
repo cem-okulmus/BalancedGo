@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	//"sort"
 )
 
 type Subset struct {

@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	//	"log"
 	"reflect"
 )
 
+// A Decomp (short for Decomposition) consists of a labelled tree which
+// subdivides a graph in a certain way
 type Decomp struct {
 	graph Graph
 	root  Node

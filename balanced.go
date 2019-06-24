@@ -23,9 +23,10 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+
 }
 
-//BalancedFactor ... used by balsep algorithms to determine how strict the balancedness check should be (default 2)
+//BalancedFactor is used by balsep algorithms to determine how strict the balancedness check should be (default 2)
 var BalancedFactor int
 
 var hinge bool
@@ -47,6 +48,8 @@ func main() {
 	hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
 	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
 
+	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
+
 	flag.Parse()
 
 	hinge = *hingeFlag
@@ -67,7 +70,7 @@ func main() {
 			fmt.Println("\t" + f.Usage)
 		})
 
-		fmt.Println("\nOptional Arguments: \n")
+		fmt.Println("\nOptional Arguments: ")
 		flag.VisitAll(func(f *flag.Flag) {
 			if f.Name == "width" || f.Name == "graph" {
 				return
@@ -151,11 +154,27 @@ func main() {
 	d := time.Now().Sub(start)
 
 	if *useHeuristic > 0 {
-		fmt.Println(" as a heuristic\n")
+		fmt.Println(" as a heuristic")
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
 		log.Printf("Ordering: %v", parsedGraph.String())
 
+	}
+
+	if *akatovTest {
+		var decomp Decomp
+		start := time.Now()
+
+		decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+
+		d := time.Now().Sub(start)
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+		fmt.Println("Result \n", decomp)
+		fmt.Println("Time", msec, " ms")
+		fmt.Println("Width: ", *width)
+		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		return
 	}
 
 	global := balsepGlobal{graph: parsedGraph}
