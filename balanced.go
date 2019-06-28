@@ -49,6 +49,7 @@ func main() {
 	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
 
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
+	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
 
 	flag.Parse()
 
@@ -165,14 +166,59 @@ func main() {
 		var decomp Decomp
 		start := time.Now()
 
-		decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+		switch *choose {
+		case 1:
+			decomp = balKDecomp{graph: parsedGraph}.findBDFullParallel(*width)
+		// case 2:
+		// 	decomp = global.findGHDParallelSearch(*width)
+		// case 3:
+		// 	decomp = global.findGHDParallelComp(*width)
+		case 4:
+			decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+		default:
+			panic("Not a valid choice")
+		}
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", *width)
+		fmt.Println("Width: ", decomp.checkWidth())
+		fmt.Println("GHD-Width: ", decomp.blowup().checkWidth())
+		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		return
+	}
+
+	if *detKTest {
+		var decomp Decomp
+		start := time.Now()
+
+		var Sp []Special
+		m[encode] = "test"
+		m[encode+1] = "test2"
+		Sp = []Special{Special{vertices: []int{16, 18}, edges: []Edge{Edge{name: encode, vertices: []int{16, 18}}}}, Special{vertices: []int{15, 17, 19}, edges: []Edge{Edge{name: encode + 1, vertices: []int{15, 17, 19}}}}}
+		encode = encode + 2
+
+		switch *choose {
+		case 1:
+			decomp = detKDecomp{graph: parsedGraph}.findHD(*width, Sp)
+		// case 2:
+		// 	decomp = global.findGHDParallelSearch(*width)
+		// case 3:
+		// 	decomp = global.findGHDParallelComp(*width)
+		// case 4:
+		// 	decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+		default:
+			panic("Not a valid choice")
+		}
+
+		d := time.Now().Sub(start)
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+		fmt.Println("Result \n", decomp)
+		fmt.Println("Time", msec, " ms")
+		fmt.Println("Width: ", decomp.checkWidth())
 		fmt.Println("Correct: ", decomp.correct(parsedGraph))
 		return
 	}

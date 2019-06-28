@@ -12,18 +12,30 @@ type detKDecomp struct {
 // TODO add caching to this
 func (d detKDecomp) findDecomp(K int, H Graph, oldSep []Edge, Sp []Special) Decomp {
 
+	log.Printf("\n\nCurrent Subgraph: %v\n", H)
+	log.Printf("Current Special Edges: %v\n\n", Sp)
+
 	// Base case if H <= K
 	if len(H.edges) <= K && len(Sp) <= 2 {
-		var children []Node
+		if len(Sp) > 0 {
+			var children Node
 
-		if len(Sp) == 1 {
-			children = []Node{Node{bag: Sp[0].vertices, cover: Sp[0].edges}}
-		} else if len(Sp) == 2 {
-			children = []Node{Node{bag: Sp[0].vertices, cover: Sp[0].edges,
-				children: []Node{Node{bag: Sp[1].vertices, cover: Sp[1].edges}}}}
+			log.Println(len(Sp), " special edges")
+			if len(Sp) == 1 {
+				log.Println("bag: ", Sp[0].vertices, " len ", len(Sp[0].vertices))
+				children = Node{bag: Sp[0].vertices, cover: Sp[0].edges}
+			} else if len(Sp) == 2 {
+				children = Node{bag: Sp[0].vertices, cover: Sp[0].edges,
+					children: []Node{Node{bag: Sp[1].vertices, cover: Sp[1].edges}}}
+			}
+
+			if len(H.edges) == 0 {
+				return Decomp{graph: H, root: children}
+			}
+			return Decomp{graph: H, root: Node{bag: H.Vertices(), cover: H.edges, children: []Node{children}}}
 		}
 
-		return Decomp{graph: H, root: Node{bag: H.Vertices(), cover: H.edges, children: children}}
+		return Decomp{graph: H, root: Node{bag: H.Vertices(), cover: H.edges}}
 	}
 
 	//TODO: think about whether filtering here is allowed, and if it should be strict or not
@@ -66,4 +78,8 @@ OUTER:
 	}
 
 	return Decomp{} // Reject if no separator could be found
+}
+
+func (d detKDecomp) findHD(K int, Sp []Special) Decomp {
+	return d.findDecomp(K, d.graph, []Edge{}, Sp)
 }
