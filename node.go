@@ -35,7 +35,7 @@ func indent(i int) string {
 
 	return output
 }
-func (n Node) StringIdent(i int) string {
+func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("\n" + indent(i) + "Bag: {")
@@ -52,7 +52,7 @@ func (n Node) StringIdent(i int) string {
 	if len(n.children) > 0 {
 		buffer.WriteString(indent(i) + "Children:\n" + indent(i) + "[")
 		for _, c := range n.children {
-			buffer.WriteString(c.StringIdent(i + 1))
+			buffer.WriteString(c.stringIdent(i + 1))
 		}
 		buffer.WriteString(indent(i) + "]\n")
 	}
@@ -61,7 +61,7 @@ func (n Node) StringIdent(i int) string {
 }
 
 func (n Node) String() string {
-	return n.StringIdent(0)
+	return n.stringIdent(0)
 }
 
 func (n Node) contains(o Node) bool {

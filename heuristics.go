@@ -26,11 +26,11 @@ func getMSCOrder(edges []Edge) []Edge {
 		maxcard := 0
 
 		for current := range edges {
-			current_card := edges[current].numNeighboursOrder(edges, chosen)
-			if !chosen[current] && current_card >= maxcard {
-				if current_card > maxcard {
+			currentCard := edges[current].numNeighboursOrder(edges, chosen)
+			if !chosen[current] && currentCard >= maxcard {
+				if currentCard > maxcard {
 					candidates = []int{}
-					maxcard = current_card
+					maxcard = currentCard
 				}
 
 				candidates = append(candidates, current)
@@ -38,11 +38,11 @@ func getMSCOrder(edges []Edge) []Edge {
 		}
 
 		//randomly select one of the edges with equal connectivity
-		next_in_order := candidates[rand.Intn(len(candidates))]
-		//next_in_order := candidates[0]
+		nextInOrder := candidates[rand.Intn(len(candidates))]
+		//nextInOrder := candidates[0]
 
-		selected = append(selected, edges[next_in_order])
-		chosen[next_in_order] = true
+		selected = append(selected, edges[nextInOrder])
+		chosen[nextInOrder] = true
 	}
 
 	// //reverse order of selected
@@ -99,9 +99,9 @@ func getMinDistances(vertices []int, edges []Edge) ([][]int, map[int]int) {
 	}
 
 	for j := 0; j < len(vertices); j++ {
-		new_row := make([]int, len(vertices))
-		copy(new_row, row)
-		output = append(output, new_row)
+		newRow := make([]int, len(vertices))
+		copy(newRow, row)
+		output = append(output, newRow)
 	}
 
 	for _, e := range edges {
@@ -163,8 +163,8 @@ func getMaxSepOrder(edges []Edge) []Edge {
 	initialDiff, order := getMinDistances(vertices, edges)
 
 	for i, e := range edges {
-		edges_wihout_e := diffEdges(edges, e)
-		newDiff, _ := getMinDistances(vertices, edges_wihout_e)
+		edgesWihoutE := diffEdges(edges, e)
+		newDiff, _ := getMinDistances(vertices, edgesWihoutE)
 		newDiffPrep := addEdgeDistances(order, newDiff, e)
 		weights[i] = diffDistances(initialDiff, newDiffPrep)
 	}

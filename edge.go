@@ -36,6 +36,7 @@ func (e Edge) String() string {
 	return buffer.String()
 }
 
+// A slice of Edge, defined for the use of the sort interface
 type Edges []Edge
 
 func (s Edges) Len() int {
@@ -131,6 +132,7 @@ OUTER:
 	return output
 }
 
+// checks if vertex i is contained in a slice of edges
 func Contains(l []Edge, v int) bool {
 
 	for _, e := range l {
@@ -213,6 +215,7 @@ OUTER:
 	return false
 }
 
+// produces the union of all vertices from a slice of Edge
 func Vertices(e []Edge) []int {
 	var output []int
 	for _, otherE := range e {

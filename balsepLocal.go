@@ -10,23 +10,23 @@ type balsepLocal struct {
 	graph Graph
 }
 
-func searchSubEdge(g *balsepLocal, H *Graph, Sp []Special, balsep_orig Edges, sepSub *SepSub, K int) []Edge {
+func searchSubEdge(g *balsepLocal, H *Graph, Sp []Special, balsepOrig Edges, sepSub *SepSub, K int) []Edge {
 
-	balsep := balsep_orig
+	balsep := balsepOrig
 
 	// log.Printf("\n\nCurrent Subgraph: %v\n", H)
 	// log.Printf("Current Special Edges: %v\n\n", Sp)
 	if sepSub == nil {
 		sepSub = getSepSub(g.graph.edges, balsep, K)
 	}
-	next_balsep_found := false
+	nextBalsepFound := false
 
-	for !next_balsep_found {
+	for !nextBalsepFound {
 		if sepSub.hasNext() {
 			balsep = sepSub.getCurrent()
-			log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+			log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 			if H.checkBalancedSep(balsep, Sp) {
-				next_balsep_found = true
+				nextBalsepFound = true
 			}
 		} else {
 			return []Edge{}
@@ -65,7 +65,7 @@ OUTER:
 		var sepSub *SepSub
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
-		balsep_orig := balsep
+		balsepOrig := balsep
 	INNER:
 		for {
 			comps, compsSp, _ := H.getComponents(balsep, Sp)
@@ -83,25 +83,25 @@ OUTER:
 					if sepSub == nil {
 						sepSub = getSepSub(g.graph.edges, balsep, K)
 					}
-					next_balsep_found := false
+					nextBalsepFound := false
 
-					for !next_balsep_found {
+					for !nextBalsepFound {
 						if sepSub.hasNext() {
 							balsep = sepSub.getCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.edges {
 							// 	log.Println(s.combination)
 							// }
 							if H.checkBalancedSep(balsep, Sp) {
-								next_balsep_found = true
+								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsep_orig}, Sp)
+							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 					continue INNER
 
 				}
@@ -148,7 +148,7 @@ func (g balsepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 
 	generators := splitCombin(len(edges), K, runtime.GOMAXPROCS(-1), true)
 	var subtrees []Decomp
-	balsep_orig := balsep
+	balsepOrig := balsep
 OUTER:
 	for !decomposed {
 		var found []int
@@ -190,25 +190,25 @@ OUTER:
 					if sepSub == nil {
 						sepSub = getSepSub(g.graph.edges, balsep, K)
 					}
-					next_balsep_found := false
+					nextBalsepFound := false
 
-					for !next_balsep_found {
+					for !nextBalsepFound {
 						if sepSub.hasNext() {
 							balsep = sepSub.getCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.edges {
 							// 	log.Println(s.combination)
 							// }
 							if H.checkBalancedSep(balsep, Sp) {
-								next_balsep_found = true
+								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsep_orig}, Sp)
+							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 					continue INNER
 				}
 
@@ -273,7 +273,7 @@ OUTER:
 		//wait until first worker finds a balanced sep
 		balsep = getSubset(edges, found)
 		var sepSub *SepSub
-		balsep_orig := balsep
+		balsepOrig := balsep
 		log.Printf("Balanced Sep chosen: %+v\n", balsep)
 	INNER:
 		for !decomposed {
@@ -294,25 +294,25 @@ OUTER:
 					if sepSub == nil {
 						sepSub = getSepSub(g.graph.edges, balsep, K)
 					}
-					next_balsep_found := false
+					nextBalsepFound := false
 
-					for !next_balsep_found {
+					for !nextBalsepFound {
 						if sepSub.hasNext() {
 							balsep = sepSub.getCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.edges {
 							// 	log.Println(s.combination)
 							// }
 							if H.checkBalancedSep(balsep, Sp) {
-								next_balsep_found = true
+								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsep_orig}, Sp)
+							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsep_orig}, Sp)
+					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{edges: balsep}, Graph{edges: balsepOrig}, Sp)
 					continue INNER
 				}
 
@@ -357,7 +357,7 @@ OUTER:
 		var sepSub *SepSub
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{edges: balsep})
-		//balsep_orig := balsep
+		//balsepOrig := balsep
 	INNER:
 		for {
 			comps, compsSp, _ := H.getComponents(balsep, Sp)

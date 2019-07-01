@@ -69,7 +69,7 @@ func rerooting(H Graph, balsep []Edge, subtrees []Decomp) Decomp {
 	// 	log.Printf("%v \n", s)
 	// }
 	for _, s := range subtrees {
-		s.root = s.root.reroot(rerootNode) // TODO: check if this works
+		s.root = s.root.reroot(rerootNode)
 		log.Printf("Rerooted Decomp: %v\n", s)
 		output.children = append(output.children, s.root.children...)
 	}

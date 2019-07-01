@@ -25,6 +25,7 @@ func (g Graph) String() string {
 	return buffer.String()
 }
 
+// produces the union of all vertices from all edges of the graph
 func (g Graph) Vertices() []int {
 	var output []int
 	for _, otherE := range g.edges {
@@ -192,14 +193,31 @@ func (g Graph) checkBalancedSep(sep []Edge, sp []Special) bool {
 	return true
 }
 
+func (g Graph) checkNextSep(sep []Edge, oldSep []Edge, Sp []Special) bool {
+
+	verticesCurrent := append(g.Vertices(), VerticesSpecial(Sp)...)
+
+	// check if balsep covers the intersection of oldsep and H
+	if !subset(inter(Vertices(oldSep), verticesCurrent), Vertices(sep)) {
+		return false
+	}
+	//check if balsep "makes some progress" into separating H
+	if len(inter(Vertices(sep), diff(verticesCurrent, Vertices(oldSep)))) == 0 {
+		return false
+	}
+
+	return true
+
+}
+
 func (g Graph) computeSubEdges(K int) Graph {
 	var output = g
 
 	for _, e := range g.edges {
-		edges_wihout_e := diffEdges(g.edges, e)
-		gen := getCombin(len(edges_wihout_e), K)
+		edgesWihoutE := diffEdges(g.edges, e)
+		gen := getCombin(len(edgesWihoutE), K)
 		for gen.hasNext() {
-			var tuple = Vertices(getSubset(edges_wihout_e, gen.combination))
+			var tuple = Vertices(getSubset(edgesWihoutE, gen.combination))
 			output.edges = append(output.edges, Edge{vertices: inter(e.vertices, tuple)}.subedges()...)
 			gen.confirm()
 		}
