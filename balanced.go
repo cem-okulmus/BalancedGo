@@ -254,17 +254,23 @@ func main() {
 			decomp = global.findGHD(*width)
 		case 5:
 			decomp = local.findGHDParallelFull(*width)
+			decomp.restoreSubedges()
 		case 6:
 			decomp = local.findGHDParallelSearch(*width)
+			decomp.restoreSubedges()
 		case 7:
 			decomp = local.findGHDParallelComp(*width)
+			decomp.restoreSubedges()
 		case 8:
 			decomp = local.findGHD(*width)
+			decomp.restoreSubedges()
 		default:
 			panic("Not a valid choice")
 		}
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+		fmt.Println("Graph \n", decomp.graph)
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")

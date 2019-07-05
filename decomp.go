@@ -16,6 +16,12 @@ func (d Decomp) String() string {
 	return d.root.String()
 }
 
+func (d *Decomp) restoreSubedges() {
+	newRoot := d.root.restoreEdges(d.graph.edges)
+
+	d.root = newRoot
+}
+
 func (d Decomp) connected(vert int) bool {
 	var containingNodes = d.root.allChildrenContaining(vert, 0)
 	var edgesContaining = filterVertices(d.root.getConGraph(0), containingNodes)

@@ -235,3 +235,24 @@ func (n Node) noSCViolation() bool {
 
 	return true
 }
+
+func (n *Node) restoreEdges(edges Edges) Node {
+	var nuCover []Edge
+
+	for _, e := range edges {
+		for _, e2 := range n.cover {
+			if subset(e2.vertices, e.vertices) {
+				nuCover = append(nuCover, e)
+			}
+		}
+	}
+
+	var nuChildern []Node
+
+	for _, c := range n.children {
+
+		nuChildern = append(nuChildern, c.restoreEdges(edges))
+	}
+
+	return Node{bag: n.bag, cover: nuCover, children: nuChildern}
+}
