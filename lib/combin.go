@@ -5,7 +5,7 @@
 
 // Package combin implements routines involving combinatorics (permutations,
 // combinations, etc.).
-package main
+package lib
 
 // Binomial returns the binomial coefficient of (n,k), also commonly referred to
 // as "n choose k".
@@ -51,21 +51,21 @@ func ExtendedBinom(n int, k int) int {
 type CombinationIterator struct {
 	n           int
 	k           int
-	combination []int
+	Combination []int
 	empty       bool
 	stepSize    int
 	extended    bool
 	confirmed   bool
 }
 
-func getCombin(n int, k int) CombinationIterator {
+func GetCombin(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
 	return CombinationIterator{n: n, k: k, stepSize: 1, extended: true, confirmed: true}
 }
 
-func getCombinUnextend(n int, k int) CombinationIterator {
+func GetCombinUnextend(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
@@ -116,20 +116,20 @@ func (c *CombinationIterator) advance(step int) (bool, int) {
 	if c.empty {
 		return false, 0
 	}
-	if c.combination == nil {
-		c.combination = make([]int, c.k)
-		for i := range c.combination {
-			c.combination[i] = i
+	if c.Combination == nil {
+		c.Combination = make([]int, c.k)
+		for i := range c.Combination {
+			c.Combination[i] = i
 		}
 	} else {
-		res, steps := nextCombinationStep(c.combination, c.n, c.k, step)
+		res, steps := nextCombinationStep(c.Combination, c.n, c.k, step)
 		c.empty = !res
 		return res, steps
 	}
 	return true, step
 }
 
-func (c *CombinationIterator) hasNext() bool {
+func (c *CombinationIterator) HasNext() bool {
 	if !c.confirmed {
 		return true
 	}
@@ -141,7 +141,7 @@ func (c *CombinationIterator) hasNext() bool {
 		}
 
 		c.k--
-		c.combination, c.empty = nil, false   // discard old slice, reset flag
+		c.Combination, c.empty = nil, false   // discard old slice, reset flag
 		c.advance(0)                          // initialize the iterator
 		c.advance(c.stepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
 	}
@@ -150,11 +150,11 @@ func (c *CombinationIterator) hasNext() bool {
 	return true
 }
 
-func (c *CombinationIterator) confirm() {
+func (c *CombinationIterator) Confirm() {
 	c.confirmed = true
 }
 
-func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterator {
+func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterator {
 	if k > n {
 		k = n
 	}
@@ -167,8 +167,8 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 	for i := 1; i < split; i++ {
 		tempIter := CombinationIterator{n: n, k: k, stepSize: split, extended: !unextended, confirmed: true}
 
-		tempIter.hasNext()
-		nextCombinationStep(tempIter.combination, n, k, i)
+		tempIter.HasNext()
+		nextCombinationStep(tempIter.Combination, n, k, i)
 
 		output = append(output, &tempIter)
 	}
@@ -179,9 +179,9 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 // func allCombinations(index int, c *CombinationIterator) int {
 // 	count := 0
 
-// 	for c.hasNext() {
-// 		//fmt.Println(index, " Checking combin ", c.combination)
-// 		c.confirm()
+// 	for c.HasNext() {
+// 		//fmt.Println(index, " Checking combin ", c.Combination)
+// 		c.Confirm()
 // 		count++
 // 	}
 
@@ -195,34 +195,34 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 // 	// parsedGraph := getGraph(string(dat))
 // 	// //runtime.GOMAXPROCS(1)
 
-// 	// e1 := parsedGraph.edges[0]
-// 	// e2 := parsedGraph.edges[1]
-// 	// e3 := parsedGraph.edges[2]
-// 	// e4 := parsedGraph.edges[3]
-// 	// e5 := parsedGraph.edges[4]
-// 	// e6 := parsedGraph.edges[5]
-// 	// e7 := parsedGraph.edges[6]
-// 	// e8 := parsedGraph.edges[7]
+// 	// e1 := parsedGraph.Edges[0]
+// 	// e2 := parsedGraph.Edges[1]
+// 	// e3 := parsedGraph.Edges[2]
+// 	// e4 := parsedGraph.Edges[3]
+// 	// e5 := parsedGraph.Edges[4]
+// 	// e6 := parsedGraph.Edges[5]
+// 	// e7 := parsedGraph.Edges[6]
+// 	// e8 := parsedGraph.Edges[7]
 
-// 	// fmt.Printf("%v %v\n", e1, Edge{vertices: e1.vertices})
-// 	// fmt.Printf("%v %v\n", e2, Edge{vertices: e2.vertices})
-// 	// fmt.Printf("%v %v\n", e3, Edge{vertices: e3.vertices})
-// 	// fmt.Printf("%v %v\n", e4, Edge{vertices: e4.vertices})
-// 	// fmt.Printf("%v %v\n", e5, Edge{vertices: e5.vertices})
-// 	// fmt.Printf("%v %v\n", e6, Edge{vertices: e6.vertices})
-// 	// fmt.Printf("%v %v\n", e7, Edge{vertices: e7.vertices})
-// 	// fmt.Printf("%v %v\n", e8, Edge{vertices: e8.vertices})
+// 	// fmt.Printf("%v %v\n", e1, Edge{Vertices: e1.Vertices})
+// 	// fmt.Printf("%v %v\n", e2, Edge{Vertices: e2.Vertices})
+// 	// fmt.Printf("%v %v\n", e3, Edge{Vertices: e3.Vertices})
+// 	// fmt.Printf("%v %v\n", e4, Edge{Vertices: e4.Vertices})
+// 	// fmt.Printf("%v %v\n", e5, Edge{Vertices: e5.Vertices})
+// 	// fmt.Printf("%v %v\n", e6, Edge{Vertices: e6.Vertices})
+// 	// fmt.Printf("%v %v\n", e7, Edge{Vertices: e7.Vertices})
+// 	// fmt.Printf("%v %v\n", e8, Edge{Vertices: e8.Vertices})
 
-// 	// H := Graph{edges: []Edge{e2, e3, e4}}
-// 	// Sp := []Special{Special{edges: []Edge{Edge{vertices: []int{e5.vertices[0], e5.vertices[2]}}, e1}, vertices: Vertices([]Edge{Edge{vertices: []int{e5.vertices[0], e5.vertices[2]}}, e1})}}
+// 	// H := Graph{Edges: []Edge{e2, e3, e4}}
+// 	// Sp := []Special{Special{Edges: []Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1}, Vertices: Vertices([]Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1})}}
 
 // 	// fmt.Println("H: ", H)
 // 	// fmt.Println("Sp: ", Sp)
 
-// 	// edges := cutEdges(parsedGraph.edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+// 	// edges := CutEdges(parsedGraph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 // 	// fmt.Println("Bionomial", Binomial(len(edges), 2))
-// 	// generators := splitCombin(len(edges), 2, runtime.GOMAXPROCS(-1), true)
+// 	// generators := SplitCombin(len(edges), 2, runtime.GOMAXPROCS(-1), true)
 // 	// for _, e := range edges {
 
 // 	// 	fmt.Println(e)
@@ -241,7 +241,7 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 // 	// 		fmt.Println("nothing more found")
 // 	// 		break
 // 	// 	} else {
-// 	// 		fmt.Println("Balsep", getSubset(edges, found))
+// 	// 		fmt.Println("Balsep", GetSubset(edges, found))
 // 	// 	}
 // 	// }
 
@@ -250,7 +250,7 @@ func splitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 // 	sum := 0
 // 	ch := make(chan int)
 // 	runtime.GOMAXPROCS(1)
-// 	generators := splitCombin(n, k, runtime.GOMAXPROCS(-1), true)
+// 	generators := SplitCombin(n, k, runtime.GOMAXPROCS(-1), true)
 
 // 	for i, g := range generators {
 // 		go func(i int, g *CombinationIterator, ch chan int) {

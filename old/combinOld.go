@@ -21,7 +21,7 @@ func ExtendedBinom(n int, k int) int {
 	return output
 }
 
-func getCombin(n int, k int) Combin {
+func GetCombin(n int, k int) Combin {
 	if k > n {
 		k = n
 	}
@@ -52,15 +52,15 @@ func (c *Combin) HasNext() bool {
 			c.current.Next()
 		}
 	}
-	if len(c.combination) != c.k {
-		if len(c.combination) < c.k {
-			c.combination = make([]int, c.k) // generate new slice, if old is too small
+	if len(c.Combination) != c.k {
+		if len(c.Combination) < c.k {
+			c.Combination = make([]int, c.k) // generate new slice, if old is too small
 		} else {
-			c.combination = c.combination[0:c.k] // "shrink" combinations for smaller k
+			c.Combination = c.Combination[0:c.k] // "shrink" combinations for smaller k
 		}
 	}
 	c.left--
-	c.current.Combination(c.combination)
+	c.current.Combination(c.Combination)
 	c.confirmed = false
 	return true
 }
@@ -138,13 +138,13 @@ func SplitCombin(n int, k int, split int, unextended bool) []*Combin {
 
 // 	procNum := 24
 
-// 	combins := splitCombin(n, k, procNum)
+// 	combins := SplitCombin(n, k, procNum)
 // 	for _, c := range combins {
 // 		i := 0
-// 		for c.hasNext() {
+// 		for c.HasNext() {
 // 			// fmt.Println("left: ", c.left)
-// 			c.confirm()
-// 			fmt.Println(c.combination)
+// 			c.Confirm()
+// 			fmt.Println(c.Combination)
 // 			i++
 // 		}
 // 		fmt.Println("Work items ", i)

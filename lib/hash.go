@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 
 // implements hashes for basic types (used for hash table implementations)
 
-func (e Edges) hash() uint32 {
+func (e Edges) Hash() uint32 {
 
 	arrBytes := []byte{}
 	for _, item := range e {

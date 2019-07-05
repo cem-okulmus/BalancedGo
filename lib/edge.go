@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bytes"
@@ -10,17 +10,17 @@ import (
 
 // An Edge (used here for hyperedge) consists of a collection of vertices and a name
 type Edge struct {
-	name     int
-	vertices []int // use integers for vertices
+	Name     int
+	Vertices []int // use integers for vertices
 }
 
 func (e Edge) String() string {
-	if e.name > 0 {
-		return m[e.name]
+	if e.Name > 0 {
+		return m[e.Name]
 	}
 	var buffer bytes.Buffer
 	buffer.WriteString("(")
-	for i, n := range e.vertices {
+	for i, n := range e.Vertices {
 		var s string
 		if m == nil {
 			s = fmt.Sprintf("%v", n)
@@ -28,7 +28,7 @@ func (e Edge) String() string {
 			s = m[n]
 		}
 		buffer.WriteString(s)
-		if i != len(e.vertices)-1 {
+		if i != len(e.Vertices)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -47,13 +47,13 @@ func (s Edges) Swap(i, j int) {
 }
 
 func (s Edges) Less(i, j int) bool {
-	if len(s[i].vertices) < len(s[j].vertices) {
+	if len(s[i].Vertices) < len(s[j].Vertices) {
 		return true
-	} else if len(s[i].vertices) > len(s[j].vertices) {
+	} else if len(s[i].Vertices) > len(s[j].Vertices) {
 		return false
 	} else {
-		for k := 0; k < len(s[i].vertices); k++ {
-			if s[i].vertices[k] < s[j].vertices[k] {
+		for k := 0; k < len(s[i].Vertices); k++ {
+			if s[i].Vertices[k] < s[j].Vertices[k] {
 				return true
 			}
 		}
@@ -71,7 +71,7 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 
 	j := 0
 	for i := 1; i < len(elements); i++ {
-		if reflect.DeepEqual(elements[j].vertices, elements[i].vertices) {
+		if reflect.DeepEqual(elements[j].Vertices, elements[i].Vertices) {
 			continue
 		}
 		j++
@@ -87,17 +87,17 @@ func removeDuplicateEdges(elements []Edge) []Edge {
 func (e Edge) subedges() []Edge {
 	var output []Edge
 
-	powerSetSize := int(math.Pow(2, float64(len(e.vertices))))
+	powerSetSize := int(math.Pow(2, float64(len(e.Vertices))))
 	var index int
 	for index < powerSetSize {
 		var subSet []int
 
-		for j, elem := range e.vertices {
+		for j, elem := range e.Vertices {
 			if index&(1<<uint(j)) > 0 {
 				subSet = append(subSet, elem)
 			}
 		}
-		output = append(output, Edge{vertices: subSet})
+		output = append(output, Edge{Vertices: subSet})
 		index++
 	}
 
@@ -108,7 +108,7 @@ func getDegree(edges Edges, node int) int {
 	var output int
 
 	for _, e := range edges {
-		if mem(e.vertices, node) {
+		if Mem(e.Vertices, node) {
 			output++
 		}
 	}
@@ -120,13 +120,13 @@ func (e Edge) intersect(l []Edge) Edge {
 	var output Edge
 
 OUTER:
-	for _, n := range e.vertices {
+	for _, n := range e.Vertices {
 		for _, o := range l { // skip all vertices n that are not conained in ALL edges of l
 			if !o.contains(n) {
 				continue OUTER
 			}
 		}
-		output.vertices = append(output.vertices, n)
+		output.Vertices = append(output.Vertices, n)
 	}
 
 	return output
@@ -136,7 +136,7 @@ OUTER:
 func Contains(l []Edge, v int) bool {
 
 	for _, e := range l {
-		for _, a := range e.vertices {
+		for _, a := range e.Vertices {
 			if a == v {
 				return true
 			}
@@ -146,7 +146,7 @@ func Contains(l []Edge, v int) bool {
 }
 
 func (e Edge) contains(v int) bool {
-	for _, a := range e.vertices {
+	for _, a := range e.Vertices {
 		if a == v {
 			return true
 		}
@@ -164,7 +164,7 @@ func (e Edge) containedIn(l []Edge) bool {
 }
 
 func (e Edge) areNeighbours(o Edge) bool {
-	for _, a := range o.vertices {
+	for _, a := range o.Vertices {
 		if e.contains(a) {
 			return true
 		}
@@ -202,7 +202,7 @@ func (e Edge) areSNeighbours(o Edge, sep []int) bool {
 	}
 
 OUTER:
-	for _, a := range o.vertices {
+	for _, a := range o.Vertices {
 		for _, s := range sep { // don't consider sep vertices for neighbouring edges
 			if s == a {
 				continue OUTER
@@ -219,7 +219,7 @@ OUTER:
 func Vertices(e []Edge) []int {
 	var output []int
 	for _, otherE := range e {
-		output = append(output, otherE.vertices...)
+		output = append(output, otherE.Vertices...)
 	}
-	return removeDuplicates(output)
+	return RemoveDuplicates(output)
 }

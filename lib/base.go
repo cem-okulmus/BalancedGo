@@ -1,8 +1,8 @@
-package main
+package lib
 
 import "reflect"
 
-func removeDuplicates(elements []int) []int {
+func RemoveDuplicates(elements []int) []int {
 	// Use map to record duplicates as we find them.
 	encountered := make(map[int]struct{})
 	result := []int{}
@@ -22,7 +22,7 @@ func removeDuplicates(elements []int) []int {
 	return result
 }
 
-// func diff(as, bs []int) []int {
+// func Diff(as, bs []int) []int {
 // 	encountered_b := map[int]bool{}
 
 // 	for _, b := range bs {
@@ -43,7 +43,7 @@ func removeDuplicates(elements []int) []int {
 
 // }
 
-func mem(as []int, b int) bool {
+func Mem(as []int, b int) bool {
 	for _, a := range as {
 		if a == b {
 			return true
@@ -52,7 +52,7 @@ func mem(as []int, b int) bool {
 	return false
 }
 
-func diff(a, b []int) []int {
+func Diff(a, b []int) []int {
 	var output []int
 
 OUTER:
@@ -69,11 +69,11 @@ OUTER:
 
 }
 
-// func diff(a, b []int) []int {
+// func Diff(a, b []int) []int {
 // 	var output []int
 
-// 	// a = removeDuplicates(a)
-// 	// b = removeDuplicates(b)
+// 	// a = RemoveDuplicates(a)
+// 	// b = RemoveDuplicates(b)
 
 // 	sort.Ints(a)
 // 	sort.Ints(b)
@@ -102,12 +102,12 @@ OUTER:
 
 // }
 
-func diffEdges(a []Edge, e Edge) []Edge {
+func DiffEdges(a []Edge, e Edge) []Edge {
 	var output []Edge
 
 	for _, n := range a {
-		length := len(inter(n.vertices, e.vertices))
-		if (length > 0) && (length < (len(e.vertices))) {
+		length := len(Inter(n.Vertices, e.Vertices))
+		if (length > 0) && (length < (len(e.Vertices))) {
 			output = append(output, n)
 		}
 	}
@@ -116,7 +116,7 @@ func diffEdges(a []Edge, e Edge) []Edge {
 
 }
 
-func diffSpecial(a, b []Special) []Special {
+func DiffSpecial(a, b []Special) []Special {
 	var output []Special
 OUTER:
 	for _, n := range a {
@@ -132,7 +132,7 @@ OUTER:
 
 }
 
-func inter(as, bs []int) []int {
+func Inter(as, bs []int) []int {
 	encountered_b := make(map[int]struct{})
 	var Empty struct{}
 	for _, b := range bs {
@@ -151,7 +151,7 @@ func inter(as, bs []int) []int {
 
 }
 
-// func inter(as, bs []int) []int {
+// func Inter(as, bs []int) []int {
 // 	var output []int
 // OUTER:
 // 	for _, a := range as {
@@ -167,7 +167,7 @@ func inter(as, bs []int) []int {
 // 	return output
 // }
 
-func subset(as []int, bs []int) bool {
+func Subset(as []int, bs []int) bool {
 	encountered_b := make(map[int]struct{})
 	var Empty struct{}
 	for _, b := range bs {
@@ -183,7 +183,7 @@ func subset(as []int, bs []int) bool {
 	return true
 }
 
-// func subset(a []int, b []int) bool {
+// func Subset(a []int, b []int) bool {
 
 // OUTER:
 // 	for _, n := range a {

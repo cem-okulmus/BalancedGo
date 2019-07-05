@@ -9,6 +9,10 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"time"
+
+	. "github.com/cem-okulmus/BalancedGo/algorithms"
+
+	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
 func logActive(b bool) {
@@ -100,16 +104,16 @@ func main() {
 	dat, err := ioutil.ReadFile(*graphPath)
 	check(err)
 
-	parsedGraph := getGraph(string(dat))
+	parsedGraph := GetGraph(string(dat))
 	var reducedGraph Graph
 
 	if *typeC {
 		count := 0
 		fmt.Println("\n\n", *graphPath)
 		fmt.Println("Graph after Type Collapse:")
-		reducedGraph, _, count = parsedGraph.typeCollapse()
-		for _, e := range reducedGraph.edges {
-			fmt.Printf("%v %v\n", e, Edge{vertices: e.vertices})
+		reducedGraph, _, count = parsedGraph.TypeCollapse()
+		for _, e := range reducedGraph.Edges {
+			fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 		}
 		fmt.Println("Removed ", count, " vertex/vertices")
 		parsedGraph = reducedGraph
@@ -136,20 +140,20 @@ func main() {
 	//return
 
 	// count := 0
-	// for _, e := range parsedGraph.edges {
-	// 	isOW, _ := e.OWcheck(parsedGraph.edges)
+	// for _, e := range parsedGraph.Edges {
+	// 	isOW, _ := e.OWcheck(parsedGraph.Edges)
 	// 	if isOW {
 	// 		count++
 	// 	}
 	// }
-	// fmt.Println("No of OW edges: ", count)
+	// fmt.Println("No of OW Edges: ", count)
 
 	// collapsedGraph, _ := parsedGraph.typeCollapse()
 
 	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
 
 	if *computeSubedges {
-		parsedGraph = parsedGraph.computeSubEdges(*width)
+		parsedGraph = parsedGraph.ComputeSubEdges(*width)
 
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
@@ -158,13 +162,13 @@ func main() {
 	switch *useHeuristic {
 	case 1:
 		fmt.Print("Using degree ordering")
-		parsedGraph.edges = getDegreeOrder(parsedGraph.edges)
+		parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
 	case 2:
 		fmt.Print("Using max seperator ordering")
-		parsedGraph.edges = getMaxSepOrder(parsedGraph.edges)
+		parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
 	case 3:
 		fmt.Print("Using MSC ordering")
-		parsedGraph.edges = getMSCOrder(parsedGraph.edges)
+		parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
 	}
 	d := time.Now().Sub(start)
 
@@ -182,13 +186,13 @@ func main() {
 
 		switch *choose {
 		case 1:
-			decomp = balKDecomp{graph: parsedGraph}.findBDFullParallel(*width)
+			decomp = BalKDecomp{Graph: parsedGraph}.FindBDFullParallel(*width)
 		// case 2:
-		// 	decomp = global.findGHDParallelSearch(*width)
+		// 	decomp = global.FindGHDParallelSearch(*width)
 		// case 3:
-		// 	decomp = global.findGHDParallelComp(*width)
+		// 	decomp = global.FindGHDParallelComp(*width)
 		case 4:
-			decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+			decomp = BalKDecomp{Graph: parsedGraph}.FindBD(*width)
 		default:
 			panic("Not a valid choice")
 		}
@@ -198,9 +202,9 @@ func main() {
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.checkWidth())
-		fmt.Println("GHD-Width: ", decomp.blowup().checkWidth())
-		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		fmt.Println("Width: ", decomp.CheckWidth())
+		fmt.Println("GHD-Width: ", decomp.Blowup().CheckWidth())
+		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
 		return
 	}
 
@@ -209,21 +213,21 @@ func main() {
 		start := time.Now()
 
 		var Sp []Special
-		m[encode] = "test"
-		m[encode+1] = "test2"
-		Sp = []Special{Special{vertices: []int{16, 18}, edges: []Edge{Edge{name: encode, vertices: []int{16, 18}}}}, Special{vertices: []int{15, 17, 19}, edges: []Edge{Edge{name: encode + 1, vertices: []int{15, 17, 19}}}}}
-		encode = encode + 2
+		// m[encode] = "test"
+		// m[encode+1] = "test2"
+		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
+		// encode = encode + 2
 
-		det := detKDecomp{graph: parsedGraph}
+		det := DetKDecomp{Graph: parsedGraph}
 		switch *choose {
 		case 1:
-			decomp = det.findHDParallelFull(*width, Sp)
+			decomp = det.FindHDParallelFull(*width, Sp)
 		case 2:
-			decomp = det.findHDParallelSearch(*width, Sp)
+			decomp = det.FindHDParallelSearch(*width, Sp)
 		case 3:
-			decomp = det.findHDParallelDecomp(*width, Sp)
+			decomp = det.FindHDParallelDecomp(*width, Sp)
 		case 4:
-			decomp = det.findHD(*width, Sp)
+			decomp = det.FindHD(*width, Sp)
 		default:
 			panic("Not a valid choice")
 		}
@@ -233,49 +237,49 @@ func main() {
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.checkWidth())
-		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		fmt.Println("Width: ", decomp.CheckWidth())
+		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
 		return
 	}
 
-	global := balsepGlobal{graph: parsedGraph}
-	local := balsepLocal{graph: parsedGraph}
+	global := BalSepGlobal{Graph: parsedGraph}
+	local := BalSepLocal{Graph: parsedGraph}
 	if *choose != 0 {
 		var decomp Decomp
 		start := time.Now()
 		switch *choose {
 		case 1:
-			decomp = global.findGHDParallelFull(*width)
+			decomp = global.FindGHDParallelFull(*width)
 		case 2:
-			decomp = global.findGHDParallelSearch(*width)
+			decomp = global.FindGHDParallelSearch(*width)
 		case 3:
-			decomp = global.findGHDParallelComp(*width)
+			decomp = global.FindGHDParallelComp(*width)
 		case 4:
-			decomp = global.findGHD(*width)
+			decomp = global.FindGHD(*width)
 		case 5:
-			decomp = local.findGHDParallelFull(*width)
-			decomp.restoreSubedges()
+			decomp = local.FindGHDParallelFull(*width)
+			decomp.RestoreSubedges()
 		case 6:
-			decomp = local.findGHDParallelSearch(*width)
-			decomp.restoreSubedges()
+			decomp = local.FindGHDParallelSearch(*width)
+			decomp.RestoreSubedges()
 		case 7:
-			decomp = local.findGHDParallelComp(*width)
-			decomp.restoreSubedges()
+			decomp = local.FindGHDParallelComp(*width)
+			decomp.RestoreSubedges()
 		case 8:
-			decomp = local.findGHD(*width)
-			decomp.restoreSubedges()
+			decomp = local.FindGHD(*width)
+			decomp.RestoreSubedges()
 		default:
 			panic("Not a valid choice")
 		}
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Graph \n", decomp.graph)
+		fmt.Println("Graph \n", decomp.Graph)
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
 		fmt.Println("Width: ", *width)
-		fmt.Println("Correct: ", decomp.correct(parsedGraph))
+		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
 		return
 	}
 
@@ -299,15 +303,15 @@ func main() {
 
 	//fmt.Printf("parsedGraph %+v\n", parsedGraph)
 
-	output = output + fmt.Sprintf("%v;", len(parsedGraph.edges))
-	output = output + fmt.Sprintf("%v;", len(Vertices(parsedGraph.edges)))
+	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges))
+	output = output + fmt.Sprintf("%v;", len(Vertices(parsedGraph.Edges)))
 	output = output + fmt.Sprintf("%v;", *width)
 
 	// Parallel Execution FULL
 	start = time.Now()
-	decomp := global.findGHDParallelFull(*width)
+	decomp := global.FindGHDParallelFull(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
+	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
 	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
 	//fmt.Println("Correct decomposition:", decomp.correct())
@@ -317,9 +321,9 @@ func main() {
 
 	// Parallel Execution Search
 	start = time.Now()
-	decomp = global.findGHDParallelSearch(*width)
+	decomp = global.FindGHDParallelSearch(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
+	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
 	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
 	//fmt.Println("Correct decomposition:", decomp.correct())
@@ -329,9 +333,9 @@ func main() {
 
 	// Parallel Execution Comp
 	start = time.Now()
-	decomp = global.findGHDParallelComp(*width)
+	decomp = global.FindGHDParallelComp(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.root)
+	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
 	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
 	//fmt.Println("Correct decomposition:", decomp.correct())
@@ -340,13 +344,13 @@ func main() {
 	output = output + fmt.Sprintf("%.5f;", msec)
 	// Sequential Execution
 	start = time.Now()
-	decomp = global.findGHD(*width)
+	decomp = global.FindGHD(*width)
 
-	//fmt.Printf("Decomp of parsedGraph: %v\n", decomp.root)
+	//fmt.Printf("Decomp of parsedGraph: %v\n", decomp.Root)
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
-	output = output + fmt.Sprintf("%v\n", decomp.correct(parsedGraph))
+	output = output + fmt.Sprintf("%v\n", decomp.Correct(parsedGraph))
 	//fmt.Println("Elapsed time for sequential:", time.Now().Sub(start))
 	//fmt.Println("Correct decomposition:", decomp.correct())
 

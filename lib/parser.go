@@ -1,4 +1,4 @@
-package main
+package lib
 
 import "github.com/alecthomas/participle"
 
@@ -17,7 +17,7 @@ type ParseGraph struct {
 
 var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1))
 
-func getGraph(s string) Graph {
+func GetGraph(s string) Graph {
 	var output Graph
 	pgraph := ParseGraph{}
 	parser.ParseString(s, &pgraph)
@@ -44,7 +44,7 @@ func getGraph(s string) Graph {
 				encode++
 			}
 		}
-		output.edges = append(output.edges, Edge{name: pgraph.m[e.Name], vertices: outputEdges})
+		output.Edges = append(output.Edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
 	}
 	m = encoding
 	return output

@@ -1,6 +1,6 @@
 // Functions that simplify graphs, and transform decompositions of the simplified graph back to decomposition of original graph
 
-package main
+package lib
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ type edgeOp struct {
 func (_ edgeOp) isGYÖ() {}
 
 func (e edgeOp) String() string {
-	return fmt.Sprintf("(%v ⊆ %v)", m[e.subedge.name], m[e.parent.name])
+	return fmt.Sprintf("(%v ⊆ %v)", m[e.subedge.Name], m[e.parent.Name])
 }
 
 type vertOp struct {
@@ -34,7 +34,7 @@ type vertOp struct {
 func (_ vertOp) isGYÖ() {}
 
 func (v vertOp) String() string {
-	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], m[v.edge.name])
+	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], m[v.edge.Name])
 }
 
 // Performs one part of GYÖ reduct
@@ -44,9 +44,9 @@ func (g Graph) removeEdges() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
 
 OUTER:
-	for _, e1 := range g.edges {
-		for _, e2 := range g.edges {
-			if e1.name != e2.name && !e2.containedIn(removed) && subset(e1.vertices, e2.vertices) {
+	for _, e1 := range g.Edges {
+		for _, e2 := range g.Edges {
+			if e1.Name != e2.Name && !e2.containedIn(removed) && Subset(e1.Vertices, e2.Vertices) {
 				ops = append(ops, edgeOp{subedge: e1, parent: e2})
 				removed.append(e1)
 				continue OUTER
@@ -56,32 +56,32 @@ OUTER:
 		output.append(e1)
 	}
 
-	return Graph{edges: output}, ops
+	return Graph{Edges: output}, ops
 }
 
 func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
 	var edges Edges
 
-	for _, e1 := range g.edges {
+	for _, e1 := range g.Edges {
 		var vertices []int
 		//	fmt.Println("Working on edge ", e1)
 	INNER:
-		for _, v := range e1.vertices {
-			//		fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.edges, v))
-			if getDegree(g.edges, v) == 1 {
+		for _, v := range e1.Vertices {
+			//		fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.Edges, v))
+			if getDegree(g.Edges, v) == 1 {
 				ops = append(ops, vertOp{vertex: v, edge: e1})
 				continue INNER
 			}
 			vertices = append(vertices, v)
 		}
 		if len(vertices) > 0 {
-			edges.append(Edge{name: e1.name, vertices: vertices})
+			edges.append(Edge{Name: e1.Name, Vertices: vertices})
 		}
 
 	}
 
-	return Graph{edges: edges}, ops
+	return Graph{Edges: edges}, ops
 }
 
 func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
@@ -98,8 +98,8 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 		//Perform vertex removal
 		g2, ops2 := g1.removeVertices()
 		// fmt.Println("After Vertex Removal:")
-		// for _, e := range g2.edges {
-		// 	fmt.Printf("%v %v\n", e, Edge{vertices: e.vertices})
+		// for _, e := range g2.Edges {
+		// 	fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 		// }
 
 		ops = append(ops, ops2...)
@@ -120,16 +120,16 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 }
 
 func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
-	if e.parent.containedIn(n.cover) {
-		n.children = append(n.children, Node{bag: e.subedge.vertices, cover: []Edge{e.subedge}})
+	if e.parent.containedIn(n.Cover) {
+		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: []Edge{e.subedge}})
 		return n, true // Won't work without deep copy
 	}
 
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		res, b := child.restoreEdgeOp(e)
 		if b {
 			child = res // updating this element!
-			return Node{bag: n.bag, cover: n.cover, children: n.children}, true
+			return Node{Bag: n.Bag, Cover: n.Cover, Children: n.Children}, true
 		}
 	}
 
@@ -137,15 +137,15 @@ func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 }
 
 func (n Node) restoreVertex(v vertOp) (Node, bool) {
-	if subset(v.edge.vertices, n.bag) {
-		return Node{bag: append(n.bag, v.vertex), cover: n.cover, children: n.children}, true
+	if Subset(v.edge.Vertices, n.Bag) {
+		return Node{Bag: append(n.Bag, v.vertex), Cover: n.Cover, Children: n.Children}, true
 	}
 
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		res, b := child.restoreVertex(v)
 		if b {
 			child = res // updating this element!
-			return Node{bag: n.bag, cover: n.cover, children: n.children}, true
+			return Node{Bag: n.Bag, Cover: n.Cover, Children: n.Children}, true
 		}
 	}
 
@@ -160,8 +160,8 @@ Type Collapse
 func (g Graph) getType(vertex int) *big.Int {
 	output := new(big.Int)
 
-	for i := range g.edges {
-		if mem(g.edges[i].vertices, vertex) {
+	for i := range g.Edges {
+		if Mem(g.Edges[i].Vertices, vertex) {
 			output.SetBit(output, i, 1)
 		}
 	}
@@ -169,7 +169,7 @@ func (g Graph) getType(vertex int) *big.Int {
 }
 
 // Possible optimization: When computing the distances, use the matrix to speed up type detection
-func (g Graph) typeCollapse() (Graph, map[int][]int, int) {
+func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 	count := 0
 
 	substituteMap := make(map[int]int)    // to keep track of which vertices to collapse
@@ -197,13 +197,13 @@ func (g Graph) typeCollapse() (Graph, map[int][]int, int) {
 
 	var newEdges Edges
 
-	for _, e := range g.edges {
+	for _, e := range g.Edges {
 		var vertices []int
-		for _, v := range e.vertices {
+		for _, v := range e.Vertices {
 			vertices = append(vertices, substituteMap[v])
 		}
-		newEdges.append(Edge{name: e.name, vertices: removeDuplicates(vertices)})
+		newEdges.append(Edge{Name: e.Name, Vertices: RemoveDuplicates(vertices)})
 	}
 
-	return Graph{edges: newEdges}, restorationMap, count
+	return Graph{Edges: newEdges}, restorationMap, count
 }

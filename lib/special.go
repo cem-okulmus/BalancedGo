@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bytes"
@@ -7,20 +7,20 @@ import (
 
 // A Special Edge is a collection of edges, seen as one edge
 type Special struct {
-	vertices []int
-	edges    []Edge
+	Vertices []int
+	Edges    []Edge
 }
 
 func (s Special) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
-	for i, v := range s.vertices {
+	for i, v := range s.Vertices {
 		if m == nil {
 			buffer.WriteString(fmt.Sprintf("%d", v))
 		} else {
 			buffer.WriteString(m[v])
 		}
-		if i != len(s.vertices)-1 {
+		if i != len(s.Vertices)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -32,22 +32,22 @@ func VerticesSpecial(sp []Special) []int {
 	var output []int
 
 	for _, s := range sp {
-		output = append(output, s.vertices...)
+		output = append(output, s.Vertices...)
 	}
 
-	return removeDuplicates(output)
+	return RemoveDuplicates(output)
 }
 
 func (s Special) areSNeighbours(o Edge, sep []int) bool {
 
 OUTER:
-	for _, a := range o.vertices {
+	for _, a := range o.Vertices {
 		for _, ss := range sep { // don't consider sep vertices for neighbouring edges
 			if ss == a {
 				continue OUTER
 			}
 		}
-		if Contains(s.edges, a) {
+		if Contains(s.Edges, a) {
 			return true
 		}
 	}

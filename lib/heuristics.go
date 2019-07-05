@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"log"
@@ -9,7 +9,7 @@ import (
 
 // Heuristics to order the edges by
 
-func getMSCOrder(edges []Edge) []Edge {
+func GetMSCOrder(edges []Edge) []Edge {
 	if len(edges) <= 1 {
 		return edges
 	}
@@ -70,8 +70,8 @@ func isInf(a int) bool {
 
 func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
 
-	for _, n := range e.vertices {
-		for _, m := range e.vertices {
+	for _, n := range e.Vertices {
+		for _, m := range e.Vertices {
 			n_index, _ := order[n]
 			m_index, _ := order[m]
 			if n_index != m_index {
@@ -153,7 +153,7 @@ func diffDistances(old, new [][]int) int {
 	return output
 }
 
-func getMaxSepOrder(edges []Edge) []Edge {
+func GetMaxSepOrder(edges []Edge) []Edge {
 	if len(edges) <= 1 {
 		return edges
 	}
@@ -163,7 +163,7 @@ func getMaxSepOrder(edges []Edge) []Edge {
 	initialDiff, order := getMinDistances(vertices, edges)
 
 	for i, e := range edges {
-		edgesWihoutE := diffEdges(edges, e)
+		edgesWihoutE := DiffEdges(edges, e)
 		newDiff, _ := getMinDistances(vertices, edgesWihoutE)
 		newDiffPrep := addEdgeDistances(order, newDiff, e)
 		weights[i] = diffDistances(initialDiff, newDiffPrep)
@@ -177,14 +177,14 @@ func getMaxSepOrder(edges []Edge) []Edge {
 func edgeDegree(edges []Edge, edge Edge) int {
 	var output int
 
-	for _, v := range edge.vertices {
+	for _, v := range edge.Vertices {
 		output = output + getDegree(edges, v)
 	}
 
-	return output - len(edge.vertices)
+	return output - len(edge.Vertices)
 }
 
-func getDegreeOrder(edges []Edge) []Edge {
+func GetDegreeOrder(edges []Edge) []Edge {
 	if len(edges) <= 1 {
 		return edges
 	}

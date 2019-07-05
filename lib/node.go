@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bytes"
@@ -9,16 +9,16 @@ import (
 // A Node is the root of a labelled tree, where the labels are the bag
 // and the (edge) cover
 type Node struct {
-	bag      []int
-	cover    []Edge
-	children []Node
+	Bag      []int
+	Cover    []Edge
+	Children []Node
 }
 
 func (n Node) printBag() string {
 	var buffer bytes.Buffer
-	for i, v := range n.bag {
+	for i, v := range n.Bag {
 		buffer.WriteString(m[v])
-		if i != len(n.bag)-1 {
+		if i != len(n.Bag)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -43,16 +43,16 @@ func (n Node) stringIdent(i int) string {
 	buffer.WriteString(n.printBag())
 
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
-	for i, e := range n.cover {
+	for i, e := range n.Cover {
 		buffer.WriteString(e.String())
-		if i != len(n.cover)-1 {
+		if i != len(n.Cover)-1 {
 			buffer.WriteString(", ")
 		}
 	}
 	buffer.WriteString("}\n")
-	if len(n.children) > 0 {
+	if len(n.Children) > 0 {
 		buffer.WriteString(indent(i) + "Children:\n" + indent(i) + "[")
-		for _, c := range n.children {
+		for _, c := range n.Children {
 			buffer.WriteString(c.stringIdent(i + 1))
 		}
 		buffer.WriteString(indent(i) + "]\n")
@@ -72,7 +72,7 @@ func (n Node) contains(o Node) bool {
 	}
 
 	// Check recursively if contained in children
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		if child.contains(o) {
 			return true
 		}
@@ -82,11 +82,11 @@ func (n Node) contains(o Node) bool {
 }
 
 func (n Node) bagSubsets() bool {
-	if !subset(n.bag, Vertices(n.cover)) {
+	if !Subset(n.Bag, Vertices(n.Cover)) {
 		return false
 	}
 
-	for _, c := range n.children {
+	for _, c := range n.Children {
 		if !c.bagSubsets() {
 			return false
 		}
@@ -99,13 +99,13 @@ func (n Node) bagSubsets() bool {
 func (n Node) getConGraph(num int) Edges {
 	var output Edges
 
-	output.append(Edge{vertices: []int{num + encode + 1, num + encode + 1}}) // add loop (needed )
+	output.append(Edge{Vertices: []int{num + encode + 1, num + encode + 1}}) // add loop (needed )
 
-	for i, _ := range n.children {
-		output.append(Edge{vertices: []int{num + encode + 1, (num + i + encode + 2)}}) //using breadth-first ordering to number nodes
+	for i, _ := range n.Children {
+		output.append(Edge{Vertices: []int{num + encode + 1, (num + i + encode + 2)}}) //using breadth-first ordering to number nodes
 	}
 
-	for i, c := range n.children {
+	for i, c := range n.Children {
 		output = append(output, c.getConGraph((num + 1 + i))...)
 	}
 
@@ -116,11 +116,11 @@ func (n Node) allChildrenContaining(vert, num int) []int {
 	var output []int
 	//m[num+encode+1] = strconv.Itoa(num)
 
-	if Contains(n.cover, vert) {
+	if Contains(n.Cover, vert) {
 		output = append(output, num+encode+1)
 	}
 
-	for i, c := range n.children {
+	for i, c := range n.Children {
 		output = append(output, c.allChildrenContaining(vert, (num+i+1))...)
 	}
 
@@ -129,12 +129,12 @@ func (n Node) allChildrenContaining(vert, num int) []int {
 
 func (n Node) coversEdge(e Edge) bool {
 	// edge contained in current node
-	if subset(e.vertices, Vertices(n.cover)) {
+	if Subset(e.Vertices, Vertices(n.Cover)) {
 		return true
 	}
 
 	// Check recursively if contained in children
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		if child.coversEdge(e) {
 			return true
 		}
@@ -144,10 +144,10 @@ func (n Node) coversEdge(e Edge) bool {
 }
 
 func (n Node) ancestorOnI(o Node, i int) Node {
-	if !Contains(o.cover, i) {
+	if !Contains(o.Cover, i) {
 		return o
 	}
-	if !(reflect.DeepEqual(o, n.parent(o))) && Contains(n.parent(o).cover, i) {
+	if !(reflect.DeepEqual(o, n.parent(o))) && Contains(n.parent(o).Cover, i) {
 		return n.ancestorOnI(n.parent(o), i)
 	}
 
@@ -156,7 +156,7 @@ func (n Node) ancestorOnI(o Node, i int) Node {
 
 func (n Node) parent(o Node) Node {
 	// Check recursively if contained in children
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		if reflect.DeepEqual(child, o) {
 			return n
 		} else if child.contains(o) {
@@ -169,37 +169,37 @@ func (n Node) parent(o Node) Node {
 }
 
 // reroot G at child, producing an isomorphic graph
-func (n Node) reroot(child Node) Node {
+func (n Node) Reroot(child Node) Node {
 
 	if !n.contains(child) {
-		log.Panicf("Can't reroot: no child %+v in node %+v!\n", child, n)
+		log.Panicf("Can't reRoot: no child %+v in node %+v!\n", child, n)
 	}
 	if reflect.DeepEqual(n, child) {
 		return child
 	}
 	p := n.parent(child)
-	p = n.reroot(p)
+	p = n.Reroot(p)
 
 	// remove child from children of parent
 	var newparentchildren []Node
-	for _, c := range p.children {
+	for _, c := range p.Children {
 		if reflect.DeepEqual(c, child) {
 			continue
 		}
 		newparentchildren = append(newparentchildren, c)
 	}
-	p.children = newparentchildren
-	newchildren := append(child.children, p)
+	p.Children = newparentchildren
+	newchildren := append(child.Children, p)
 
-	return Node{bag: child.bag, cover: child.cover, children: newchildren}
+	return Node{Bag: child.Bag, Cover: child.Cover, Children: newchildren}
 }
 
 // recurisvely collect all vertices from the bag of this node, and the bags of all its children
 func (n Node) Vertices() []int {
 	var output []int
-	output = append(output, n.bag...)
+	output = append(output, n.Bag...)
 
-	for _, c := range n.children {
+	for _, c := range n.Children {
 		output = append(output, c.Vertices()...)
 	}
 
@@ -208,11 +208,11 @@ func (n Node) Vertices() []int {
 
 //tests special condition violation on one node
 func (n Node) specialCondition() bool {
-	hiddenVertices := diff(Vertices(n.cover), n.bag)
+	hiddenVertices := Diff(Vertices(n.Cover), n.Bag)
 	verticesRooted := n.Vertices()
 
 	for _, v := range hiddenVertices {
-		if mem(verticesRooted, v) {
+		if Mem(verticesRooted, v) {
 			log.Println("Vertex ", v, " violates special condition")
 			return false
 		}
@@ -227,7 +227,7 @@ func (n Node) noSCViolation() bool {
 		return false
 	}
 
-	for _, c := range n.children {
+	for _, c := range n.Children {
 		if !c.specialCondition() {
 			return false
 		}
@@ -236,12 +236,12 @@ func (n Node) noSCViolation() bool {
 	return true
 }
 
-func (n *Node) restoreEdges(edges Edges) Node {
+func (n *Node) RestoreEdges(edges Edges) Node {
 	var nuCover []Edge
 
 	for _, e := range edges {
-		for _, e2 := range n.cover {
-			if subset(e2.vertices, e.vertices) {
+		for _, e2 := range n.Cover {
+			if Subset(e2.Vertices, e.Vertices) {
 				nuCover = append(nuCover, e)
 			}
 		}
@@ -249,10 +249,10 @@ func (n *Node) restoreEdges(edges Edges) Node {
 
 	var nuChildern []Node
 
-	for _, c := range n.children {
+	for _, c := range n.Children {
 
-		nuChildern = append(nuChildern, c.restoreEdges(edges))
+		nuChildern = append(nuChildern, c.RestoreEdges(edges))
 	}
 
-	return Node{bag: n.bag, cover: nuCover, children: nuChildern}
+	return Node{Bag: n.Bag, Cover: nuCover, Children: nuChildern}
 }
