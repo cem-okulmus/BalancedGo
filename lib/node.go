@@ -213,7 +213,7 @@ func (n Node) specialCondition() bool {
 
 	for _, v := range hiddenVertices {
 		if Mem(verticesRooted, v) {
-			log.Println("Vertex ", v, " violates special condition")
+			log.Println("Vertex ", m[v], " violates special condition")
 			return false
 		}
 	}

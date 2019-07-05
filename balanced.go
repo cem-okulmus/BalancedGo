@@ -183,16 +183,17 @@ func main() {
 	if *akatovTest {
 		var decomp Decomp
 		start := time.Now()
+		bal := BalKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
 
 		switch *choose {
 		case 1:
-			decomp = BalKDecomp{Graph: parsedGraph}.FindBDFullParallel(*width)
+			decomp = bal.FindBDFullParallel(*width)
 		// case 2:
 		// 	decomp = global.FindGHDParallelSearch(*width)
 		// case 3:
 		// 	decomp = global.FindGHDParallelComp(*width)
 		case 4:
-			decomp = BalKDecomp{Graph: parsedGraph}.FindBD(*width)
+			decomp = bal.FindBD(*width)
 		default:
 			panic("Not a valid choice")
 		}
@@ -218,7 +219,7 @@ func main() {
 		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
 		// encode = encode + 2
 
-		det := DetKDecomp{Graph: parsedGraph}
+		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
 		switch *choose {
 		case 1:
 			decomp = det.FindHDParallelFull(*width, Sp)
@@ -242,8 +243,8 @@ func main() {
 		return
 	}
 
-	global := BalSepGlobal{Graph: parsedGraph}
-	local := BalSepLocal{Graph: parsedGraph}
+	global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}
+	local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
 	if *choose != 0 {
 		var decomp Decomp
 		start := time.Now()
