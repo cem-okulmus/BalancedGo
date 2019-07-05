@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"time"
 )
 
@@ -33,9 +34,10 @@ var hinge bool
 
 func main() {
 
-	m = make(map[int]string)
+	// m = make(map[int]string)
 
 	//Command-Line Argument Parsing
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	logging := flag.Bool("log", false, "turn on extensive logs")
 	computeSubedges := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
@@ -53,6 +55,16 @@ func main() {
 
 	flag.Parse()
 
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
+
 	hinge = *hingeFlag
 
 	logActive(*logging)
@@ -67,7 +79,8 @@ func main() {
 			if f.Name != "width" && f.Name != "graph" {
 				return
 			}
-			fmt.Println("  -" + f.Name)
+			s := fmt.Sprintf("%T", f.Value)
+			fmt.Printf("  -%s \t%s\n", f.Name, s[6:len(s)-5])
 			fmt.Println("\t" + f.Usage)
 		})
 
@@ -76,7 +89,8 @@ func main() {
 			if f.Name == "width" || f.Name == "graph" {
 				return
 			}
-			fmt.Println("  -" + f.Name)
+			s := fmt.Sprintf("%T", f.Value)
+			fmt.Printf("  -%s \t%s\n", f.Name, s[6:len(s)-5])
 			fmt.Println("\t" + f.Usage)
 		})
 
@@ -200,15 +214,16 @@ func main() {
 		Sp = []Special{Special{vertices: []int{16, 18}, edges: []Edge{Edge{name: encode, vertices: []int{16, 18}}}}, Special{vertices: []int{15, 17, 19}, edges: []Edge{Edge{name: encode + 1, vertices: []int{15, 17, 19}}}}}
 		encode = encode + 2
 
+		det := detKDecomp{graph: parsedGraph}
 		switch *choose {
 		case 1:
-			decomp = detKDecomp{graph: parsedGraph}.findHD(*width, Sp)
-		// case 2:
-		// 	decomp = global.findGHDParallelSearch(*width)
-		// case 3:
-		// 	decomp = global.findGHDParallelComp(*width)
-		// case 4:
-		// 	decomp = balKDecomp{graph: parsedGraph}.findBD(*width)
+			decomp = det.findHDParallelFull(*width, Sp)
+		case 2:
+			decomp = det.findHDParallelSearch(*width, Sp)
+		case 3:
+			decomp = det.findHDParallelDecomp(*width, Sp)
+		case 4:
+			decomp = det.findHD(*width, Sp)
 		default:
 			panic("Not a valid choice")
 		}

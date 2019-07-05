@@ -69,5 +69,11 @@ func (d Decomp) correct(g Graph) bool {
 		}
 	}
 
+	//special condition (optionally)
+
+	if !d.root.noSCViolation() {
+		fmt.Println("SCV found!. Not a valid hypertree!")
+	}
+
 	return true
 }

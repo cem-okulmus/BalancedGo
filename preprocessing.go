@@ -154,9 +154,7 @@ func (n Node) restoreVertex(v vertOp) (Node, bool) {
 }
 
 /*
-
 Type Collapse
-
 */
 
 func (g Graph) getType(vertex int) *big.Int {

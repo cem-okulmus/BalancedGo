@@ -35,6 +35,7 @@ func indent(i int) string {
 
 	return output
 }
+
 func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
@@ -191,4 +192,46 @@ func (n Node) reroot(child Node) Node {
 	newchildren := append(child.children, p)
 
 	return Node{bag: child.bag, cover: child.cover, children: newchildren}
+}
+
+// recurisvely collect all vertices from the bag of this node, and the bags of all its children
+func (n Node) Vertices() []int {
+	var output []int
+	output = append(output, n.bag...)
+
+	for _, c := range n.children {
+		output = append(output, c.Vertices()...)
+	}
+
+	return output
+}
+
+//tests special condition violation on one node
+func (n Node) specialCondition() bool {
+	hiddenVertices := diff(Vertices(n.cover), n.bag)
+	verticesRooted := n.Vertices()
+
+	for _, v := range hiddenVertices {
+		if mem(verticesRooted, v) {
+			log.Println("Vertex ", v, " violates special condition")
+			return false
+		}
+	}
+
+	return true
+}
+
+//test special condition recursively on entire subtree rooted at node
+func (n Node) noSCViolation() bool {
+	if !n.specialCondition() {
+		return false
+	}
+
+	for _, c := range n.children {
+		if !c.specialCondition() {
+			return false
+		}
+	}
+
+	return true
 }

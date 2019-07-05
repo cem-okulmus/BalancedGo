@@ -9,7 +9,7 @@ import (
 
 // A Graph is a collection of edges
 type Graph struct {
-	edges []Edge
+	edges Edges
 }
 
 func (g Graph) String() string {
