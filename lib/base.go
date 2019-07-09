@@ -1,25 +1,49 @@
 package lib
 
-import "reflect"
+import (
+	"reflect"
+	"sort"
+)
 
+// func RemoveDuplicates(elements []int) []int {
+// 	// Use map to record duplicates as we find them.
+// 	encountered := make(map[int]struct{})
+// 	result := []int{}
+
+// 	for v := range elements {
+// 		if _, ok := encountered[elements[v]]; ok {
+// 			// Do not add duplicate.
+// 		} else {
+// 			// Record this element as an encountered element.
+// 			var Empty struct{}
+// 			encountered[elements[v]] = Empty
+// 			// Append to result slice.
+// 			result = append(result, elements[v])
+// 		}
+// 	}
+// 	// Return the new slice.
+// 	return result
+// }
+
+//using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func RemoveDuplicates(elements []int) []int {
-	// Use map to record duplicates as we find them.
-	encountered := make(map[int]struct{})
-	result := []int{}
-
-	for v := range elements {
-		if _, ok := encountered[elements[v]]; ok {
-			// Do not add duplicate.
-		} else {
-			// Record this element as an encountered element.
-			var Empty struct{}
-			encountered[elements[v]] = Empty
-			// Append to result slice.
-			result = append(result, elements[v])
-		}
+	if len(elements) == 0 {
+		return elements
 	}
-	// Return the new slice.
-	return result
+	sort.Ints(elements)
+
+	j := 0
+	for i := 1; i < len(elements); i++ {
+		if elements[j] == elements[i] {
+			continue
+		}
+		j++
+
+		// only set what is required
+		elements[j] = elements[i]
+	}
+
+	return elements[:j+1]
 }
 
 // func Diff(as, bs []int) []int {
