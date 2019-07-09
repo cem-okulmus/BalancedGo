@@ -9,7 +9,8 @@ import (
 
 // A Graph is a collection of edges
 type Graph struct {
-	Edges Edges
+	Edges    Edges
+	vertices []int
 }
 
 func (g Graph) String() string {
@@ -26,12 +27,16 @@ func (g Graph) String() string {
 }
 
 // produces the union of all vertices from all edges of the graph
-func (g Graph) Vertices() []int {
+func (g *Graph) Vertices() []int {
+	if len(g.vertices) > 0 {
+		return g.vertices
+	}
 	var output []int
 	for _, otherE := range g.Edges {
 		output = append(output, otherE.Vertices...)
 	}
-	return RemoveDuplicates(output)
+	g.vertices = RemoveDuplicates(output)
+	return g.vertices
 }
 
 func GetSubset(edges []Edge, s []int) []Edge {

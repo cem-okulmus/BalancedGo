@@ -49,7 +49,7 @@ func (d Decomp) connected(vert int) bool {
 func (d Decomp) Correct(g Graph) bool {
 
 	//must be a decomp of same graph
-	if !reflect.DeepEqual(d.Graph, g) {
+	if !reflect.DeepEqual(d.Graph.Edges, g.Edges) {
 		return false
 	}
 
