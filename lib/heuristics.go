@@ -5,11 +5,14 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"time"
 )
 
 // Heuristics to order the edges by
 
 func GetMSCOrder(edges []Edge) []Edge {
+
+	rand.Seed(time.Now().UTC().UnixNano())
 	if len(edges) <= 1 {
 		return edges
 	}
