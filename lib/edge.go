@@ -37,23 +37,26 @@ func (e Edge) String() string {
 }
 
 // A slice of Edge, defined for the use of the sort interface
-type Edges []Edge
+type Edges struct {
+	Slice    []Edge
+	vertices []int
+}
 
 func (s Edges) Len() int {
-	return len(s)
+	return len(s.Slice)
 }
 func (s Edges) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+	s.Slice[i], s.Slice[j] = s.Slice[j], s.Slice[i]
 }
 
 func (s Edges) Less(i, j int) bool {
-	if len(s[i].Vertices) < len(s[j].Vertices) {
+	if len(s.Slice[i].Vertices) < len(s.Slice[j].Vertices) {
 		return true
-	} else if len(s[i].Vertices) > len(s[j].Vertices) {
+	} else if len(s.Slice[i].Vertices) > len(s.Slice[j].Vertices) {
 		return false
 	} else {
-		for k := 0; k < len(s[i].Vertices); k++ {
-			if s[i].Vertices[k] < s[j].Vertices[k] {
+		for k := 0; k < len(s.Slice[i].Vertices); k++ {
+			if s.Slice[i].Vertices[k] < s.Slice[j].Vertices[k] {
 				return true
 			}
 		}
@@ -62,25 +65,26 @@ func (s Edges) Less(i, j int) bool {
 }
 
 func (s *Edges) append(e Edge) {
-	*s = append(*s, e)
+	s.Slice = append(s.Slice, e)
 }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
-func removeDuplicateEdges(elements []Edge) []Edge {
-	sort.Sort(Edges(elements))
+func removeDuplicateEdges(elementsSlice []Edge) Edges {
+	elements := Edges{Slice: elementsSlice}
+	sort.Sort(elements)
 
 	j := 0
-	for i := 1; i < len(elements); i++ {
-		if reflect.DeepEqual(elements[j].Vertices, elements[i].Vertices) {
+	for i := 1; i < len(elements.Slice); i++ {
+		if reflect.DeepEqual(elements.Slice[j].Vertices, elements.Slice[i].Vertices) {
 			continue
 		}
 		j++
 
 		// only set what is required
-		elements[j] = elements[i]
+		elements.Slice[j] = elements.Slice[i]
 	}
 
-	return elements[:j+1]
+	return Edges{Slice: elements.Slice[:j+1]}
 }
 
 // Unnessarily adds empty edge
@@ -107,7 +111,7 @@ func (e Edge) subedges() []Edge {
 func getDegree(edges Edges, node int) int {
 	var output int
 
-	for _, e := range edges {
+	for _, e := range edges.Slice {
 		if Mem(e.Vertices, node) {
 			output++
 		}
@@ -133,6 +137,19 @@ OUTER:
 }
 
 // checks if vertex i is contained in a slice of edges
+
+func (l Edges) Contains(v int) bool {
+
+	for _, e := range l.Slice {
+		for _, a := range e.Vertices {
+			if a == v {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func Contains(l []Edge, v int) bool {
 
 	for _, e := range l {
@@ -184,11 +201,11 @@ func (e Edge) numIndicent(l []Edge) int {
 	return output
 }
 
-func (e Edge) numNeighboursOrder(l []Edge, remaining []bool) int {
+func (e Edge) numNeighboursOrder(l Edges, remaining []bool) int {
 	output := 0
 
-	for i := range l {
-		if remaining[i] && e.areNeighbours(l[i]) {
+	for i := range l.Slice {
+		if remaining[i] && e.areNeighbours(l.Slice[i]) {
 			output++
 		}
 	}
@@ -216,10 +233,14 @@ OUTER:
 }
 
 // produces the union of all vertices from a slice of Edge
-func Vertices(e []Edge) []int {
-	var output []int
-	for _, otherE := range e {
-		output = append(output, otherE.Vertices...)
+func (e *Edges) Vertices() []int {
+	if len(e.vertices) == 0 {
+		var output []int
+		for _, otherE := range e.Slice {
+			output = append(output, otherE.Vertices...)
+		}
+		e.vertices = RemoveDuplicates(output)
 	}
-	return RemoveDuplicates(output)
+
+	return e.vertices
 }

@@ -10,7 +10,7 @@ import (
 // and the (edge) cover
 type Node struct {
 	Bag      []int
-	Cover    []Edge
+	Cover    Edges
 	Children []Node
 }
 
@@ -43,9 +43,9 @@ func (n Node) stringIdent(i int) string {
 	buffer.WriteString(n.printBag())
 
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
-	for i, e := range n.Cover {
+	for i, e := range n.Cover.Slice {
 		buffer.WriteString(e.String())
-		if i != len(n.Cover)-1 {
+		if i != len(n.Cover.Slice)-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -82,7 +82,7 @@ func (n Node) contains(o Node) bool {
 }
 
 func (n Node) bagSubsets() bool {
-	if !Subset(n.Bag, Vertices(n.Cover)) {
+	if !Subset(n.Bag, n.Cover.Vertices()) {
 		return false
 	}
 
@@ -106,7 +106,8 @@ func (n Node) getConGraph(num int) Edges {
 	}
 
 	for i, c := range n.Children {
-		output = append(output, c.getConGraph((num + 1 + i))...)
+		edgesChild := c.getConGraph((num + 1 + i))
+		output.Slice = append(output.Slice, edgesChild.Slice...)
 	}
 
 	return output
@@ -116,7 +117,7 @@ func (n Node) allChildrenContaining(vert, num int) []int {
 	var output []int
 	//m[num+encode+1] = strconv.Itoa(num)
 
-	if Contains(n.Cover, vert) {
+	if n.Cover.Contains(vert) {
 		output = append(output, num+encode+1)
 	}
 
@@ -129,7 +130,7 @@ func (n Node) allChildrenContaining(vert, num int) []int {
 
 func (n Node) coversEdge(e Edge) bool {
 	// edge contained in current node
-	if Subset(e.Vertices, Vertices(n.Cover)) {
+	if Subset(e.Vertices, n.Cover.Vertices()) {
 		return true
 	}
 
@@ -144,10 +145,10 @@ func (n Node) coversEdge(e Edge) bool {
 }
 
 func (n Node) ancestorOnI(o Node, i int) Node {
-	if !Contains(o.Cover, i) {
+	if !o.Cover.Contains(i) {
 		return o
 	}
-	if !(reflect.DeepEqual(o, n.parent(o))) && Contains(n.parent(o).Cover, i) {
+	if !(reflect.DeepEqual(o, n.parent(o))) && n.parent(o).Cover.Contains(i) {
 		return n.ancestorOnI(n.parent(o), i)
 	}
 
@@ -208,7 +209,7 @@ func (n Node) Vertices() []int {
 
 //tests special condition violation on one node
 func (n Node) specialCondition() bool {
-	hiddenVertices := Diff(Vertices(n.Cover), n.Bag)
+	hiddenVertices := Diff(n.Cover.Vertices(), n.Bag)
 	verticesRooted := n.Vertices()
 
 	for _, v := range hiddenVertices {
@@ -237,12 +238,12 @@ func (n Node) noSCViolation() bool {
 }
 
 func (n *Node) RestoreEdges(edges Edges) Node {
-	var nuCover []Edge
+	var nuCover Edges
 
-	for _, e := range edges {
-		for _, e2 := range n.Cover {
+	for _, e2 := range n.Cover.Slice {
+		for _, e := range edges.Slice {
 			if Subset(e2.Vertices, e.Vertices) {
-				nuCover = append(nuCover, e)
+				nuCover.append(e)
 			}
 		}
 	}

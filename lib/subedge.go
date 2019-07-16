@@ -1,9 +1,5 @@
 package lib
 
-import (
-	"fmt"
-)
-
 type subSet struct {
 	source  []int
 	current CombinationIterator
@@ -56,7 +52,7 @@ type SubEdges struct {
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	var h_edges Edges
 
-	for _, j := range edges {
+	for _, j := range edges.Slice {
 		inter := Inter(j.Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
 			h_edges.append(Edge{Vertices: inter})
@@ -69,11 +65,11 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
 	output.source = h_edges
-	if k > len(output.source) {
-		k = len(output.source)
+	if k > len(output.source.Slice) {
+		k = len(output.source.Slice)
 	}
 	// fmt.Println("k", k)
-	tmp := GetCombinUnextend(len(output.source), k)
+	tmp := GetCombinUnextend(len(output.source.Slice), k)
 	output.gen = &tmp
 	output.current = e
 	output.initial = e
@@ -86,7 +82,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 func (s *SubEdges) reset() {
 	// fmt.Println("Reset")
-	tmp := GetCombinUnextend(len(s.source), s.k)
+	tmp := GetCombinUnextend(len(s.source.Slice), s.k)
 	s.gen = &tmp
 
 	s.currentSubset = nil
@@ -122,7 +118,7 @@ func (s *SubEdges) hasNext() bool {
 			// fmt.Println("We need a new subset")
 			// fmt.Println("current:", GetSubset(s.source, s.Combination))
 			edges := GetSubset(s.source, s.combination)
-			vertices := RemoveDuplicates(Vertices(edges))
+			vertices := edges.Vertices()
 			if s.existsSubset(vertices) || len(vertices) == 0 { // || len(vertices) == len(Vertices(s.source))
 				continue //skip
 			} else {
@@ -164,7 +160,7 @@ type SepSub struct {
 func GetSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
 
-	for _, e := range sep {
+	for _, e := range sep.Slice {
 		output.Edges = append(output.Edges, getSubEdgeIterator(edges, e, k))
 	}
 
@@ -190,7 +186,7 @@ func (sep *SepSub) HasNext() bool {
 	return false
 }
 
-func (sep SepSub) GetCurrent() []Edge {
+func (sep SepSub) GetCurrent() Edges {
 	var output Edges
 
 	for _, s := range sep.Edges {
@@ -228,14 +224,14 @@ func test() {
 	// 	fmt.Println("now", test2.getCurrent())
 	// }
 
-	fmt.Println("SepSub test: ")
-	fmt.Println("========================================")
+	// fmt.Println("SepSub test: ")
+	// fmt.Println("========================================")
 
-	test3 := GetSepSub([]Edge{Edge{Vertices: []int{5, 8, 2, 9}}, Edge{Vertices: []int{1, 2, 3, 4}}, Edge{Vertices: []int{1, 2, 5, 6}}, Edge{Vertices: []int{9, 12, 15, 16}}, Edge{Vertices: []int{16, 112, 115, 116}}}, []Edge{Edge{Vertices: []int{5, 8, 2, 9}}, Edge{Vertices: []int{9, 12, 15, 16}}}, 2)
+	// test3 := GetSepSub([]Edge{Edge{Vertices: []int{5, 8, 2, 9}}, Edge{Vertices: []int{1, 2, 3, 4}}, Edge{Vertices: []int{1, 2, 5, 6}}, Edge{Vertices: []int{9, 12, 15, 16}}, Edge{Vertices: []int{16, 112, 115, 116}}}, []Edge{Edge{Vertices: []int{5, 8, 2, 9}}, Edge{Vertices: []int{9, 12, 15, 16}}}, 2)
 
-	fmt.Println("begin", test3.GetCurrent())
-	for test3.HasNext() {
-		fmt.Println("now", test3.GetCurrent())
-	}
+	// fmt.Println("begin", test3.GetCurrent())
+	// for test3.HasNext() {
+	// 	fmt.Println("now", test3.GetCurrent())
+	// }
 
 }

@@ -37,6 +37,7 @@ func (v vertOp) String() string {
 	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], m[v.edge.Name])
 }
 
+//TODO fix this to run in linear time
 // Performs one part of GYÖ reduct
 func (g Graph) removeEdges() (Graph, []GYÖReduct) {
 	var output Edges
@@ -44,9 +45,9 @@ func (g Graph) removeEdges() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
 
 OUTER:
-	for _, e1 := range g.Edges {
-		for _, e2 := range g.Edges {
-			if e1.Name != e2.Name && !e2.containedIn(removed) && Subset(e1.Vertices, e2.Vertices) {
+	for _, e1 := range g.Edges.Slice {
+		for _, e2 := range g.Edges.Slice {
+			if e1.Name != e2.Name && !e2.containedIn(removed.Slice) && Subset(e1.Vertices, e2.Vertices) {
 				ops = append(ops, edgeOp{subedge: e1, parent: e2})
 				removed.append(e1)
 				continue OUTER
@@ -63,7 +64,7 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
 	var edges Edges
 
-	for _, e1 := range g.Edges {
+	for _, e1 := range g.Edges.Slice {
 		var vertices []int
 		//	fmt.Println("Working on edge ", e1)
 	INNER:
@@ -120,8 +121,8 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 }
 
 func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
-	if e.parent.containedIn(n.Cover) {
-		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: []Edge{e.subedge}})
+	if e.parent.containedIn(n.Cover.Slice) {
+		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: Edges{Slice: []Edge{e.subedge}}})
 		return n, true // Won't work without deep copy
 	}
 
@@ -160,8 +161,8 @@ Type Collapse
 func (g Graph) getType(vertex int) *big.Int {
 	output := new(big.Int)
 
-	for i := range g.Edges {
-		if Mem(g.Edges[i].Vertices, vertex) {
+	for i := range g.Edges.Slice {
+		if Mem(g.Edges.Slice[i].Vertices, vertex) {
 			output.SetBit(output, i, 1)
 		}
 	}
@@ -197,7 +198,7 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 
 	var newEdges Edges
 
-	for _, e := range g.Edges {
+	for _, e := range g.Edges.Slice {
 		var vertices []int
 		for _, v := range e.Vertices {
 			vertices = append(vertices, substituteMap[v])

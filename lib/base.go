@@ -77,7 +77,8 @@ func Mem(as []int, b int) bool {
 }
 
 func Diff(a, b []int) []int {
-	var output []int
+	//var output []int
+	output := make([]int, 0, len(a))
 
 OUTER:
 	for _, n := range a {
@@ -126,13 +127,13 @@ OUTER:
 
 // }
 
-func DiffEdges(a []Edge, e Edge) []Edge {
-	var output []Edge
+func DiffEdges(a Edges, e Edge) Edges {
+	var output Edges
 
-	for _, n := range a {
+	for _, n := range a.Slice {
 		length := len(Inter(n.Vertices, e.Vertices))
 		if (length > 0) && (length < (len(e.Vertices))) {
-			output = append(output, n)
+			output.append(n)
 		}
 	}
 

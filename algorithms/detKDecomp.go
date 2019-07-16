@@ -38,24 +38,24 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 
 	}
 
-	if len(H.Edges) == 0 {
+	if len(H.Edges.Slice) == 0 {
 		return Decomp{Graph: H, Root: children}
 	}
 	return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges, Children: []Node{children}}}
 }
 
 // TODO add caching to this
-func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []Edge, Sp []Special) Decomp {
+func (d DetKDecomp) findDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
-	if len(H.Edges) <= K && len(Sp) <= 2 {
+	if len(H.Edges.Slice) <= K && len(Sp) <= 2 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 
-	gen := GetCombin(len(d.Graph.Edges), K)
+	gen := GetCombin(len(d.Graph.Edges.Slice), K)
 
 OUTER:
 	for gen.HasNext() {
@@ -65,11 +65,11 @@ OUTER:
 
 		verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 		// check if sep covers the intersection of oldsep and H
-		if !Subset(Inter(Vertices(oldSep), verticesCurrent), Vertices(sep)) {
+		if !Subset(Inter(oldSep.Vertices(), verticesCurrent), sep.Vertices()) {
 			continue
 		}
 		//check if sep "makes some progress" into separating H
-		if len(Inter(Vertices(sep), Diff(verticesCurrent, Vertices(oldSep)))) == 0 {
+		if len(Inter(sep.Vertices(), Diff(verticesCurrent, oldSep.Vertices()))) == 0 {
 			continue
 		}
 
@@ -103,14 +103,14 @@ OUTER:
 			subtrees = append(subtrees, decomp.Root)
 		}
 		compCache.succ = append(compCache.succ, H.Edges.Hash())
-		bag := Inter(Vertices(sep), append(Vertices(oldSep), H.Vertices()...))
+		bag := Inter(sep.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
 		return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sep, Children: subtrees}}
 	}
 
 	return Decomp{} // Reject if no separator could be found
 }
 
-func parallelSearchDetK(H Graph, Sp []Special, edges []Edge, result *[]int, generators []*CombinationIterator, oldSep []Edge) {
+func parallelSearchDetK(H Graph, Sp []Special, edges Edges, result *[]int, generators []*CombinationIterator, oldSep Edges) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -143,7 +143,7 @@ func parallelSearchDetK(H Graph, Sp []Special, edges []Edge, result *[]int, gene
 
 }
 
-func workerDetK(workernum int, H Graph, Sp []Special, edges []Edge, found chan []int, gen *CombinationIterator, wg *sync.WaitGroup, finished *bool, oldSep []Edge) {
+func workerDetK(workernum int, H Graph, Sp []Special, edges Edges, found chan []int, gen *CombinationIterator, wg *sync.WaitGroup, finished *bool, oldSep Edges) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
@@ -170,21 +170,21 @@ func workerDetK(workernum int, H Graph, Sp []Special, edges []Edge, found chan [
 	}
 }
 
-func (d DetKDecomp) findDecompParallelFull(K int, H Graph, oldSep []Edge, Sp []Special) Decomp {
+func (d DetKDecomp) findDecompParallelFull(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
-	if len(H.Edges) <= K && len(Sp) <= 2 {
+	if len(H.Edges.Slice) <= K && len(Sp) <= 2 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 
-	var sep []Edge
+	var sep Edges
 	var subtrees []Node
 	var decomposed = false
 
-	generators := SplitCombin(len(d.Graph.Edges), K, runtime.GOMAXPROCS(-1), false)
+	generators := SplitCombin(len(d.Graph.Edges.Slice), K, runtime.GOMAXPROCS(-1), false)
 
 OUTER:
 	for !decomposed {
@@ -209,7 +209,7 @@ OUTER:
 
 		ch := make(chan Decomp)
 		for i := range comps {
-			go func(K int, i int, comps []Graph, compsSp [][]Special, sep []Edge) {
+			go func(K int, i int, comps []Graph, compsSp [][]Special, sep Edges) {
 				ch <- d.findDecompParallelFull(K, comps[i], sep, compsSp[i])
 			}(K, i, comps, compsSp, sep)
 		}
@@ -231,26 +231,26 @@ OUTER:
 		decomposed = true
 	}
 
-	bag := Inter(Vertices(sep), append(Vertices(oldSep), H.Vertices()...))
+	bag := Inter(sep.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
 	return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sep, Children: subtrees}}
 
 }
 
-func (d DetKDecomp) findDecompParallelSearch(K int, H Graph, oldSep []Edge, Sp []Special) Decomp {
+func (d DetKDecomp) findDecompParallelSearch(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
-	if len(H.Edges) <= K && len(Sp) <= 2 {
+	if len(H.Edges.Slice) <= K && len(Sp) <= 2 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 
-	var sep []Edge
+	var sep Edges
 	var subtrees []Node
 	var decomposed = false
 
-	generators := SplitCombin(len(d.Graph.Edges), K, runtime.GOMAXPROCS(-1), false)
+	generators := SplitCombin(len(d.Graph.Edges.Slice), K, runtime.GOMAXPROCS(-1), false)
 
 OUTER:
 	for !decomposed {
@@ -290,22 +290,22 @@ OUTER:
 		decomposed = true
 	}
 
-	bag := Inter(Vertices(sep), append(Vertices(oldSep), H.Vertices()...))
+	bag := Inter(sep.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
 	return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sep, Children: subtrees}}
 
 }
 
-func (d DetKDecomp) findDecompParallelDecomp(K int, H Graph, oldSep []Edge, Sp []Special) Decomp {
+func (d DetKDecomp) findDecompParallelDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
-	if len(H.Edges) <= K && len(Sp) <= 2 {
+	if len(H.Edges.Slice) <= K && len(Sp) <= 2 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 
-	gen := GetCombin(len(d.Graph.Edges), K)
+	gen := GetCombin(len(d.Graph.Edges.Slice), K)
 
 OUTER:
 	for gen.HasNext() {
@@ -314,11 +314,11 @@ OUTER:
 
 		verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 		// check if sep covers the intersection of oldsep and H
-		if !Subset(Inter(Vertices(oldSep), verticesCurrent), Vertices(sep)) {
+		if !Subset(Inter(oldSep.Vertices(), verticesCurrent), sep.Vertices()) {
 			continue
 		}
 		//check if sep "makes some progress" into separating H
-		if len(Inter(Vertices(sep), Diff(verticesCurrent, Vertices(oldSep)))) == 0 {
+		if len(Inter(sep.Vertices(), Diff(verticesCurrent, oldSep.Vertices()))) == 0 {
 			continue
 		}
 
@@ -330,7 +330,7 @@ OUTER:
 		var subtrees []Node
 		ch := make(chan Decomp)
 		for i := range comps {
-			go func(K int, i int, comps []Graph, compsSp [][]Special, sep []Edge) {
+			go func(K int, i int, comps []Graph, compsSp [][]Special, sep Edges) {
 				ch <- d.findDecompParallelDecomp(K, comps[i], sep, compsSp[i])
 			}(K, i, comps, compsSp, sep)
 		}
@@ -348,7 +348,7 @@ OUTER:
 			subtrees = append(subtrees, decomp.Root)
 		}
 
-		bag := Inter(Vertices(sep), append(Vertices(oldSep), H.Vertices()...))
+		bag := Inter(sep.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
 		return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sep, Children: subtrees}}
 	}
 
@@ -357,17 +357,17 @@ OUTER:
 
 func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
 	cache = make(map[uint32]CompCache)
-	return d.findDecomp(K, d.Graph, []Edge{}, Sp)
+	return d.findDecomp(K, d.Graph, Edges{}, Sp)
 }
 
 func (d DetKDecomp) FindHDParallelFull(K int, Sp []Special) Decomp {
-	return d.findDecompParallelFull(K, d.Graph, []Edge{}, Sp)
+	return d.findDecompParallelFull(K, d.Graph, Edges{}, Sp)
 }
 
 func (d DetKDecomp) FindHDParallelSearch(K int, Sp []Special) Decomp {
-	return d.findDecompParallelSearch(K, d.Graph, []Edge{}, Sp)
+	return d.findDecompParallelSearch(K, d.Graph, Edges{}, Sp)
 }
 
 func (d DetKDecomp) FindHDParallelDecomp(K int, Sp []Special) Decomp {
-	return d.findDecompParallelDecomp(K, d.Graph, []Edge{}, Sp)
+	return d.findDecompParallelDecomp(K, d.Graph, Edges{}, Sp)
 }

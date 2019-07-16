@@ -31,10 +31,8 @@ func check(e error) {
 
 }
 
-//BalancedFactor is used by balsep algorithms to determine how strict the balancedness check should be (default 2)
-var BalancedFactor int
-
-var hinge bool
+var Version string
+var Build string
 
 func main() {
 
@@ -51,7 +49,7 @@ func main() {
 	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
 	gyö := flag.Bool("g", false, "perform a GYÖ reduct and show the resulting graph")
 	typeC := flag.Bool("t", false, "perform a Type Collapse and show the resulting graph")
-	hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
+	//hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
 	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
 
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
@@ -69,22 +67,21 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	hinge = *hingeFlag
-
 	logActive(*logging)
 
-	BalancedFactor = *balanceFactorFlag
+	BalancedFactor := *balanceFactorFlag
 
 	runtime.GOMAXPROCS(*numCPUs)
 
+	// Outpt usage message if graph and width not specified
 	if *graphPath == "" || *width <= 0 {
-		fmt.Fprintf(os.Stderr, "Usage of %s: \n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage of BalancedGo (v%s, %s): \n", Version, Build)
 		flag.VisitAll(func(f *flag.Flag) {
 			if f.Name != "width" && f.Name != "graph" {
 				return
 			}
-			s := fmt.Sprintf("%T", f.Value)
-			fmt.Printf("  -%s \t%s\n", f.Name, s[6:len(s)-5])
+			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
+			fmt.Printf("  -%-10s \t<%s>\n", f.Name, s[6:len(s)-5])
 			fmt.Println("\t" + f.Usage)
 		})
 
@@ -93,8 +90,12 @@ func main() {
 			if f.Name == "width" || f.Name == "graph" {
 				return
 			}
-			s := fmt.Sprintf("%T", f.Value)
-			fmt.Printf("  -%s \t%s\n", f.Name, s[6:len(s)-5])
+			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
+			if s[6:len(s)-5] != "bool" {
+				fmt.Printf("  -%-10s \t<%s>\n", f.Name, s[6:len(s)-5])
+			} else {
+				fmt.Printf("  -%-10s \n", f.Name)
+			}
 			fmt.Println("\t" + f.Usage)
 		})
 
@@ -112,7 +113,7 @@ func main() {
 		fmt.Println("\n\n", *graphPath)
 		fmt.Println("Graph after Type Collapse:")
 		reducedGraph, _, count = parsedGraph.TypeCollapse()
-		for _, e := range reducedGraph.Edges {
+		for _, e := range reducedGraph.Edges.Slice {
 			fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 		}
 		fmt.Println("Removed ", count, " vertex/vertices")
@@ -259,16 +260,16 @@ func main() {
 			decomp = global.FindGHD(*width)
 		case 5:
 			decomp = local.FindGHDParallelFull(*width)
-			decomp.RestoreSubedges()
+			//decomp.RestoreSubedges()
 		case 6:
 			decomp = local.FindGHDParallelSearch(*width)
-			decomp.RestoreSubedges()
+			//decomp.RestoreSubedges()
 		case 7:
 			decomp = local.FindGHDParallelComp(*width)
-			decomp.RestoreSubedges()
+			//decomp.RestoreSubedges()
 		case 8:
 			decomp = local.FindGHD(*width)
-			decomp.RestoreSubedges()
+		//	decomp.RestoreSubedges()
 		default:
 			panic("Not a valid choice")
 		}
@@ -304,8 +305,8 @@ func main() {
 
 	//fmt.Printf("parsedGraph %+v\n", parsedGraph)
 
-	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges))
-	output = output + fmt.Sprintf("%v;", len(Vertices(parsedGraph.Edges)))
+	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges.Slice))
+	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges.Vertices()))
 	output = output + fmt.Sprintf("%v;", *width)
 
 	// Parallel Execution FULL

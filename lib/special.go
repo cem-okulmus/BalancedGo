@@ -8,7 +8,7 @@ import (
 // A Special Edge is a collection of edges, seen as one edge
 type Special struct {
 	Vertices []int
-	Edges    []Edge
+	Edges    Edges
 }
 
 func (s Special) String() string {
@@ -47,7 +47,7 @@ OUTER:
 				continue OUTER
 			}
 		}
-		if Contains(s.Edges, a) {
+		if s.Edges.Contains(a) {
 			return true
 		}
 	}

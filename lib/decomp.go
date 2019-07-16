@@ -36,7 +36,7 @@ func (d Decomp) connected(vert int) bool {
 	// 	log.Printf("%v ,", e)
 	// }
 
-	g, _, _ := Graph{Edges: edgesContaining}.GetComponents([]Edge{}, []Special{})
+	g, _, _ := Graph{Edges: edgesContaining}.GetComponents(Edges{}, []Special{})
 
 	// log.Printf("Components of Node %s\n", m[vert])
 	// for _, c := range g {
@@ -60,7 +60,7 @@ func (d Decomp) Correct(g Graph) bool {
 	}
 
 	// Every edge has to be covered
-	for _, e := range d.Graph.Edges {
+	for _, e := range d.Graph.Edges.Slice {
 		if !d.Root.coversEdge(e) {
 			fmt.Printf("Edge %v isn't covered", e)
 			return false
@@ -68,7 +68,7 @@ func (d Decomp) Correct(g Graph) bool {
 	}
 
 	//connectedness
-	for _, i := range Vertices(d.Graph.Edges) {
+	for _, i := range d.Graph.Edges.Vertices() {
 		if !d.connected(i) {
 			fmt.Printf("Node %v doesn't span connected subtree\n", m[i])
 			return false
@@ -93,8 +93,8 @@ func (d Decomp) CheckWidth() int {
 	for len(current) > 0 {
 		children := []Node{}
 		for _, n := range current {
-			if len(n.Cover) > output {
-				output = len(n.Cover)
+			if len(n.Cover.Slice) > output {
+				output = len(n.Cover.Slice)
 			}
 
 			for _, c := range n.Children {
@@ -122,10 +122,10 @@ func (d *Decomp) Blowup() Decomp {
 			nchildren := n.Children
 			for _, c := range nchildren {
 				// fmt.Println("Cover prior: ", c.Cover)
-				c.Cover = removeDuplicateEdges(append(c.Cover, lambda...)) // merge lambda with direct ancestor
+				c.Cover = removeDuplicateEdges(append(c.Cover.Slice, lambda.Slice...)) // merge lambda with direct ancestor
 
 				// fmt.Println("Cover after: ", c.Cover)
-				c.Bag = Vertices(c.Cover)      // fix the bag
+				c.Bag = c.Cover.Vertices()     // fix the bag
 				children = append(children, c) // build up the next level of the tree
 			}
 			n.Children = nchildren
