@@ -47,23 +47,24 @@ func (d Decomp) connected(vert int) bool {
 }
 
 func (d Decomp) Correct(g Graph) bool {
+	output := true
 
 	//must be a decomp of same graph
 	if !reflect.DeepEqual(d.Graph.Edges, g.Edges) {
-		return false
+		output = false
 	}
 
 	//Every bag must be subset of the lambda label
 	if !d.Root.bagSubsets() {
 		fmt.Printf("Bags not subsets of edge labels")
-		return false
+		output = false
 	}
 
 	// Every edge has to be covered
 	for _, e := range d.Graph.Edges.Slice {
 		if !d.Root.coversEdge(e) {
 			fmt.Printf("Edge %v isn't covered", e)
-			return false
+			output = false
 		}
 	}
 
@@ -71,8 +72,9 @@ func (d Decomp) Correct(g Graph) bool {
 	for _, i := range d.Graph.Edges.Vertices() {
 		if !d.connected(i) {
 			fmt.Printf("Node %v doesn't span connected subtree\n", m[i])
-			return false
+			output = false
 		}
+
 	}
 
 	//special condition (optionally)
@@ -81,7 +83,7 @@ func (d Decomp) Correct(g Graph) bool {
 		fmt.Println("SCV found!. Not a valid hypertree!")
 	}
 
-	return true
+	return output
 }
 
 func (d Decomp) CheckWidth() int {

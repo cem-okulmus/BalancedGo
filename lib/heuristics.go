@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"log"
 	"math"
 	"math/rand"
 	"sort"
@@ -89,8 +88,6 @@ func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
 func getMinDistances(vertices []int, edges Edges) ([][]int, map[int]int) {
 	var output [][]int
 	order := make(map[int]int)
-
-	log.Println("Vertices: ", len(vertices))
 
 	for i, n := range vertices {
 		order[n] = i

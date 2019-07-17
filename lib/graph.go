@@ -57,11 +57,12 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	var outputS [][]Special
 
 	var vertices = make(map[int]*disjoint.Element)
-	var comps = make(map[*disjoint.Element]Edges)
+	var comps = make(map[*disjoint.Element][]Edge)
 	var compsSp = make(map[*disjoint.Element][]Special)
 
 	balsepVert := sep.Vertices()
 	balSepCache := make(map[int]bool, len(balsepVert))
+	//fmt.Println("Current separator ", Edge{Vertices: balsepVert})
 	for _, v := range balsepVert {
 		balSepCache[v] = true
 	}
@@ -73,25 +74,46 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	// Merge together the connected components
 	for _, e := range g.Edges.Slice {
-		//actualVertices := Diff(e.Vertices, balsepVert)
-		for i := 0; i < len(e.Vertices)-1 && i+1 < len(vertices); i++ {
-			if balSepCache[e.Vertices[i]] || balSepCache[e.Vertices[i+1]] {
+		//	fmt.Println("Have edge ", Edge{Vertices: e.Vertices})
+		// actualVertices := Diff(e.Vertices, balsepVert)
+		// for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
+		// 	disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
+		// }
+		for i := 0; i < len(e.Vertices); i++ {
+			if balSepCache[e.Vertices[i]] {
+
 				continue
 			}
-			disjoint.Union(vertices[e.Vertices[i]], vertices[e.Vertices[i+1]])
+			for j := i + 1; j < len(e.Vertices); j++ {
+				if balSepCache[e.Vertices[j]] {
+					continue
+				}
+				//			fmt.Println("Union of ", m[e.Vertices[i]], "and ", m[e.Vertices[j]])
+				disjoint.Union(vertices[e.Vertices[i]], vertices[e.Vertices[j]])
+
+				break
+			}
 		}
 	}
 
 	for _, s := range Sp {
-		// actualVertices := Diff(s.Vertices, balsepVert)
-		// for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
+		//actualVertices := Diff(s.Vertices, balsepVert)
+		// for i := 0; i < len(actualVertices)-1 && i+1 < len(actualVertices); i++ {
 		// 	disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		// }
-		for i := 0; i < len(s.Vertices)-1 && i+1 < len(vertices); i++ {
-			if balSepCache[s.Vertices[i]] || balSepCache[s.Vertices[i+1]] {
+
+		for i := 0; i < len(s.Vertices)-1; i++ {
+			if balSepCache[s.Vertices[i]] {
 				continue
 			}
-			disjoint.Union(vertices[s.Vertices[i]], vertices[s.Vertices[i+1]])
+			for j := i + 1; j < len(s.Vertices); j++ {
+				if balSepCache[s.Vertices[j]] {
+					continue
+				}
+
+				disjoint.Union(vertices[s.Vertices[i]], vertices[s.Vertices[j]])
+				break
+			}
 		}
 
 	}
@@ -104,20 +126,27 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		// 	edges.append(e) // = append(comps[vertices[actualVertices[0]].Find()], e)
 		// }
 		var vertexRep int
-		var found bool
+		found := false
 		for _, v := range e.Vertices {
 			if balSepCache[v] {
 				continue
 			}
 			vertexRep = v
+			found = true
 			break
 		}
 		if !found {
 			continue
 		}
 
-		edges := comps[vertices[vertexRep].Find()]
-		edges.append(e) // = append(comps[vertices[actualVertices[0]].Find()], e)
+		slice, ok := comps[vertices[vertexRep].Find()]
+		if !ok {
+			newslice := make([]Edge, 0, len(g.Edges.Slice))
+			comps[vertices[vertexRep].Find()] = newslice
+			slice = newslice
+		}
+
+		comps[vertices[vertexRep].Find()] = append(slice, e)
 
 	}
 	var isolatedSp []Special
@@ -129,12 +158,13 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		// 	isolatedSp = append(isolatedSp, s)
 		// }
 		var vertexRep int
-		var found bool
+		found := false
 		for _, v := range s.Vertices {
 			if balSepCache[v] {
 				continue
 			}
 			vertexRep = v
+			found = true
 			break
 		}
 		if !found {
@@ -142,13 +172,22 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			continue
 		}
 
-		compsSp[vertices[vertexRep].Find()] = append(compsSp[vertices[vertexRep].Find()], s)
+		//compsSp[vertices[vertexRep].Find()] = append(compsSp[vertices[vertexRep].Find()], s)
+
+		slice, ok := compsSp[vertices[vertexRep].Find()]
+		if !ok {
+			newslice := make([]Special, 0, len(Sp))
+			compsSp[vertices[vertexRep].Find()] = newslice
+			slice = newslice
+		}
+
+		compsSp[vertices[vertexRep].Find()] = append(slice, s)
 
 	}
 
 	// Store the components as graphs
 	for k, _ := range comps {
-		g := Graph{Edges: comps[k]}
+		g := Graph{Edges: Edges{Slice: comps[k]}}
 		outputG = append(outputG, g)
 		outputS = append(outputS, compsSp[k])
 
@@ -172,7 +211,6 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	return outputG, outputS, vertices
 }
-
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output Edges
 
