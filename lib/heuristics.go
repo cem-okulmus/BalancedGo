@@ -12,23 +12,23 @@ import (
 func GetMSCOrder(edges Edges) Edges {
 
 	rand.Seed(time.Now().UTC().UnixNano())
-	if len(edges.Slice) <= 1 {
+	if edges.Len() <= 1 {
 		return edges
 	}
 	var selected Edges
-	chosen := make([]bool, len(edges.Slice))
+	chosen := make([]bool, edges.Len())
 
 	//randomly select last edge in the ordering
-	i := rand.Intn(len(edges.Slice))
+	i := rand.Intn(edges.Len())
 	chosen[i] = true
-	selected.append(edges.Slice[i])
+	selected.append(edges.Slice()[i])
 
-	for len(selected.Slice) < len(edges.Slice) {
+	for selected.Len() < edges.Len() {
 		var candidates []int
 		maxcard := 0
 
-		for current := range edges.Slice {
-			currentCard := edges.Slice[current].numNeighboursOrder(edges, chosen)
+		for current := range edges.Slice() {
+			currentCard := edges.Slice()[current].numNeighboursOrder(edges, chosen)
 			if !chosen[current] && currentCard >= maxcard {
 				if currentCard > maxcard {
 					candidates = []int{}
@@ -43,7 +43,7 @@ func GetMSCOrder(edges Edges) Edges {
 		nextInOrder := candidates[rand.Intn(len(candidates))]
 		//nextInOrder := candidates[0]
 
-		selected.append(edges.Slice[nextInOrder])
+		selected.append(edges.Slice()[nextInOrder])
 		chosen[nextInOrder] = true
 	}
 
@@ -104,11 +104,11 @@ func getMinDistances(vertices []int, edges Edges) ([][]int, map[int]int) {
 		output = append(output, newRow)
 	}
 
-	for _, e := range edges.Slice {
+	for _, e := range edges.Slice() {
 		output = addEdgeDistances(order, output, e)
 	}
 
-	for j := 0; j < len(edges.Slice); j++ {
+	for j := 0; j < edges.Len(); j++ {
 		changed := false
 		for k := range vertices {
 			for l := range vertices {
@@ -154,15 +154,15 @@ func diffDistances(old, new [][]int) int {
 }
 
 func GetMaxSepOrder(edges Edges) Edges {
-	if len(edges.Slice) <= 1 {
+	if edges.Len() <= 1 {
 		return edges
 	}
 	vertices := edges.Vertices()
-	weights := make([]int, len(edges.Slice))
+	weights := make([]int, edges.Len())
 
 	initialDiff, order := getMinDistances(vertices, edges)
 
-	for i, e := range edges.Slice {
+	for i, e := range edges.Slice() {
 		edgesWihoutE := DiffEdges(edges, e)
 		newDiff, _ := getMinDistances(vertices, edgesWihoutE)
 		newDiffPrep := addEdgeDistances(order, newDiff, e)
@@ -185,9 +185,9 @@ func edgeDegree(edges Edges, edge Edge) int {
 }
 
 func GetDegreeOrder(edges Edges) Edges {
-	if len(edges.Slice) <= 1 {
+	if edges.Len() <= 1 {
 		return edges
 	}
-	sort.Slice(edges.Slice, func(i, j int) bool { return edgeDegree(edges, edges.Slice[i]) > edgeDegree(edges, edges.Slice[j]) })
+	sort.Slice(edges.Slice, func(i, j int) bool { return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j]) })
 	return edges
 }

@@ -38,25 +38,29 @@ func (e Edge) String() string {
 
 // A slice of Edge, defined for the use of the sort interface
 type Edges struct {
-	Slice    []Edge
+	slice    []Edge
 	vertices []int
 }
 
+func (e Edges) Slice() []Edge {
+	return e.slice
+}
+
 func (s Edges) Len() int {
-	return len(s.Slice)
+	return len(s.slice)
 }
 func (s Edges) Swap(i, j int) {
-	s.Slice[i], s.Slice[j] = s.Slice[j], s.Slice[i]
+	s.slice[i], s.slice[j] = s.slice[j], s.slice[i]
 }
 
 func (s Edges) Less(i, j int) bool {
-	if len(s.Slice[i].Vertices) < len(s.Slice[j].Vertices) {
+	if len(s.slice[i].Vertices) < len(s.slice[j].Vertices) {
 		return true
-	} else if len(s.Slice[i].Vertices) > len(s.Slice[j].Vertices) {
+	} else if len(s.slice[i].Vertices) > len(s.slice[j].Vertices) {
 		return false
 	} else {
-		for k := 0; k < len(s.Slice[i].Vertices); k++ {
-			if s.Slice[i].Vertices[k] < s.Slice[j].Vertices[k] {
+		for k := 0; k < len(s.slice[i].Vertices); k++ {
+			if s.slice[i].Vertices[k] < s.slice[j].Vertices[k] {
 				return true
 			}
 		}
@@ -64,27 +68,32 @@ func (s Edges) Less(i, j int) bool {
 	return false
 }
 
-func (s *Edges) append(e Edge) {
-	s.Slice = append(s.Slice, e)
+func (s *Edges) append(es ...Edge) {
+	for _, e := range es {
+		s.slice = append(s.slice, e)
+	}
+	if len(s.vertices) > 0 {
+		s.vertices = s.vertices[:0] // do this to preserve allocated memory
+	}
 }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elementsSlice []Edge) Edges {
-	elements := Edges{Slice: elementsSlice}
+	elements := Edges{slice: elementsSlice}
 	sort.Sort(elements)
 
 	j := 0
-	for i := 1; i < len(elements.Slice); i++ {
-		if reflect.DeepEqual(elements.Slice[j].Vertices, elements.Slice[i].Vertices) {
+	for i := 1; i < len(elements.Slice()); i++ {
+		if reflect.DeepEqual(elements.slice[j].Vertices, elements.slice[i].Vertices) {
 			continue
 		}
 		j++
 
 		// only set what is required
-		elements.Slice[j] = elements.Slice[i]
+		elements.slice[j] = elements.slice[i]
 	}
 
-	return Edges{Slice: elements.Slice[:j+1]}
+	return Edges{slice: elements.slice[:j+1]}
 }
 
 // Unnessarily adds empty edge
@@ -111,7 +120,7 @@ func (e Edge) subedges() []Edge {
 func getDegree(edges Edges, node int) int {
 	var output int
 
-	for _, e := range edges.Slice {
+	for _, e := range edges.Slice() {
 		if Mem(e.Vertices, node) {
 			output++
 		}
@@ -140,7 +149,7 @@ OUTER:
 
 func (l Edges) Contains(v int) bool {
 
-	for _, e := range l.Slice {
+	for _, e := range l.Slice() {
 		for _, a := range e.Vertices {
 			if a == v {
 				return true
@@ -204,8 +213,8 @@ func (e Edge) numIndicent(l []Edge) int {
 func (e Edge) numNeighboursOrder(l Edges, remaining []bool) int {
 	output := 0
 
-	for i := range l.Slice {
-		if remaining[i] && e.areNeighbours(l.Slice[i]) {
+	for i := range l.Slice() {
+		if remaining[i] && e.areNeighbours(l.Slice()[i]) {
 			output++
 		}
 	}
@@ -236,7 +245,7 @@ OUTER:
 func (e *Edges) Vertices() []int {
 	if len(e.vertices) == 0 {
 		var output []int
-		for _, otherE := range e.Slice {
+		for _, otherE := range e.Slice() {
 			output = append(output, otherE.Vertices...)
 		}
 		e.vertices = RemoveDuplicates(output)

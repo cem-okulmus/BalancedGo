@@ -16,9 +16,9 @@ type Graph struct {
 func (g Graph) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
-	for i, e := range g.Edges.Slice {
+	for i, e := range g.Edges.Slice() {
 		buffer.WriteString(e.String())
-		if i != len(g.Edges.Slice)-1 {
+		if i != g.Edges.Len()-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -32,7 +32,7 @@ func (g *Graph) Vertices() []int {
 		return g.vertices
 	}
 	var output []int
-	for _, otherE := range g.Edges.Slice {
+	for _, otherE := range g.Edges.Slice() {
 		output = append(output, otherE.Vertices...)
 	}
 	g.vertices = RemoveDuplicates(output)
@@ -42,7 +42,7 @@ func (g *Graph) Vertices() []int {
 func GetSubset(edges Edges, s []int) Edges {
 	var output Edges
 	for _, i := range s {
-		output.append(edges.Slice[i])
+		output.append(edges.Slice()[i])
 	}
 	return output
 }
@@ -73,7 +73,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	}
 
 	// Merge together the connected components
-	for _, e := range g.Edges.Slice {
+	for _, e := range g.Edges.Slice() {
 		//	fmt.Println("Have edge ", Edge{Vertices: e.Vertices})
 		// actualVertices := Diff(e.Vertices, balsepVert)
 		// for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
@@ -119,7 +119,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	}
 
 	//sort each edge and special edge to a corresponding component
-	for _, e := range g.Edges.Slice {
+	for _, e := range g.Edges.Slice() {
 		//actualVertices := Diff(e.Vertices, balsepVert)
 		// if len(actualVertices) > 0 {
 		// 	edges := comps[vertices[actualVertices[0]].Find()]
@@ -141,7 +141,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 		slice, ok := comps[vertices[vertexRep].Find()]
 		if !ok {
-			newslice := make([]Edge, 0, len(g.Edges.Slice))
+			newslice := make([]Edge, 0, g.Edges.Len())
 			comps[vertices[vertexRep].Find()] = newslice
 			slice = newslice
 		}
@@ -187,7 +187,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	// Store the components as graphs
 	for k, _ := range comps {
-		g := Graph{Edges: Edges{Slice: comps[k]}}
+		g := Graph{Edges: Edges{slice: comps[k]}}
 		outputG = append(outputG, g)
 		outputS = append(outputS, compsSp[k])
 
@@ -214,7 +214,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output Edges
 
-	for _, e := range edges.Slice {
+	for _, e := range edges.Slice() {
 		if len(Inter(e.Vertices, vertices)) > 0 {
 			output.append(e)
 		}
@@ -227,7 +227,7 @@ func FilterVertices(edges Edges, vertices []int) Edges {
 func FilterVerticesStrict(edges Edges, vertices []int) Edges {
 	var output Edges
 
-	for _, e := range edges.Slice {
+	for _, e := range edges.Slice() {
 		if Subset(e.Vertices, vertices) {
 			output.append(e)
 		}
@@ -240,7 +240,7 @@ func FilterVerticesStrict(edges Edges, vertices []int) Edges {
 func CutEdges(edges Edges, vertices []int) Edges {
 	var output Edges
 
-	for _, e := range edges.Slice {
+	for _, e := range edges.Slice() {
 		inter := Inter(e.Vertices, vertices)
 		if len(inter) > 0 {
 			output.append(Edge{Vertices: inter})
@@ -259,7 +259,7 @@ func (g Graph) CheckBalancedSep(sep Edges, sp []Special, balancedFactor int) boo
 	comps, compSps, _ := g.GetComponents(sep, sp)
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
-		if len(comps[i].Edges.Slice)+len(compSps[i]) > (((len(g.Edges.Slice) + len(sp)) * (balancedFactor - 1)) / balancedFactor) {
+		if comps[i].Edges.Len()+len(compSps[i]) > (((g.Edges.Len() + len(sp)) * (balancedFactor - 1)) / balancedFactor) {
 			//	log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], len(comps[i].Edges)+len(compSps[i]), ((len(g.Edges) + len(sp)) / 2))
 			return false
 		}
@@ -303,17 +303,17 @@ func (g Graph) CheckNextSep(sep Edges, oldSep Edges, Sp []Special) bool {
 func (g Graph) ComputeSubEdges(K int) Graph {
 	var output = g
 
-	for _, e := range g.Edges.Slice {
+	for _, e := range g.Edges.Slice() {
 		edgesWihoutE := DiffEdges(g.Edges, e)
-		gen := GetCombin(len(edgesWihoutE.Slice), K)
+		gen := GetCombin(edgesWihoutE.Len(), K)
 		for gen.HasNext() {
 			subset := GetSubset(edgesWihoutE, gen.Combination)
 			var tuple = subset.Vertices()
-			output.Edges.Slice = append(output.Edges.Slice, Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
+			output.Edges.append(Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
 			gen.Confirm()
 		}
 	}
 
-	output.Edges = removeDuplicateEdges(output.Edges.Slice)
+	output.Edges = removeDuplicateEdges(output.Edges.Slice())
 	return output
 }

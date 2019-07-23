@@ -43,9 +43,9 @@ func (n Node) stringIdent(i int) string {
 	buffer.WriteString(n.printBag())
 
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
-	for i, e := range n.Cover.Slice {
+	for i, e := range n.Cover.Slice() {
 		buffer.WriteString(e.String())
-		if i != len(n.Cover.Slice)-1 {
+		if i != n.Cover.Len()-1 {
 			buffer.WriteString(", ")
 		}
 	}
@@ -107,7 +107,7 @@ func (n Node) getConGraph(num int) Edges {
 
 	for i, c := range n.Children {
 		edgesChild := c.getConGraph((num + 1 + i))
-		output.Slice = append(output.Slice, edgesChild.Slice...)
+		output.append(edgesChild.Slice()...)
 	}
 
 	return output
@@ -240,8 +240,8 @@ func (n Node) noSCViolation() bool {
 func (n *Node) RestoreEdges(edges Edges) Node {
 	var nuCover Edges
 
-	for _, e2 := range n.Cover.Slice {
-		for _, e := range edges.Slice {
+	for _, e2 := range n.Cover.Slice() {
+		for _, e := range edges.Slice() {
 			if Subset(e2.Vertices, e.Vertices) {
 				nuCover.append(e)
 			}

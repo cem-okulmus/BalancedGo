@@ -51,7 +51,7 @@ func main() {
 	typeC := flag.Bool("t", false, "perform a Type Collapse and show the resulting graph")
 	//hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
 	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
-
+	bench := flag.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
 	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
 
@@ -67,6 +67,9 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	if *bench { // no logging output when running benchmarks
+		*logging = false
+	}
 	logActive(*logging)
 
 	BalancedFactor := *balanceFactorFlag
@@ -110,18 +113,20 @@ func main() {
 
 	if *typeC {
 		count := 0
-		fmt.Println("\n\n", *graphPath)
-		fmt.Println("Graph after Type Collapse:")
 		reducedGraph, _, count = parsedGraph.TypeCollapse()
-		for _, e := range reducedGraph.Edges.Slice {
-			fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
-		}
-		fmt.Println("Removed ", count, " vertex/vertices")
 		parsedGraph = reducedGraph
+		if !*bench { // be silent when benchmarking
+			fmt.Println("\n\n", *graphPath)
+			fmt.Println("Graph after Type Collapse:")
+			for _, e := range reducedGraph.Edges.Slice() {
+				fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
+			}
+			fmt.Println("Removed ", count, " vertex/vertices")
+		}
 	}
 
 	if *gyö {
-		fmt.Println("Graph after GYÖ:")
+
 		var ops []GYÖReduct
 		if *typeC {
 			reducedGraph, ops = reducedGraph.GYÖReduct()
@@ -129,11 +134,13 @@ func main() {
 			reducedGraph, ops = parsedGraph.GYÖReduct()
 		}
 
-		fmt.Println(reducedGraph)
-
-		fmt.Println("Reductions:")
-		fmt.Println(ops)
 		parsedGraph = reducedGraph
+		if !*bench { // be silent when benchmarking
+			fmt.Println("Graph after GYÖ:")
+			fmt.Println(reducedGraph)
+			fmt.Println("Reductions:")
+			fmt.Println(ops)
+		}
 
 	}
 	//fmt.Println("Graph ", parsedGraph)
@@ -162,18 +169,23 @@ func main() {
 	start := time.Now()
 	switch *useHeuristic {
 	case 1:
-		fmt.Print("Using degree ordering")
 		parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
 	case 2:
-		fmt.Print("Using max seperator ordering")
 		parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
 	case 3:
-		fmt.Print("Using MSC ordering")
 		parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
 	}
 	d := time.Now().Sub(start)
 
-	if *useHeuristic > 0 {
+	if *useHeuristic > 0 && !*bench {
+		switch *useHeuristic {
+		case 1:
+			fmt.Print("Using degree ordering")
+		case 2:
+			fmt.Print("Using max seperator ordering")
+		case 3:
+			fmt.Print("Using MSC ordering")
+		}
 		fmt.Println(" as a heuristic")
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
@@ -276,7 +288,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Graph \n", decomp.Graph)
+		fmt.Println("Graph \n", parsedGraph)
 
 		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
@@ -305,7 +317,7 @@ func main() {
 
 	//fmt.Printf("parsedGraph %+v\n", parsedGraph)
 
-	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges.Slice))
+	output = output + fmt.Sprintf("%v;", parsedGraph.Edges.Len())
 	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges.Vertices()))
 	output = output + fmt.Sprintf("%v;", *width)
 

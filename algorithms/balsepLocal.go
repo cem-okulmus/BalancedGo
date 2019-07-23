@@ -45,19 +45,19 @@ func (g BalSepLocal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.Edges.Slice)+len(Sp) <= 2 {
+	if H.Edges.Len()+len(Sp) <= 2 {
 		return baseCaseSmart(g.Graph, H, Sp)
 	}
 
 	//Early termination
-	if len(H.Edges.Slice) <= K && len(Sp) == 1 {
+	if H.Edges.Len() <= K && len(Sp) == 1 {
 		return earlyTermination(H, Sp[0])
 	}
 
 	//find a balanced separator
 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	gen := GetCombinUnextend(len(edges.Slice), K)
+	gen := GetCombinUnextend(edges.Len(), K)
 OUTER:
 	for gen.HasNext() {
 		balsep := GetSubset(edges, gen.Combination)
@@ -131,12 +131,12 @@ func (g BalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.Edges.Slice)+len(Sp) <= 2 {
+	if H.Edges.Len()+len(Sp) <= 2 {
 		return baseCaseSmart(g.Graph, H, Sp)
 	}
 
 	//Early termination
-	if len(H.Edges.Slice) <= K && len(Sp) == 1 {
+	if H.Edges.Len() <= K && len(Sp) == 1 {
 		return earlyTermination(H, Sp[0])
 	}
 	var balsep Edges
@@ -145,7 +145,7 @@ func (g BalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 	var decomposed = false
 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	generators := SplitCombin(len(edges.Slice), K, runtime.GOMAXPROCS(-1), true)
+	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
 	var subtrees []Decomp
 	balsepOrig := balsep
 OUTER:
@@ -229,12 +229,12 @@ func (g BalSepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Deco
 	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.Edges.Slice)+len(Sp) <= 2 {
+	if H.Edges.Len()+len(Sp) <= 2 {
 		return baseCaseSmart(g.Graph, H, Sp)
 	}
 
 	//Early termination
-	if len(H.Edges.Slice) <= K && len(Sp) == 1 {
+	if H.Edges.Len() <= K && len(Sp) == 1 {
 		return earlyTermination(H, Sp[0])
 	}
 	var balsep Edges
@@ -252,7 +252,7 @@ func (g BalSepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Deco
 	// }
 	//generator := GetCombin(len(g.Graph.Edges), K)
 
-	generators := SplitCombin(len(edges.Slice), K, runtime.GOMAXPROCS(-1), true)
+	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
 
 	var subtrees []Decomp
 
@@ -333,19 +333,19 @@ func (g BalSepLocal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if len(H.Edges.Slice)+len(Sp) <= 2 {
+	if H.Edges.Len()+len(Sp) <= 2 {
 		return baseCaseSmart(g.Graph, H, Sp)
 	}
 
 	//Early termination
-	if len(H.Edges.Slice) <= K && len(Sp) == 1 {
+	if H.Edges.Len() <= K && len(Sp) == 1 {
 		return earlyTermination(H, Sp[0])
 	}
 
 	//find a balanced separator
 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	gen := GetCombin(len(edges.Slice), K)
+	gen := GetCombin(edges.Len(), K)
 OUTER:
 	for gen.HasNext() {
 		balsep := GetSubset(edges, gen.Combination)
@@ -388,7 +388,7 @@ OUTER:
 					log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
 
 					subBalSep := searchSubEdge(&g, &H, Sp, balsep, sepSub, K)
-					if len(subBalSep.Slice) == 0 {
+					if subBalSep.Len() == 0 {
 						continue OUTER
 					}
 					balsep = subBalSep

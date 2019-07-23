@@ -130,7 +130,7 @@ OUTER:
 func DiffEdges(a Edges, e Edge) Edges {
 	var output Edges
 
-	for _, n := range a.Slice {
+	for _, n := range a.Slice() {
 		length := len(Inter(n.Vertices, e.Vertices))
 		if (length > 0) && (length < (len(e.Vertices))) {
 			output.append(n)

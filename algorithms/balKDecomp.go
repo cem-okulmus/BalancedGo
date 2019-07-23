@@ -17,7 +17,7 @@ type BalKDecomp struct {
 func (b BalKDecomp) findDecomp(K int, H Graph) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	gen := GetCombin(len(H.Edges.Slice), K)
+	gen := GetCombin(H.Edges.Len(), K)
 
 OUTER:
 	for gen.HasNext() {
@@ -60,7 +60,7 @@ func (b BalKDecomp) findDecompParallelFull(K int, H Graph) Decomp {
 	var balsep Edges
 	var decomposed = false
 	var subtrees []Node
-	generators := SplitCombin(len(H.Edges.Slice), K, runtime.GOMAXPROCS(-1), false)
+	generators := SplitCombin(H.Edges.Len(), K, runtime.GOMAXPROCS(-1), false)
 
 OUTER:
 	for !decomposed {

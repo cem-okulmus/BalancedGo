@@ -61,7 +61,7 @@ func (d Decomp) Correct(g Graph) bool {
 	}
 
 	// Every edge has to be covered
-	for _, e := range d.Graph.Edges.Slice {
+	for _, e := range d.Graph.Edges.Slice() {
 		if !d.Root.coversEdge(e) {
 			fmt.Printf("Edge %v isn't covered", e)
 			output = false
@@ -95,8 +95,8 @@ func (d Decomp) CheckWidth() int {
 	for len(current) > 0 {
 		children := []Node{}
 		for _, n := range current {
-			if len(n.Cover.Slice) > output {
-				output = len(n.Cover.Slice)
+			if n.Cover.Len() > output {
+				output = n.Cover.Len()
 			}
 
 			for _, c := range n.Children {
@@ -124,7 +124,8 @@ func (d *Decomp) Blowup() Decomp {
 			nchildren := n.Children
 			for _, c := range nchildren {
 				// fmt.Println("Cover prior: ", c.Cover)
-				c.Cover = removeDuplicateEdges(append(c.Cover.Slice, lambda.Slice...)) // merge lambda with direct ancestor
+				c.Cover.append(lambda.Slice()...)
+				c.Cover = removeDuplicateEdges(c.Cover.Slice()) // merge lambda with direct ancestor
 
 				// fmt.Println("Cover after: ", c.Cover)
 				c.Bag = c.Cover.Vertices()     // fix the bag

@@ -52,7 +52,7 @@ type SubEdges struct {
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	var h_edges Edges
 
-	for _, j := range edges.Slice {
+	for _, j := range edges.Slice() {
 		inter := Inter(j.Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
 			h_edges.append(Edge{Vertices: inter})
@@ -65,11 +65,11 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
 	output.source = h_edges
-	if k > len(output.source.Slice) {
-		k = len(output.source.Slice)
+	if k > output.source.Len() {
+		k = output.source.Len()
 	}
 	// fmt.Println("k", k)
-	tmp := GetCombinUnextend(len(output.source.Slice), k)
+	tmp := GetCombinUnextend(output.source.Len(), k)
 	output.gen = &tmp
 	output.current = e
 	output.initial = e
@@ -82,7 +82,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 
 func (s *SubEdges) reset() {
 	// fmt.Println("Reset")
-	tmp := GetCombinUnextend(len(s.source.Slice), s.k)
+	tmp := GetCombinUnextend(s.source.Len(), s.k)
 	s.gen = &tmp
 
 	s.currentSubset = nil
@@ -160,7 +160,7 @@ type SepSub struct {
 func GetSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
 
-	for _, e := range sep.Slice {
+	for _, e := range sep.Slice() {
 		output.Edges = append(output.Edges, getSubEdgeIterator(edges, e, k))
 	}
 

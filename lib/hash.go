@@ -27,7 +27,7 @@ func (e Edges) Hash() uint32 {
 
 	arrBytes := []byte{}
 	sort.Sort(Edges(e)) // cache this via flag
-	for _, item := range e.Slice {
+	for _, item := range e.Slice() {
 		bs := make([]byte, 4)
 		binary.LittleEndian.PutUint32(bs, item.Hash())
 		arrBytes = append(arrBytes, bs...)
