@@ -42,6 +42,26 @@ type Edges struct {
 	vertices []int
 }
 
+func NewEdges(slice []Edge) Edges {
+	return Edges{slice: slice}
+}
+
+func (e Edges) String() string {
+
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+
+	for i, e2 := range e.slice {
+		buffer.WriteString(e2.String())
+		if i != len(e.slice)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	buffer.WriteString("}")
+	return buffer.String()
+}
+
 func (e Edges) Slice() []Edge {
 	return e.slice
 }

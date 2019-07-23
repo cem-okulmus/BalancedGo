@@ -169,7 +169,7 @@ func GetMaxSepOrder(edges Edges) Edges {
 		weights[i] = diffDistances(initialDiff, newDiffPrep)
 	}
 
-	sort.Slice(edges.Slice, func(i, j int) bool { return weights[i] > weights[j] })
+	sort.Slice(edges.Slice(), func(i, j int) bool { return weights[i] > weights[j] })
 
 	return edges
 }
@@ -188,6 +188,6 @@ func GetDegreeOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
 	}
-	sort.Slice(edges.Slice, func(i, j int) bool { return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j]) })
+	sort.Slice(edges.Slice(), func(i, j int) bool { return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j]) })
 	return edges
 }

@@ -57,60 +57,82 @@ func (d DetKDecomp) findDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decom
 	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 	conn := Inter(oldSep.Vertices(), verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep.Vertices())
+	bound := FilterVertices(d.Graph.Edges, conn)
 
-	//	gen2 := NewCover(K, conn, d.Graph.Edges, H.Edges)
-	gen := GetCombin(len(d.Graph.Edges.Slice()), K)
+	gen := NewCover(K, conn, bound, H.Edges)
 
 OUTER:
-	for gen.HasNext() {
-		gen.Confirm()
+	for gen.HasNext {
+		gen.NextSubset()
 		var sep Edges
-		sep = GetSubset(d.Graph.Edges, gen.Combination)
+		sep = GetSubset(bound, gen.Subset)
 
-		//		addEdges := false
+		addEdges := false
 
-		// check if sep covers the intersection of oldsep and H
-		if !Subset(conn, sep.Vertices()) {
-			continue
-		}
+		// // check if sep covers the intersection of oldsep and H
+		// if !Subset(conn, sep.Vertices()) {
+		// 	continue
+		// }
 
 		//check if sep "makes some progress" into separating H
 		if len(Inter(sep.Vertices(), compVertices)) == 0 {
-			continue
+			addEdges = true
 		}
 
-		comps, compsSp, _ := H.GetComponents(sep, Sp)
+		if !addEdges || K-sep.Len() > 0 {
+			i_add := 0
 
-		_, ok := cache[sep.Hash()]
-		if !ok {
-			cache[sep.Hash()] = CompCache{}
-		}
-		compCache, _ := cache[sep.Hash()]
-		for comp := range compCache.fail {
-			if reflect.DeepEqual(comp, H) {
-				fmt.Println("Seen before, skipping")
-				continue OUTER
+		addingEdges:
+			for !addEdges || i_add < H.Edges.Len() {
+				var sepActual Edges
+
+				if addEdges {
+					sepActual = NewEdges(append(sep.Slice(), H.Edges.Slice()[i_add]))
+				} else {
+					sepActual = sep
+				}
+
+				comps, compsSp, _ := H.GetComponents(sepActual, Sp)
+
+				_, ok := cache[sep.Hash()]
+				if !ok {
+					cache[sep.Hash()] = CompCache{}
+				}
+				compCache, _ := cache[sepActual.Hash()]
+				for comp := range compCache.fail {
+					if reflect.DeepEqual(comp, H) {
+						fmt.Println("Seen before, skipping")
+						continue OUTER
+					}
+				}
+
+				var subtrees []Node
+				for i := range comps {
+					decomp := d.findDecomp(K, comps[i], sepActual, compsSp[i])
+					if reflect.DeepEqual(decomp, Decomp{}) {
+						log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sep}, comps[i], compsSp[i])
+						log.Printf("\n\nCurrent SubGraph: %v\n", H)
+						log.Printf("Current Special Edges: %v\n\n", Sp)
+
+						compCache.fail = append(compCache.fail, H.Edges.Hash())
+						if addEdges {
+							i_add++
+							continue addingEdges
+						} else {
+							continue OUTER
+						}
+					}
+
+					log.Printf("Produced Decomp: %v\n", decomp)
+					subtrees = append(subtrees, decomp.Root)
+				}
+				compCache.succ = append(compCache.succ, H.Edges.Hash())
+				bag := Inter(sepActual.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
+				return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 			}
+
 		}
 
-		var subtrees []Node
-		for i := range comps {
-			decomp := d.findDecomp(K, comps[i], sep, compsSp[i])
-			if reflect.DeepEqual(decomp, Decomp{}) {
-				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sep}, comps[i], compsSp[i])
-				log.Printf("\n\nCurrent SubGraph: %v\n", H)
-				log.Printf("Current Special Edges: %v\n\n", Sp)
-				compCache, _ := cache[sep.Hash()]
-				compCache.fail = append(compCache.fail, H.Edges.Hash())
-				continue OUTER
-			}
-
-			log.Printf("Produced Decomp: %v\n", decomp)
-			subtrees = append(subtrees, decomp.Root)
-		}
-		compCache.succ = append(compCache.succ, H.Edges.Hash())
-		bag := Inter(sep.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
-		return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sep, Children: subtrees}}
 	}
 
 	return Decomp{} // Reject if no separator could be found
