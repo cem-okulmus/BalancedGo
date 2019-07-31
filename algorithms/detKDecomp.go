@@ -16,11 +16,11 @@ type DetKDecomp struct {
 }
 
 type CompCache struct {
-	succ []uint32
-	fail []uint32
+	Succ []uint32
+	Fail []uint32
 }
 
-var cache map[uint32]CompCache
+var cache map[uint32]*CompCache
 
 //Note: as implemented this breaks Special Condition (bag must be limited by oldSep)
 func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
@@ -63,9 +63,27 @@ func (d DetKDecomp) findDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decom
 
 OUTER:
 	for gen.HasNext {
-		gen.NextSubset()
+		out := gen.NextSubset()
+
+		if out == -1 {
+			if gen.HasNext {
+				log.Panicln(" -1 but hasNext not false!")
+			}
+			continue
+		}
+
 		var sep Edges
 		sep = GetSubset(bound, gen.Subset)
+		log.Println("Next Cover ", sep)
+
+		if sep.Len() > K {
+			log.Panicln("Oh noes")
+		}
+
+		if !Subset(conn, sep.Vertices()) {
+			s := fmt.Sprintln("\ncomp ", H, "oldSep ", oldSep, "\nConn ", conn, " sep ", sep.Vertices(), "out ", out)
+			log.Panicln("Oh noes deux ", s)
+		}
 
 		addEdges := false
 
@@ -92,17 +110,24 @@ OUTER:
 					sepActual = sep
 				}
 
+				log.Println("Sep chosen ", sepActual, " out ", out)
 				comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
-				_, ok := cache[sep.Hash()]
+				//fmt.Println("SepActual Hash", sepActual.Hash(), " sep ", sepActual.FullString())
+				_, ok := cache[sepActual.Hash()]
 				if !ok {
-					cache[sep.Hash()] = CompCache{}
+					var newCache CompCache
+					cache[sepActual.Hash()] = &newCache
 				}
-				compCache, _ := cache[sepActual.Hash()]
-				for comp := range compCache.fail {
-					if reflect.DeepEqual(comp, H) {
-						fmt.Println("Seen before, skipping")
+				//fmt.Println("Sep ", sepActual.FullString())
+				//fmt.Println("SepActual Hash", sepActual.Hash(), sepActual.Hash())
+				val, _ := cache[sepActual.Hash()]
+				for _, comp := range val.Fail {
+					if reflect.DeepEqual(comp, H.Edges.Hash()) {
+						fmt.Println("seen before : ", H.Edges, "for sep ", sepActual)
 						continue OUTER
+					} else {
+						fmt.Println("New never before seen: ", H.Edges, "for sep ", sepActual)
 					}
 				}
 
@@ -114,7 +139,7 @@ OUTER:
 						log.Printf("\n\nCurrent SubGraph: %v\n", H)
 						log.Printf("Current Special Edges: %v\n\n", Sp)
 
-						compCache.fail = append(compCache.fail, H.Edges.Hash())
+						cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, H.Edges.Hash())
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -126,7 +151,7 @@ OUTER:
 					log.Printf("Produced Decomp: %v\n", decomp)
 					subtrees = append(subtrees, decomp.Root)
 				}
-				compCache.succ = append(compCache.succ, H.Edges.Hash())
+				cache[sepActual.Hash()].Succ = append(cache[sepActual.Hash()].Succ, H.Edges.Hash())
 				bag := Inter(sepActual.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
 				return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 			}
@@ -384,7 +409,7 @@ OUTER:
 }
 
 func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
-	cache = make(map[uint32]CompCache)
+	cache = make(map[uint32]*CompCache)
 	return d.findDecomp(K, d.Graph, Edges{}, Sp)
 }
 

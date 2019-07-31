@@ -14,6 +14,29 @@ type Edge struct {
 	Vertices []int // use integers for vertices
 }
 
+func (e Edge) FullString() string {
+	var buffer bytes.Buffer
+
+	if e.Name > 0 {
+		buffer.WriteString(m[e.Name])
+	}
+	buffer.WriteString(" (")
+	for i, n := range e.Vertices {
+		var s string
+		// if m == nil {
+		s = fmt.Sprintf("%v", n)
+		// } else {
+		// s = m[n]
+		// }
+		buffer.WriteString(s)
+		if i != len(e.Vertices)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString(")")
+	return buffer.String()
+}
+
 func (e Edge) String() string {
 	if e.Name > 0 {
 		return m[e.Name]
@@ -40,10 +63,27 @@ func (e Edge) String() string {
 type Edges struct {
 	slice    []Edge
 	vertices []int
+	hash     *uint32
 }
 
 func NewEdges(slice []Edge) Edges {
 	return Edges{slice: slice}
+}
+
+func (e Edges) FullString() string {
+
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+
+	for i, e2 := range e.slice {
+		buffer.WriteString(e2.FullString())
+		if i != len(e.slice)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	buffer.WriteString("}")
+	return buffer.String()
 }
 
 func (e Edges) String() string {
@@ -73,6 +113,7 @@ func (s Edges) Swap(i, j int) {
 	s.slice[i], s.slice[j] = s.slice[j], s.slice[i]
 }
 
+//lexicographic order on each edge
 func (s Edges) Less(i, j int) bool {
 	if len(s.slice[i].Vertices) < len(s.slice[j].Vertices) {
 		return true
@@ -80,12 +121,15 @@ func (s Edges) Less(i, j int) bool {
 		return false
 	} else {
 		for k := 0; k < len(s.slice[i].Vertices); k++ {
-			if s.slice[i].Vertices[k] < s.slice[j].Vertices[k] {
-				return true
+			k_i := s.slice[i].Vertices[k]
+			k_j := s.slice[j].Vertices[k]
+
+			if k_i != k_j {
+				return k_i < k_j
 			}
 		}
 	}
-	return false
+	return false //edges at i and j identical
 }
 
 func (s *Edges) append(es ...Edge) {
@@ -94,6 +138,9 @@ func (s *Edges) append(es ...Edge) {
 	}
 	if len(s.vertices) > 0 {
 		s.vertices = s.vertices[:0] // do this to preserve allocated memory
+	}
+	if s.hash != nil {
+		s.hash = nil
 	}
 }
 

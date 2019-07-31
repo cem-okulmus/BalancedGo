@@ -18,6 +18,7 @@ type Cover struct {
 	Subset     []int        //The current selection
 	pos        int
 	HasNext    bool
+	first      bool
 }
 
 // func DivideCompEdges(GEdges Edges, HEdges Edges, Connector []int) Edges {
@@ -93,25 +94,32 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 	}
 
 	return Cover{K: K, coverSize: len(vertices), covered: covered, Uncovered: len(vertices),
-		inComp: inComp, covWeights: covWeights, Bound: bound, pos: 0, HasNext: true}
+		inComp: inComp, covWeights: covWeights, Bound: bound, pos: 0, HasNext: true, first: true}
 
 }
 
 // Returns number of selected edges, or -1 if no alternative possible
 func (c *Cover) NextSubset() int {
-	if len(c.Subset) != 0 {
+	if !c.first {
 		if !c.backtrack() {
 			return -1 // no more backtracking possible
 		}
 	}
+	c.first = false
 
-	covered := false
+	var covered bool
+	if c.Uncovered > 0 {
+		covered = false
+	} else {
+		covered = true
+	}
+
 	// Big Loop here that continues until conditions met (or returns empty set)
 	for ; !covered; c.pos++ {
 
-		//check remaining if remaining edges can cover all that's needed
-		i := c.pos + (c.K + len(c.Subset))
-		log.Println("i ", i, " pos ", c.pos, " size ", len(c.covWeights))
+		//check if remaining edges can cover all that's needed
+		i := c.pos + (c.K - len(c.Subset))
+		log.Println("i ", i, " pos ", c.pos, " size ", len(c.covWeights), " len ", len(c.Subset))
 		weight := 0
 		if i < len(c.covWeights) {
 			weight = c.covWeights[c.pos] - c.covWeights[i]
@@ -130,8 +138,8 @@ func (c *Cover) NextSubset() int {
 			continue
 		}
 
-		log.Println("Edge actual ", c.Bound.Slice()[c.pos])
-		log.Println("Current selection: ", GetSubset(c.Bound, c.Subset))
+		//	log.Println("Edge actual ", c.Bound.Slice()[c.pos])
+		//	log.Println("Current selection: ", GetSubset(c.Bound, c.Subset))
 		//check if current edge lies in component (precomputation via inComp ?)
 		selected := false
 

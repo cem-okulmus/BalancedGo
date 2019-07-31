@@ -90,7 +90,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 				}
 				//			fmt.Println("Union of ", m[e.Vertices[i]], "and ", m[e.Vertices[j]])
 				disjoint.Union(vertices[e.Vertices[i]], vertices[e.Vertices[j]])
-
+				// j = i-1
 				break
 			}
 		}
@@ -110,8 +110,8 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 				if balSepCache[s.Vertices[j]] {
 					continue
 				}
-
 				disjoint.Union(vertices[s.Vertices[i]], vertices[s.Vertices[j]])
+				// j = i-1
 				break
 			}
 		}
@@ -149,6 +149,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		comps[vertices[vertexRep].Find()] = append(slice, e)
 
 	}
+
 	var isolatedSp []Special
 	for _, s := range Sp {
 		// actualVertices := Diff(s.Vertices, balsepVert)
@@ -211,6 +212,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	return outputG, outputS, vertices
 }
+
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output Edges
 
