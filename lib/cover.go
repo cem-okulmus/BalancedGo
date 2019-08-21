@@ -11,7 +11,6 @@ import (
 
 type Cover struct {
 	K          int          //maximal size of cover
-	coverSize  int          //current size of cover
 	covered    map[int]int8 //map if each vertex is covered, and by how many edges
 	Uncovered  int          //number of vertices that needs to be covered
 	inComp     []bool       //indicates for each Edge if its in comp. or not
@@ -96,7 +95,7 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 		covWeights[i] = sum
 	}
 
-	return Cover{K: K, coverSize: len(vertices), covered: covered, Uncovered: len(vertices),
+	return Cover{K: K, covered: covered, Uncovered: len(vertices),
 		inComp: inComp, covWeights: covWeights, Bound: bound, pos: 0, HasNext: true, first: true}
 
 }

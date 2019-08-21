@@ -23,11 +23,11 @@ func (e Edge) FullString() string {
 	buffer.WriteString(" (")
 	for i, n := range e.Vertices {
 		var s string
-		// if m == nil {
-		s = fmt.Sprintf("%v", n)
-		// } else {
-		// s = m[n]
-		// }
+		if m == nil {
+			s = fmt.Sprintf("%v", n)
+		} else {
+			s = m[n]
+		}
 		buffer.WriteString(s)
 		if i != len(e.Vertices)-1 {
 			buffer.WriteString(", ")
@@ -100,6 +100,10 @@ func (e Edges) String() string {
 
 	buffer.WriteString("}")
 	return buffer.String()
+}
+
+func equalEdges(this, other Edges) bool {
+	return reflect.DeepEqual(this.slice, other.slice)
 }
 
 func (e Edges) Slice() []Edge {

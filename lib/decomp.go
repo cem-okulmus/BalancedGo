@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"reflect"
 )
 
 // A Decomp (short for Decomposition) consists of a labelled tree which
@@ -50,7 +49,7 @@ func (d Decomp) Correct(g Graph) bool {
 	output := true
 
 	//must be a decomp of same graph
-	if !reflect.DeepEqual(d.Graph.Edges, g.Edges) {
+	if !d.Graph.equal(g) {
 		if d.Graph.Edges.Len() > 0 {
 			fmt.Println("Decomp of different graph")
 		} else {

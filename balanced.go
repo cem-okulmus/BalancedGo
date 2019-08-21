@@ -54,6 +54,7 @@ func main() {
 	bench := flag.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
 	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
+	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
 
 	flag.Parse()
 
@@ -108,8 +109,35 @@ func main() {
 	dat, err := ioutil.ReadFile(*graphPath)
 	check(err)
 
-	parsedGraph := GetGraph(string(dat))
+	parsedGraph, _ := GetGraph(string(dat))
 	var reducedGraph Graph
+
+	start := time.Now()
+	switch *useHeuristic {
+	case 1:
+		parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
+	case 2:
+		parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
+	case 3:
+		parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
+	}
+	d := time.Now().Sub(start)
+
+	if *useHeuristic > 0 && !*bench {
+		switch *useHeuristic {
+		case 1:
+			fmt.Print("Using degree ordering")
+		case 2:
+			fmt.Print("Using max seperator ordering")
+		case 3:
+			fmt.Print("Using MSC ordering")
+		}
+		fmt.Println(" as a heuristic")
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
+		log.Printf("Ordering: %v", parsedGraph.String())
+
+	}
 
 	if *typeC {
 		count := 0
@@ -166,33 +194,6 @@ func main() {
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
-	start := time.Now()
-	switch *useHeuristic {
-	case 1:
-		parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
-	case 2:
-		parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
-	case 3:
-		parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
-	}
-	d := time.Now().Sub(start)
-
-	if *useHeuristic > 0 && !*bench {
-		switch *useHeuristic {
-		case 1:
-			fmt.Print("Using degree ordering")
-		case 2:
-			fmt.Print("Using max seperator ordering")
-		case 3:
-			fmt.Print("Using MSC ordering")
-		}
-		fmt.Println(" as a heuristic")
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
-		log.Printf("Ordering: %v", parsedGraph.String())
-
-	}
-
 	if *akatovTest {
 		var decomp Decomp
 		start := time.Now()
@@ -233,18 +234,7 @@ func main() {
 		// encode = encode + 2
 
 		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
-		switch *choose {
-		case 1:
-			decomp = det.FindHDParallelFull(*width, Sp)
-		case 2:
-			decomp = det.FindHDParallelSearch(*width, Sp)
-		case 3:
-			decomp = det.FindHDParallelDecomp(*width, Sp)
-		case 4:
-			decomp = det.FindHD(*width, Sp)
-		default:
-			panic("Not a valid choice")
-		}
+		decomp = det.FindHD(*width, Sp)
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
@@ -253,6 +243,21 @@ func main() {
 		fmt.Println("Time", msec, " ms")
 		fmt.Println("Width: ", decomp.CheckWidth())
 		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		return
+	}
+
+	if *divideTest {
+		//var decomp Decomp
+
+		start := time.Now()
+		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+
+		out := div.FindDecomp()
+		d := time.Now().Sub(start)
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+		fmt.Println("Result \n", out)
+		fmt.Println("Time", msec, " ms")
 		return
 	}
 

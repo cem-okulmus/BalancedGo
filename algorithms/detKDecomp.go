@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"runtime"
-	"sync"
 
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
@@ -166,6 +164,9 @@ OUTER:
 
 	return Decomp{} // Reject if no separator could be found
 }
+
+// OLD parallelization attempts
+/*
 
 func parallelSearchDetK(H Graph, Sp []Special, edges Edges, result *[]int, generators []*CombinationIterator, oldSep Edges) {
 	defer func() {
@@ -412,10 +413,7 @@ OUTER:
 	return Decomp{}
 }
 
-func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
-	cache = make(map[uint32]*CompCache)
-	return d.findDecomp(K, d.Graph, Edges{}, Sp)
-}
+
 
 func (d DetKDecomp) FindHDParallelFull(K int, Sp []Special) Decomp {
 
@@ -430,4 +428,10 @@ func (d DetKDecomp) FindHDParallelSearch(K int, Sp []Special) Decomp {
 func (d DetKDecomp) FindHDParallelDecomp(K int, Sp []Special) Decomp {
 
 	return d.findDecompParallelDecomp(K, d.Graph, Edges{}, Sp)
+}
+*/
+
+func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
+	cache = make(map[uint32]*CompCache)
+	return d.findDecomp(K, d.Graph, Edges{}, Sp)
 }

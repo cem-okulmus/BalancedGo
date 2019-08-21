@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"reflect"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spakin/disjoint"
 )
 
@@ -24,6 +26,10 @@ func (g Graph) String() string {
 	}
 	buffer.WriteString("}")
 	return buffer.String()
+}
+
+func (this Graph) equal(other Graph) bool {
+	return cmp.Equal(this, other, cmpopts.IgnoreUnexported(this), cmp.Comparer(equalEdges))
 }
 
 // produces the union of all vertices from all edges of the graph
