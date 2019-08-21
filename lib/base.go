@@ -221,3 +221,58 @@ func Subset(as []int, bs []int) bool {
 // 	}
 // 	return true
 // }
+
+type TwoSlicesEdge struct {
+	main_slice  []Edge
+	other_slice []int
+}
+
+type TwoSlicesBool struct {
+	main_slice  []bool
+	other_slice []int
+}
+
+type SortByOtherEdge TwoSlicesEdge
+
+func (sbo SortByOtherEdge) Len() int {
+	return len(sbo.main_slice)
+}
+
+func (sbo SortByOtherEdge) Swap(i, j int) {
+	sbo.main_slice[i], sbo.main_slice[j] = sbo.main_slice[j], sbo.main_slice[i]
+	sbo.other_slice[i], sbo.other_slice[j] = sbo.other_slice[j], sbo.other_slice[i]
+}
+
+func (sbo SortByOtherEdge) Less(i, j int) bool {
+	return sbo.other_slice[i] > sbo.other_slice[j]
+}
+
+type SortByOtherBool TwoSlicesBool
+
+func (sbo SortByOtherBool) Len() int {
+	return len(sbo.main_slice)
+}
+
+func (sbo SortByOtherBool) Swap(i, j int) {
+	sbo.main_slice[i], sbo.main_slice[j] = sbo.main_slice[j], sbo.main_slice[i]
+	sbo.other_slice[i], sbo.other_slice[j] = sbo.other_slice[j], sbo.other_slice[i]
+}
+
+func (sbo SortByOtherBool) Less(i, j int) bool {
+	return sbo.other_slice[i] > sbo.other_slice[j]
+}
+
+func sortBySliceEdge(a []Edge, b []int) {
+
+	tmp := make([]int, len(b))
+	copy(tmp, b)
+	two := TwoSlicesEdge{main_slice: a, other_slice: tmp}
+	sort.Sort(SortByOtherEdge(two))
+}
+
+func sortBySliceBool(a []bool, b []int) {
+	tmp := make([]int, len(b))
+	copy(tmp, b)
+	two := TwoSlicesBool{main_slice: a, other_slice: tmp}
+	sort.Sort(SortByOtherBool(two))
+}

@@ -46,18 +46,19 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 
 // TODO add caching to this
 func (d DetKDecomp) findDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
+	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
+	conn := Inter(oldSep.Vertices(), verticesCurrent)
+	compVertices := Diff(verticesCurrent, oldSep.Vertices())
+	bound := FilterVertices(d.Graph.Edges, conn)
 
-	log.Printf("\n\nCurrent SubGraph: %v\n", H)
+	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", oldSep, Edge{Vertices: conn})
+	log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
 	if H.Edges.Len() <= K && len(Sp) <= 2 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
-	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
-	conn := Inter(oldSep.Vertices(), verticesCurrent)
-	compVertices := Diff(verticesCurrent, oldSep.Vertices())
-	bound := FilterVertices(d.Graph.Edges, conn)
 
 	gen := NewCover(K, conn, bound, H.Edges)
 
@@ -113,6 +114,8 @@ OUTER:
 				log.Println("Sep chosen ", sepActual, " out ", out)
 				comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
+				log.Printf("Comps of Sep: %v\n", comps)
+
 				//fmt.Println("SepActual Hash", sepActual.Hash(), " sep ", sepActual.FullString())
 				_, ok := cache[sepActual.Hash()]
 				if !ok {
@@ -135,8 +138,9 @@ OUTER:
 				for i := range comps {
 					decomp := d.findDecomp(K, comps[i], sepActual, compsSp[i])
 					if reflect.DeepEqual(decomp, Decomp{}) {
-						log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sep}, comps[i], compsSp[i])
-						log.Printf("\n\nCurrent SubGraph: %v\n", H)
+						log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
+						log.Printf("\n\nCurrent oldSep: %v\n", oldSep)
+						log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
 						log.Printf("Current Special Edges: %v\n\n", Sp)
 
 						cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, H.Edges.Hash())
@@ -414,13 +418,16 @@ func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
 }
 
 func (d DetKDecomp) FindHDParallelFull(K int, Sp []Special) Decomp {
+
 	return d.findDecompParallelFull(K, d.Graph, Edges{}, Sp)
 }
 
 func (d DetKDecomp) FindHDParallelSearch(K int, Sp []Special) Decomp {
+
 	return d.findDecompParallelSearch(K, d.Graph, Edges{}, Sp)
 }
 
 func (d DetKDecomp) FindHDParallelDecomp(K int, Sp []Special) Decomp {
+
 	return d.findDecompParallelDecomp(K, d.Graph, Edges{}, Sp)
 }

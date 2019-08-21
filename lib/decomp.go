@@ -51,6 +51,11 @@ func (d Decomp) Correct(g Graph) bool {
 
 	//must be a decomp of same graph
 	if !reflect.DeepEqual(d.Graph.Edges, g.Edges) {
+		if d.Graph.Edges.Len() > 0 {
+			fmt.Println("Decomp of different graph")
+		} else {
+			fmt.Println("Empty Decomp")
+		}
 		output = false
 	}
 

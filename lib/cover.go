@@ -2,8 +2,11 @@ package lib
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"math/rand"
 	"sort"
+	"time"
 )
 
 type Cover struct {
@@ -77,14 +80,14 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 		}
 		toCover[i] = sum
 	}
-
-	//fmt.Println("to Cover: ", toCover)
-
-	sort.Slice(bound.Slice(), func(i, j int) bool { return toCover[i] > toCover[j] })
-	sort.Slice(inComp, func(i, j int) bool { return toCover[i] > toCover[j] })
+	// fmt.Println("cover pre", toCover)
+	// fmt.Println("inComp pre", inComp)
+	// fmt.Println("Bound pre", bound)
+	sortBySliceEdge(bound.Slice(), toCover)
+	sortBySliceBool(inComp, toCover)
 	sort.Slice(toCover, func(i, j int) bool { return toCover[i] > toCover[j] })
-
-	//fmt.Println("to Cover (post): ", toCover)
+	// fmt.Println("Bound post", bound)
+	// fmt.Println("inComp post", inComp)
 
 	covWeights := make([]int, len(bound.Slice()))
 	sum := 0
@@ -102,8 +105,10 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 func (c *Cover) NextSubset() int {
 	if !c.first {
 		if !c.backtrack() {
+			log.Println("No more covers possible.")
 			return -1 // no more backtracking possible
 		}
+		c.pos++
 	}
 	c.first = false
 
@@ -116,10 +121,9 @@ func (c *Cover) NextSubset() int {
 
 	// Big Loop here that continues until conditions met (or returns empty set)
 	for ; !covered; c.pos++ {
-
+		// fmt.Println("Current: ", append(c.Subset, c.pos), "Uncovered ", c.Uncovered)
 		//check if remaining edges can cover all that's needed
 		i := c.pos + (c.K - len(c.Subset))
-		log.Println("i ", i, " pos ", c.pos, " size ", len(c.covWeights), " len ", len(c.Subset))
 		weight := 0
 		if i < len(c.covWeights) {
 			weight = c.covWeights[c.pos] - c.covWeights[i]
@@ -130,9 +134,11 @@ func (c *Cover) NextSubset() int {
 				weight = 0
 			}
 		}
-		log.Println("weight ", weight, " uncovered ", c.Uncovered)
+
+		// fmt.Println("weight ", weight)
 		if (weight < c.Uncovered) || (weight == 0) {
 			if !c.backtrack() {
+				log.Println("No more covers available.")
 				return -1 // no more backtracking possible
 			}
 			continue
@@ -196,14 +202,12 @@ func (c *Cover) backtrack() bool {
 		return false
 	}
 
-	log.Println("Subset before ", c.Subset)
-
 	c.pos = c.Subset[len(c.Subset)-1]
+
 	c.Subset = c.Subset[:len(c.Subset)-1]
 	if c.inComp[c.pos] {
 		c.inCompSel--
 	}
-	log.Println("Subset after ", c.Subset)
 
 	if c.inCompSel < 0 {
 		log.Panicln("negative inCompSel, you messed something up!")
@@ -222,7 +226,6 @@ func (c *Cover) backtrack() bool {
 			}
 		}
 	}
-	c.pos++
 	return true
 
 }
@@ -246,6 +249,60 @@ func testCover() {
 		if out > 0 {
 			fmt.Println("Subset: ", GetSubset(edges, c.Subset))
 		}
+	}
+
+}
+
+func shuffle(input Edges) Edges {
+	rand.Seed(time.Now().UTC().UnixNano())
+	a := make([]Edge, len(input.Slice()))
+	copy(a, input.Slice())
+
+	for i := len(a) - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		a[i], a[j] = a[j], a[i]
+	}
+
+	return NewEdges(a)
+}
+
+func test2Cover() {
+	dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_goodorder.hg")
+	//dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_badorder.hg")
+	parsedGraph, parsedParseGraph := GetGraph(string(dat))
+	e25 := parsedParseGraph.GetEdge("E25 ( xL75J, xL23J, xL24J )")
+	e26 := parsedParseGraph.GetEdge("E26 ( xL24J, xL76J, xL77J )")
+	e27 := parsedParseGraph.GetEdge("E27 ( xL25J, xL76J, xL77J )")
+	e28 := parsedParseGraph.GetEdge("E28 ( xL25J, xL26J, xL75J )")
+
+	fmt.Println("Graph ")
+	for _, e := range parsedGraph.Edges.Slice() {
+		fmt.Println(e.FullString())
+	}
+
+	fmt.Println("\n\n", e25.FullString())
+	fmt.Println(e28.FullString())
+
+	oldSep := NewEdges([]Edge{e25, e28})
+	largerGraph := NewEdges(append(parsedGraph.Edges.Slice(), []Edge{e26, e27, e25, e28}...))
+
+	conn := Inter(oldSep.Vertices(), parsedGraph.Vertices())
+	bound := FilterVertices(largerGraph, oldSep.Vertices())
+
+	fmt.Println("larger graph ", largerGraph)
+	fmt.Println("bound, ", bound)
+	fmt.Println("Conn, ", Edge{Vertices: conn})
+
+	gen := NewCover(2, conn, bound, parsedGraph.Edges)
+
+	for gen.HasNext {
+		gen.NextSubset()
+		if len(gen.Subset) == 0 {
+			break
+		}
+		cover := GetSubset(bound, gen.Subset)
+		fmt.Println("\033[33m Selection: ", cover, "\033[0m")
+
 	}
 
 }
