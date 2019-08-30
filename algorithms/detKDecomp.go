@@ -1,7 +1,6 @@
 package algorithms
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 
@@ -43,10 +42,10 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 }
 
 // TODO add caching to this
-func (d DetKDecomp) findDecomp(K int, H Graph, oldSep Edges, Sp []Special) Decomp {
+func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decomp {
 	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
-	conn := Inter(oldSep.Vertices(), verticesCurrent)
-	compVertices := Diff(verticesCurrent, oldSep.Vertices())
+	conn := Inter(oldSep, verticesCurrent)
+	compVertices := Diff(verticesCurrent, oldSep)
 	bound := FilterVertices(d.Graph.Edges, conn)
 
 	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", oldSep, Edge{Vertices: conn})
@@ -75,14 +74,14 @@ OUTER:
 		sep = GetSubset(bound, gen.Subset)
 		log.Println("Next Cover ", sep)
 
-		if sep.Len() > K {
-			log.Panicln("Oh noes")
-		}
+		// if sep.Len() > K {
+		// 	log.Panicln("Oh noes")
+		// }
 
-		if !Subset(conn, sep.Vertices()) {
-			s := fmt.Sprintln("\ncomp ", H, "oldSep ", oldSep, "\nConn ", conn, " sep ", sep.Vertices(), "out ", out)
-			log.Panicln("Oh noes deux ", s)
-		}
+		// if !Subset(conn, sep.Vertices()) {
+		// 	s := fmt.Sprintln("\ncomp ", H, "oldSep ", oldSep, "\nConn ", conn, " sep ", sep.Vertices(), "out ", out)
+		// 	log.Panicln("Oh noes deux ", s)
+		// }
 
 		addEdges := false
 
@@ -92,6 +91,7 @@ OUTER:
 		// }
 
 		//check if sep "makes some progress" into separating H
+
 		if len(Inter(sep.Vertices(), compVertices)) == 0 {
 			addEdges = true
 		}
@@ -108,6 +108,24 @@ OUTER:
 				} else {
 					sepActual = sep
 				}
+				// if !Subset(sep.Vertices(), sepActual.Vertices()) {
+
+				// 	fmt.Println("Sep ", sep, "Vertices: ", Edge{Vertices: sep.Vertices()})
+				// 	fmt.Println(" additional edge ", H.Edges.Slice()[i_add], "Vertices: ", Edge{Vertices: H.Edges.Slice()[i_add].Vertices})
+				// 	fmt.Println("Proper: ", Edge{Vertices: RemoveDuplicates(append(sep.Vertices(), H.Edges.Slice()[i_add].Vertices...))})
+				// 	fmt.Println("Actual: ", Edge{Vertices: sepActual.Vertices()})
+				// 	var output []int
+				// 	for _, otherE := range sep.Slice() {
+				// 		fmt.Println(otherE.FullString())
+				// 		output = append(output, otherE.Vertices...)
+				// 	}
+				// 	fmt.Println("The fuck? ", Edge{Vertices: output})
+				// 	fmt.Println("The fuck? ", Edge{Vertices: RemoveDuplicates(output)})
+				// 	sep.Clear()
+				// 	fmt.Println("Sep ", sep, "Vertices: ", Edge{Vertices: sep.Vertices()})
+
+				// 	log.Panicln("impossible separator")
+				// }
 
 				log.Println("Sep chosen ", sepActual, " out ", out)
 				comps, compsSp, _ := H.GetComponents(sepActual, Sp)
@@ -115,33 +133,50 @@ OUTER:
 				log.Printf("Comps of Sep: %v\n", comps)
 
 				//fmt.Println("SepActual Hash", sepActual.Hash(), " sep ", sepActual.FullString())
-				_, ok := cache[sepActual.Hash()]
-				if !ok {
-					var newCache CompCache
-					cache[sepActual.Hash()] = &newCache
-				}
+				// _, ok := cache[sepActual.Hash()]
+				// if !ok {
+				// 	var newCache CompCache
+				// 	cache[sepActual.Hash()] = &newCache
+				// }
+
 				//fmt.Println("Sep ", sepActual.FullString())
 				//fmt.Println("SepActual Hash", sepActual.Hash(), sepActual.Hash())
-				val, _ := cache[sepActual.Hash()]
-				for _, comp := range val.Fail {
-					if reflect.DeepEqual(comp, H.Edges.Hash()) {
-						fmt.Println("seen before : ", H.Edges, "for sep ", sepActual)
-						continue OUTER
-					} else {
-						fmt.Println("New never before seen: ", H.Edges, "for sep ", sepActual)
-					}
-				}
+				//val, _ := cache[sepActual.Hash()]
+				// for _, comp := range val.Fail {
+				// 	if reflect.DeepEqual(comp, H.Edges.Hash()) {
+				// 		//fmt.Println("seen before : ", H.Edges, "for sep ", sepActual)
+				// 		continue OUTER
+				// 	} else {
+				// 		//fmt.Println("New never before seen: ", H.Edges, "for sep ", sepActual)
+				// 	}
+				// }
 
 				var subtrees []Node
+				bag := Inter(sepActual.Vertices(), append(oldSep, verticesCurrent...))
+
+				// if !Subset(conn, bag) {
+
+				// 	fmt.Println("bag ", Edge{Vertices: RemoveDuplicates(bag)})
+				// 	fmt.Println("conn ", Edge{Vertices: RemoveDuplicates(conn)})
+				// 	sepActual.Clear()
+				// 	fmt.Println("SepA ", sepActual, "Vertices: ", Edge{Vertices: sepActual.Vertices()})
+				// 	sep.Clear()
+				// 	fmt.Println("Sep ", sep, "Vertices: ", Edge{Vertices: sep.Vertices()})
+				// 	fmt.Println("oldSep ", Edge{Vertices: oldSep})
+
+				// 	fmt.Println("Conn a subset of Sep", Subset(conn, sep.Vertices()))
+
+				// 	log.Panicln("mordieu!")
+				// }
 				for i := range comps {
-					decomp := d.findDecomp(K, comps[i], sepActual, compsSp[i])
+					decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
 					if reflect.DeepEqual(decomp, Decomp{}) {
 						log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
 						log.Printf("\n\nCurrent oldSep: %v\n", oldSep)
 						log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
 						log.Printf("Current Special Edges: %v\n\n", Sp)
 
-						cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, H.Edges.Hash())
+						//	cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, H.Edges.Hash())
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -153,8 +188,8 @@ OUTER:
 					log.Printf("Produced Decomp: %v\n", decomp)
 					subtrees = append(subtrees, decomp.Root)
 				}
-				cache[sepActual.Hash()].Succ = append(cache[sepActual.Hash()].Succ, H.Edges.Hash())
-				bag := Inter(sepActual.Vertices(), append(oldSep.Vertices(), H.Vertices()...))
+				//cache[sepActual.Hash()].Succ = append(cache[sepActual.Hash()].Succ, H.Edges.Hash())
+
 				return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 			}
 
@@ -433,5 +468,5 @@ func (d DetKDecomp) FindHDParallelDecomp(K int, Sp []Special) Decomp {
 
 func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
 	cache = make(map[uint32]*CompCache)
-	return d.findDecomp(K, d.Graph, Edges{}, Sp)
+	return d.findDecomp(K, d.Graph, []int{}, Sp)
 }

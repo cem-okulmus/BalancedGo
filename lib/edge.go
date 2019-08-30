@@ -70,6 +70,10 @@ func NewEdges(slice []Edge) Edges {
 	return Edges{slice: slice}
 }
 
+func (e *Edges) Clear() {
+	e.vertices = e.vertices[:0]
+}
+
 func (e Edges) FullString() string {
 
 	var buffer bytes.Buffer

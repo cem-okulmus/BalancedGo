@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"bytes"
 	"reflect"
 	"sort"
 )
@@ -275,4 +276,20 @@ func sortBySliceBool(a []bool, b []int) {
 	copy(tmp, b)
 	two := TwoSlicesBool{main_slice: a, other_slice: tmp}
 	sort.Sort(SortByOtherBool(two))
+}
+
+func PrintVertices(vertices []int) string {
+
+	var buffer bytes.Buffer
+
+	buffer.WriteString("(")
+	for i, v := range vertices {
+		buffer.WriteString(m[v])
+		if i != len(vertices)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString(")")
+
+	return buffer.String()
 }

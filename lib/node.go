@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"log"
 	"reflect"
+	"strconv"
 )
 
 // A Node is the root of a labelled tree, where the labels are the bag
 // and the (edge) cover
 type Node struct {
+	num      int
 	Bag      []int
 	Cover    Edges
 	Children []Node
@@ -95,34 +97,46 @@ func (n Node) bagSubsets() bool {
 	return true
 }
 
+func (n *Node) getNumber() {
+	if n.num == 0 {
+		n.num = encode
+		m[n.num] = "num : " + strconv.Itoa(n.num) + " node: " + n.Cover.String()
+		encode++
+	}
+}
+
 // Think about how to make the contains check faster than linear
-func (n Node) getConGraph(num int) Edges {
+func (n *Node) getConGraph() Edges {
 	var output Edges
 
-	output.append(Edge{Vertices: []int{num + encode + 1, num + encode + 1}}) // add loop (needed )
+	//m[num+encode] = n.Cover.String()
+
+	n.getNumber()
+	output.append(Edge{Vertices: []int{n.num, n.num}}) // add loop (needed )
 
 	for i, _ := range n.Children {
-		output.append(Edge{Vertices: []int{num + encode + 1, (num + i + encode + 2)}}) //using breadth-first ordering to number nodes
+		n.Children[i].getNumber()
+		output.append(Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
 	}
 
-	for i, c := range n.Children {
-		edgesChild := c.getConGraph((num + 1 + i))
+	for _, c := range n.Children {
+		edgesChild := c.getConGraph()
 		output.append(edgesChild.Slice()...)
 	}
 
 	return output
 }
 
-func (n Node) allChildrenContaining(vert, num int) []int {
+func (n *Node) allChildrenContaining(vert int) []int {
 	var output []int
 	//m[num+encode+1] = strconv.Itoa(num)
 
-	if n.Cover.Contains(vert) {
-		output = append(output, num+encode+1)
+	if Mem(n.Bag, vert) {
+		output = append(output, n.num)
 	}
 
-	for i, c := range n.Children {
-		output = append(output, c.allChildrenContaining(vert, (num+i+1))...)
+	for _, c := range n.Children {
+		output = append(output, c.allChildrenContaining(vert)...)
 	}
 
 	return output
@@ -256,4 +270,21 @@ func (n *Node) RestoreEdges(edges Edges) Node {
 	}
 
 	return Node{Bag: n.Bag, Cover: nuCover, Children: nuChildern}
+}
+
+func (n Node) CheckLeaves(vertices []int) (bool, *Node) {
+	if len(n.Children) == 0 {
+		if Subset(vertices, n.Bag) {
+			return true, &n
+		}
+	}
+
+	for _, child := range n.Children {
+		ok, result := child.CheckLeaves(vertices)
+		if ok {
+			return ok, result
+		}
+	}
+
+	return false, &Node{}
 }

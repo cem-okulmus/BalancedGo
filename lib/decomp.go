@@ -22,8 +22,9 @@ func (d *Decomp) RestoreSubedges() {
 }
 
 func (d Decomp) connected(vert int) bool {
-	var containingNodes = d.Root.allChildrenContaining(vert, 0)
-	var edgesContaining = FilterVertices(d.Root.getConGraph(0), containingNodes)
+	conGraph := d.Root.getConGraph()
+	var containingNodes = d.Root.allChildrenContaining(vert)
+	var edgesContaining = FilterVertices(conGraph, containingNodes)
 
 	// log.Printf("All nodes containing %s\n", m[vert])
 	// for _, n := range containingNodes {
@@ -37,9 +38,11 @@ func (d Decomp) connected(vert int) bool {
 
 	g, _, _ := Graph{Edges: edgesContaining}.GetComponents(Edges{}, []Special{})
 
-	// log.Printf("Components of Node %s\n", m[vert])
-	// for _, c := range g {
-	// 	log.Printf("%v \n\n", c)
+	// if len(g) > 1 {
+	// 	fmt.Printf("Components of Node %s\n", m[vert])
+	// 	for _, c := range g {
+	// 		fmt.Printf("%v \n\n", c)
+	// 	}
 	// }
 
 	return len(g) == 1

@@ -1,6 +1,8 @@
 package lib
 
-import "github.com/alecthomas/participle"
+import (
+	"github.com/alecthomas/participle"
+)
 
 var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
 var encode int       // stores the encoding of the highest int used
@@ -15,9 +17,8 @@ type ParseGraph struct {
 	m     map[string]int
 }
 
-var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1))
-
-func GetGraph(s string) Graph {
+func GetGraph(s string) (Graph, ParseGraph) {
+	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1))
 	var output Graph
 	pgraph := ParseGraph{}
 	parser.ParseString(s, &pgraph)
@@ -47,5 +48,27 @@ func GetGraph(s string) Graph {
 		output.Edges.append(Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
 	}
 	m = encoding
-	return output
+	return output, pgraph
+}
+
+func (p *ParseGraph) GetEdge(input string) Edge {
+
+	var parser = participle.MustBuild(&ParseEdge{}, participle.UseLookahead(1))
+	pEdge := ParseEdge{}
+	parser.ParseString(input, &pEdge)
+	var vertices []int
+	for _, v := range pEdge.Vertices {
+		val, ok := p.m[v]
+		if ok {
+			vertices = append(vertices, val)
+		} else {
+			p.m[v] = encode
+			m[encode] = v
+			vertices = append(vertices, encode)
+			encode++
+		}
+	}
+	m[encode] = pEdge.Name
+	encode++
+	return Edge{Vertices: vertices, Name: encode - 1}
 }

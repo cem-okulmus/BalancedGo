@@ -28,7 +28,7 @@ func (e *Edges) Hash() uint32 {
 	if e.hash == nil {
 		arrBytes := []byte{}
 		sort.Sort(*e)
-		fmt.Println(e)
+		//	fmt.Println(e)
 		for _, item := range e.Slice() {
 			bs := make([]byte, 4)
 			binary.LittleEndian.PutUint32(bs, item.Hash())
