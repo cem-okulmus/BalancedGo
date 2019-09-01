@@ -48,7 +48,7 @@ func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decom
 	compVertices := Diff(verticesCurrent, oldSep)
 	bound := FilterVertices(d.Graph.Edges, conn)
 
-	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", oldSep, Edge{Vertices: conn})
+	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
