@@ -36,7 +36,7 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 	//Early termination
 	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, SxL17Jp[0])
+		return earlyTermination(H, Sp[0])
 	}
 
 	var balsep Edges
