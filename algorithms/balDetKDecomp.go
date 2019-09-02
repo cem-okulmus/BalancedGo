@@ -81,7 +81,7 @@ OUTER:
 				}(K, i, comps, compsSp, SepSpecial)
 			} else {
 				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-					det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor}
+					det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
 					ch <- det.findDecomp(K, comps[i], []int{}, append(compsSp[i], SepSpecial))
 				}(K, i, comps, compsSp, SepSpecial)
 			}

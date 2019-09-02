@@ -251,7 +251,7 @@ func main() {
 		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
 		// encode = encode + 2
 
-		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
+		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: true}
 		decomp = det.FindHD(*width, Sp)
 
 		d := time.Now().Sub(start)
