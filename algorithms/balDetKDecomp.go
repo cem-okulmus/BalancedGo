@@ -36,7 +36,7 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 	//Early termination
 	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
+		return earlyTermination(H, SxL17Jp[0])
 	}
 
 	var balsep Edges
@@ -101,7 +101,7 @@ OUTER:
 
 			log.Printf("Produced Decomp: %+v\n", decomp)
 			if currentDepth == 1 {
-				fmt.Println("From detK:\n", decomp)
+				fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
 			}
 
 			subtrees = append(subtrees, decomp)

@@ -55,7 +55,7 @@ func main() {
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
 	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
 	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
-	balDetTest := flag.Bool("balDet", false, "Test hybrid balSep and DetK algorithm")
+	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
 
 	flag.Parse()
 
@@ -224,11 +224,11 @@ func main() {
 		return
 	}
 
-	if *balDetTest {
+	if *balDetTest > 0 {
 		var decomp Decomp
 		start := time.Now()
 
-		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: 0}
+		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest}
 		decomp = balDet.FindGHD(*width)
 
 		d := time.Now().Sub(start)

@@ -53,7 +53,7 @@ func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decom
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
-	if H.Edges.Len() <= K && len(Sp) <= 2 {
+	if H.Edges.Len() <= K && len(Sp) <= 1 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 

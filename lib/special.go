@@ -14,6 +14,19 @@ type Special struct {
 func (s Special) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
+	for i := range s.Edges.Slice() {
+		buffer.WriteString(s.Edges.Slice()[i].String())
+		if i != len(s.Edges.Slice())-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString("}")
+	return buffer.String()
+}
+
+func (s Special) StringVertices() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
 	for i, v := range s.Vertices {
 		if m == nil {
 			buffer.WriteString(fmt.Sprintf("%d", v))
