@@ -128,15 +128,31 @@ OUTER:
 
 // }
 
-func DiffEdges(a Edges, e Edge) Edges {
-	var output Edges
-
-	for _, n := range a.Slice() {
-		length := len(Inter(n.Vertices, e.Vertices))
-		if (length > 0) && (length < (len(e.Vertices))) {
-			output.append(n)
+func Mem32(as []uint32, b uint32) bool {
+	for _, a := range as {
+		if a == b {
+			return true
 		}
 	}
+	return false
+}
+
+func DiffEdges(a Edges, e ...Edge) Edges {
+	var output Edges
+	///	log.Println("Edges ", a, "Other ", e)
+
+	var hashes []uint32
+	for i := range e {
+		hashes = append(hashes, e[i].Hash())
+	}
+
+	for i := range a.Slice() {
+		if !Mem32(hashes, a.Slice()[i].Hash()) {
+			output.Append(a.Slice()[i])
+		}
+	}
+
+	//	log.Println("Result ", output)
 
 	return output
 

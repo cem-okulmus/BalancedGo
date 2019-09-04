@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"sort"
+	"sync"
 )
 
 // implements hashes for basic types (used for hash table implementations)
@@ -25,6 +26,8 @@ func (e Edge) Hash() uint32 {
 }
 
 func (e *Edges) Hash() uint32 {
+	var mux sync.Mutex
+	mux.Lock() // ensure that hash is computed only on one gorutine at a time
 	if e.hash == nil {
 		arrBytes := []byte{}
 		sort.Sort(*e)
@@ -39,6 +42,7 @@ func (e *Edges) Hash() uint32 {
 		result := h.Sum32()
 		e.hash = &result
 	}
+	mux.Unlock()
 
 	return *e.hash
 }

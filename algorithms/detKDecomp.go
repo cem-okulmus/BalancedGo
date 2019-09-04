@@ -116,6 +116,19 @@ OUTER:
 					log.Println("Sep chosen ", sepActual, " out ", out)
 					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
+					// //check chache for previous encounters
+					// compCachePrev, ok := cache[sepActual.Hash()]
+					// if ok {
+					// 	for i := range compCachePrev.Fail {
+					// 		for j := range comps {
+					// 			if comps[j].Edges.Hash() == compCachePrev.Fail[i] {
+					// 				log.Println("Comp ", comps, " known as negative for sep ", sepActual)
+					// 				continue OUTER
+					// 			}
+					// 		}
+					// 	}
+					// }
+
 					log.Printf("Comps of Sep: %v\n", comps)
 
 					var subtrees []Node

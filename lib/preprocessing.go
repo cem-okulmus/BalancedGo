@@ -49,12 +49,12 @@ OUTER:
 		for _, e2 := range g.Edges.Slice() {
 			if e1.Name != e2.Name && !e2.containedIn(removed.Slice()) && Subset(e1.Vertices, e2.Vertices) {
 				ops = append(ops, edgeOp{subedge: e1, parent: e2})
-				removed.append(e1)
+				removed.Append(e1)
 				continue OUTER
 			}
 		}
 
-		output.append(e1)
+		output.Append(e1)
 	}
 
 	return Graph{Edges: output}, ops
@@ -77,7 +77,7 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 			vertices = append(vertices, v)
 		}
 		if len(vertices) > 0 {
-			edges.append(Edge{Name: e1.Name, Vertices: vertices})
+			edges.Append(Edge{Name: e1.Name, Vertices: vertices})
 		}
 
 	}
@@ -203,7 +203,7 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 		for _, v := range e.Vertices {
 			vertices = append(vertices, substituteMap[v])
 		}
-		newEdges.append(Edge{Name: e.Name, Vertices: RemoveDuplicates(vertices)})
+		newEdges.Append(Edge{Name: e.Name, Vertices: RemoveDuplicates(vertices)})
 	}
 
 	return Graph{Edges: newEdges}, restorationMap, count

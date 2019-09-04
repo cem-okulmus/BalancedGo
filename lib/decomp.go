@@ -70,7 +70,7 @@ func (d Decomp) Correct(g Graph) bool {
 	// Every edge has to be covered
 	for _, e := range d.Graph.Edges.Slice() {
 		if !d.Root.coversEdge(e) {
-			fmt.Printf("Edge %v isn't covered", e)
+			fmt.Println("Edge ", e, " isn't covered")
 			output = false
 		}
 	}
@@ -131,7 +131,7 @@ func (d *Decomp) Blowup() Decomp {
 			nchildren := n.Children
 			for _, c := range nchildren {
 				// fmt.Println("Cover prior: ", c.Cover)
-				c.Cover.append(lambda.Slice()...)
+				c.Cover.Append(lambda.Slice()...)
 				c.Cover = removeDuplicateEdges(c.Cover.Slice()) // merge lambda with direct ancestor
 
 				// fmt.Println("Cover after: ", c.Cover)

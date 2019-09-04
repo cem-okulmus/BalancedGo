@@ -48,7 +48,7 @@ func (g *Graph) Vertices() []int {
 func GetSubset(edges Edges, s []int) Edges {
 	var output Edges
 	for _, i := range s {
-		output.append(edges.Slice()[i])
+		output.Append(edges.Slice()[i])
 	}
 	return output
 }
@@ -224,7 +224,7 @@ func FilterVertices(edges Edges, vertices []int) Edges {
 
 	for _, e := range edges.Slice() {
 		if len(Inter(e.Vertices, vertices)) > 0 {
-			output.append(e)
+			output.Append(e)
 		}
 	}
 
@@ -237,7 +237,7 @@ func FilterVerticesStrict(edges Edges, vertices []int) Edges {
 
 	for _, e := range edges.Slice() {
 		if Subset(e.Vertices, vertices) {
-			output.append(e)
+			output.Append(e)
 		}
 	}
 
@@ -251,7 +251,7 @@ func CutEdges(edges Edges, vertices []int) Edges {
 	for _, e := range edges.Slice() {
 		inter := Inter(e.Vertices, vertices)
 		if len(inter) > 0 {
-			output.append(Edge{Vertices: inter})
+			output.Append(Edge{Vertices: inter})
 		}
 	}
 
@@ -268,7 +268,7 @@ func (g Graph) CheckBalancedSep(sep Edges, sp []Special, balancedFactor int) boo
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
 		if comps[i].Edges.Len()+len(compSps[i]) > (((g.Edges.Len() + len(sp)) * (balancedFactor - 1)) / balancedFactor) {
-			//	log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], len(comps[i].Edges)+len(compSps[i]), ((len(g.Edges) + len(sp)) / 2))
+			//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], comps[i].Edges.Len()+len(compSps[i]), ((g.Edges.Len() + len(sp)) / 2))
 			return false
 		}
 	}
@@ -283,7 +283,7 @@ func (g Graph) CheckBalancedSep(sep Edges, sp []Special, balancedFactor int) boo
 	// Make sure that "special seps can never be used as separators"
 	for _, s := range sp {
 		if reflect.DeepEqual(s.Vertices, sep.Vertices()) {
-			//	log.Println("Special edge %+v\n used again", s)
+			//log.Println("Special edge %+v\n used again", s)
 			return false
 		}
 	}
@@ -317,7 +317,7 @@ func (g Graph) ComputeSubEdges(K int) Graph {
 		for gen.HasNext() {
 			subset := GetSubset(edgesWihoutE, gen.Combination)
 			var tuple = subset.Vertices()
-			output.Edges.append(Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
+			output.Edges.Append(Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
 			gen.Confirm()
 		}
 	}

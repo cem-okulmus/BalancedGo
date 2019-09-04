@@ -2,7 +2,6 @@
 package algorithms
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -81,7 +80,7 @@ OUTER:
 				}(K, i, comps, compsSp, SepSpecial)
 			} else {
 				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-					det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
+					det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: false}
 					ch <- det.findDecomp(K, comps[i], []int{}, append(compsSp[i], SepSpecial))
 				}(K, i, comps, compsSp, SepSpecial)
 			}
@@ -100,9 +99,9 @@ OUTER:
 			}
 
 			log.Printf("Produced Decomp: %+v\n", decomp)
-			if currentDepth == 1 {
-				fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
-			}
+			// if currentDepth == 1 {
+			// 	fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
+			// }
 
 			subtrees = append(subtrees, decomp)
 		}

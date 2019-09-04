@@ -112,16 +112,16 @@ func (n *Node) getConGraph() Edges {
 	//m[num+encode] = n.Cover.String()
 
 	n.getNumber()
-	output.append(Edge{Vertices: []int{n.num, n.num}}) // add loop (needed )
+	output.Append(Edge{Vertices: []int{n.num, n.num}}) // add loop (needed )
 
 	for i, _ := range n.Children {
 		n.Children[i].getNumber()
-		output.append(Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
+		output.Append(Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
 	}
 
 	for _, c := range n.Children {
 		edgesChild := c.getConGraph()
-		output.append(edgesChild.Slice()...)
+		output.Append(edgesChild.Slice()...)
 	}
 
 	return output
@@ -257,7 +257,7 @@ func (n *Node) RestoreEdges(edges Edges) Node {
 	for _, e2 := range n.Cover.Slice() {
 		for _, e := range edges.Slice() {
 			if Subset(e2.Vertices, e.Vertices) {
-				nuCover.append(e)
+				nuCover.Append(e)
 			}
 		}
 	}
@@ -272,17 +272,19 @@ func (n *Node) RestoreEdges(edges Edges) Node {
 	return Node{Bag: n.Bag, Cover: nuCover, Children: nuChildern}
 }
 
-func (n Node) CheckLeaves(vertices []int) (bool, *Node) {
+func (n *Node) CheckLeaves(vertices []int, subtree Node) (bool, *Node) {
 	if len(n.Children) == 0 {
 		if Subset(vertices, n.Bag) {
-			return true, &n
+			n.Children = []Node{subtree}
+			return true, n
 		}
 	}
 
-	for _, child := range n.Children {
-		ok, result := child.CheckLeaves(vertices)
+	for i := range n.Children {
+		ok, result := n.Children[i].CheckLeaves(vertices, subtree)
 		if ok {
-			return ok, result
+			n.Children[i] = *result
+			return ok, n
 		}
 	}
 

@@ -251,7 +251,7 @@ func main() {
 		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
 		// encode = encode + 2
 
-		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: true}
+		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: false}
 		decomp = det.FindHD(*width, Sp)
 
 		d := time.Now().Sub(start)
@@ -265,17 +265,19 @@ func main() {
 	}
 
 	if *divideTest {
-		//var decomp Decomp
-
+		var decomp Decomp
 		start := time.Now()
-		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
 
-		out := div.FindDecomp()
+		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		decomp = div.FindDecomp()
+
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Result \n", out)
+		fmt.Println("Result \n", decomp)
 		fmt.Println("Time", msec, " ms")
+		fmt.Println("Width: ", decomp.CheckWidth())
+		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
 		return
 	}
 
@@ -346,7 +348,7 @@ func main() {
 
 	// Parallel Execution FULL
 	start = time.Now()
-	decomp := global.FindGHDParallelFull(*width)
+	decomp := local.FindGHDParallelFull(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
@@ -358,7 +360,7 @@ func main() {
 
 	// Parallel Execution Search
 	start = time.Now()
-	decomp = global.FindGHDParallelSearch(*width)
+	decomp = local.FindGHDParallelSearch(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
@@ -370,7 +372,7 @@ func main() {
 
 	// Parallel Execution Comp
 	start = time.Now()
-	decomp = global.FindGHDParallelComp(*width)
+	decomp = local.FindGHDParallelComp(*width)
 
 	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
 
@@ -381,7 +383,7 @@ func main() {
 	output = output + fmt.Sprintf("%.5f;", msec)
 	// Sequential Execution
 	start = time.Now()
-	decomp = global.FindGHD(*width)
+	decomp = local.FindGHD(*width)
 
 	//fmt.Printf("Decomp of parsedGraph: %v\n", decomp.Root)
 	d = time.Now().Sub(start)

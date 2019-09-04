@@ -38,8 +38,8 @@ func (c divideComp) String() string {
 
 //similar to getComponents on Graphs, with minor changes to account for divideKDecomp
 func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint.Element, bool) {
-	upEdge := Edge{Vertices: comp.up}
-	lowEdge := Edge{Vertices: comp.low}
+	//	edgesUp := FilterVertices(comp.edges, comp.up)   // all edges in comp connected to Up
+	edgesLow := FilterVertices(comp.edges, comp.low) // all edges in comp conneted to low
 
 	var output []divideComp
 
@@ -54,7 +54,7 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint
 	}
 
 	//  Set up the disjoint sets for each node
-	for _, i := range append(comp.edges.Vertices()) {
+	for _, i := range comp.edges.Vertices() {
 		vertices[i] = disjoint.NewElement()
 	}
 
@@ -74,14 +74,6 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint
 				break
 			}
 		}
-	}
-
-	//join the connecting vertices together
-	for i := 0; i < len(upEdge.Vertices)-1; i++ {
-		disjoint.Union(vertices[upEdge.Vertices[i]], vertices[upEdge.Vertices[i+1]])
-	}
-	for i := 0; i < len(lowEdge.Vertices)-1; i++ {
-		disjoint.Union(vertices[lowEdge.Vertices[i]], vertices[lowEdge.Vertices[i+1]])
 	}
 
 	//sort each edge to a corresponding component
@@ -116,12 +108,15 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint
 	for i, _ := range comps {
 		c := divideComp{edges: NewEdges(comps[i])}
 		if len(Inter(comp.up, c.edges.Vertices())) > 0 { // comp Up connecting
+			//	c.edges.Append(DiffEdges(c.edges, edgesUp.Slice()...).Slice()...) // make sure all upEdges stay together
 			c.upConnecting = true
 			upConn = true
 			c.up = Inter(comp.up, c.edges.Vertices())
 			c.low = Inter(sepVert, c.edges.Vertices())
 		} else {
 			if len(Inter(comp.low, c.edges.Vertices())) > 0 { // comp Low connecting
+				//	log.Println("Low connecting comp.", c.edges, " lowEdges", edgesLow, "\nAdding Edges ", DiffEdges(edgesLow, c.edges.Slice()...))
+				c.edges.Append(DiffEdges(edgesLow, c.edges.Slice()...).Slice()...) // make sure all lowEdges stay together
 				c.low = Inter(comp.low, c.edges.Vertices())
 			}
 			c.up = Inter(sepVert, c.edges.Vertices())
@@ -190,6 +185,10 @@ func (d DivideKDecomp) CheckBalancedSep(comp divideComp, sep Edges) bool {
 	} else {
 		for i := range comps {
 			if len(comps[i].low) == 0 {
+				if comps[i].edges.Len() == comp.edges.Len() { // must make some progres
+					return false
+				}
+
 				continue
 			}
 			if comps[i].edges.Len() > (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor) {
@@ -207,9 +206,10 @@ func (d DivideKDecomp) CheckBalancedSep(comp divideComp, sep Edges) bool {
 
 //TODO check if this kind of manipulation actually works outside of current scope
 func reorderComps(parent Node, subtree Node, up []int) Node {
+	log.Println("Two Nodes enter: ", parent, subtree)
 	up = Inter(up, parent.Vertices())
 	//finding connecting leaf in parent
-	found, leaf := parent.CheckLeaves(up)
+	found, leaf := parent.CheckLeaves(up, subtree)
 	if !found {
 		fmt.Println("\n \n comp ", PrintVertices(up))
 		fmt.Println("parent ", parent)
@@ -217,9 +217,10 @@ func reorderComps(parent Node, subtree Node, up []int) Node {
 		log.Panicln("parent tree doesn't contain connecting node!")
 	}
 
-	//attaching subtree to parent
-	leaf.Children = []Node{subtree}
-
+	// //attaching subtree to parent
+	// leaf.Children = []Node{subtree}
+	log.Println("Leaf ", leaf)
+	log.Println("One Node leaves: ", parent)
 	return parent
 }
 
@@ -254,7 +255,7 @@ OUTER:
 			child := d.decomposable(comps[i])
 			if reflect.DeepEqual(child, Decomp{}) {
 				log.Printf("REJECTING %v: couldn't decompose %v \n", Graph{Edges: balsep}, comps[i])
-				log.Printf("\n\nCurrent SubGraph: %v\n", Graph{Edges: comp.edges})
+				log.Printf("\n\nCurrent SubGraph: %v\n", comp)
 				continue OUTER
 			}
 

@@ -21,7 +21,7 @@ func GetMSCOrder(edges Edges) Edges {
 	//randomly select last edge in the ordering
 	i := rand.Intn(edges.Len())
 	chosen[i] = true
-	selected.append(edges.Slice()[i])
+	selected.Append(edges.Slice()[i])
 
 	for selected.Len() < edges.Len() {
 		var candidates []int
@@ -43,7 +43,7 @@ func GetMSCOrder(edges Edges) Edges {
 		nextInOrder := candidates[rand.Intn(len(candidates))]
 		//nextInOrder := candidates[0]
 
-		selected.append(edges.Slice()[nextInOrder])
+		selected.Append(edges.Slice()[nextInOrder])
 		chosen[nextInOrder] = true
 	}
 

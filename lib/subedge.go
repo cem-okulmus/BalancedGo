@@ -55,7 +55,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	for _, j := range edges.Slice() {
 		inter := Inter(j.Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
-			h_edges.append(Edge{Vertices: inter})
+			h_edges.Append(Edge{Vertices: inter})
 		}
 	}
 	// TODO: Sort h_edges by size
@@ -190,7 +190,7 @@ func (sep SepSub) GetCurrent() Edges {
 	var output Edges
 
 	for _, s := range sep.Edges {
-		output.append(s.getCurrent())
+		output.Append(s.getCurrent())
 	}
 
 	return output
