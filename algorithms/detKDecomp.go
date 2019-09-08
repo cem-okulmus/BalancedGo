@@ -43,8 +43,8 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 	case 1:
 		children = Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges}
 	case 2:
-		children = Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges,
-			Children: []Node{Node{Bag: Sp[1].Vertices, Cover: Sp[1].Edges}}}
+		children = Node{Bag: Sp[1].Vertices, Cover: Sp[1].Edges,
+			Children: []Node{Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges}}}
 
 	}
 
@@ -110,6 +110,21 @@ OUTER:
 
 				sepActualOrigin := sepActual
 				var sepSub *SepSub
+				var sepConst Edges
+				var sepChanging Edges
+				if d.SubEdge {
+					for i, v := range gen.Subset {
+						if gen.InComp[v] {
+							sepChanging.Append(sep.Slice()[i])
+						} else {
+							sepConst.Append(sep.Slice()[i])
+						}
+					}
+					if addEdges {
+						sepChanging.Append(H.Edges.Slice()[i_add])
+					}
+				}
+
 			subEdges:
 				for true {
 
@@ -137,14 +152,14 @@ OUTER:
 					for i := range comps {
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
 						if reflect.DeepEqual(decomp, Decomp{}) {
-							log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
+							log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
 							log.Printf("\n\nCurrent oldSep: %v\n", oldSep)
 							log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
 							log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
 								if sepSub == nil {
-									sepSub = GetSepSub(d.Graph.Edges, sepActual, K)
+									sepSub = GetSepSub(d.Graph.Edges, sepChanging, K)
 								}
 
 								nextBalsepFound := false
@@ -152,6 +167,7 @@ OUTER:
 								for !nextBalsepFound {
 									if sepSub.HasNext() {
 										sepActual = sepSub.GetCurrent()
+										sepActual.Append(sepConst.Slice()...)
 										log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
 										// log.Println("SubSep: ")
 										// for _, s := range sepSub.Edges {

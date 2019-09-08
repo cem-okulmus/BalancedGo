@@ -295,6 +295,8 @@ func sortBySliceBool(a []bool, b []int) {
 }
 
 func PrintVertices(vertices []int) string {
+	mutex.RLock()
+	defer mutex.RUnlock()
 
 	var buffer bytes.Buffer
 

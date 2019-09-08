@@ -40,12 +40,13 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 	var balsep Edges
 
+	//find a balanced separator
 	var decomposed = false
-	edges := FilterVerticesStrict(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := CutEdges(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
-	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), false)
-
+	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
 	var subtrees []Decomp
+	balsepOrig := balsep
 
 	//find a balanced separator
 OUTER:
@@ -56,57 +57,85 @@ OUTER:
 		parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
 
 		if len(found) == 0 { // meaning that the search above never found anything
-			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+			log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 			return Decomp{}
 		}
 
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
+		var sepSub *SepSub
 
 		log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
 
-		comps, compsSp, _ := H.GetComponents(balsep, Sp)
+	INNER:
+		for !decomposed {
+			comps, compsSp, _ := H.GetComponents(balsep, Sp)
 
-		log.Printf("Comps of Sep: %+v\n", comps)
+			log.Printf("Comps of Sep: %+v\n", comps)
 
-		SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
+			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
-		ch := make(chan Decomp)
-		for i := range comps {
+			ch := make(chan Decomp)
+			for i := range comps {
 
-			if currentDepth > 0 {
-				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-					ch <- b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial))
-				}(K, i, comps, compsSp, SepSpecial)
-			} else {
-				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-					det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: false}
-					ch <- det.findDecomp(K, comps[i], []int{}, append(compsSp[i], SepSpecial))
-				}(K, i, comps, compsSp, SepSpecial)
+				if currentDepth > 0 {
+					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
+						ch <- b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial))
+					}(K, i, comps, compsSp, SepSpecial)
+				} else {
+					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
+						det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
+						Sp := append(compsSp[i], SepSpecial)
+						if len(Sp) > 1 {
+							edgesFromSpecial := EdgesSpecial(Sp)
+							comps[i].Edges.Append(edgesFromSpecial...)
+
+						}
+						ch <- det.findDecomp(K, comps[i], []int{}, Sp)
+					}(K, i, comps, compsSp, SepSpecial)
+				}
+
 			}
 
-		}
+			for i := 0; i < len(comps); i++ {
+				decomp := <-ch
+				if reflect.DeepEqual(decomp, Decomp{}) {
+					subtrees = []Decomp{}
+					if sepSub == nil {
+						sepSub = GetSepSub(b.Graph.Edges, balsep, K)
+					}
+					nextBalsepFound := false
 
-		for i := range comps {
-			decomp := <-ch
-			if reflect.DeepEqual(decomp, Decomp{}) {
+					for !nextBalsepFound {
+						if sepSub.HasNext() {
+							balsep = sepSub.GetCurrent()
+							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							// log.Println("SubSep: ")
+							// for _, s := range sepSub.Edges {
+							// 	log.Println(s.Combination)
+							// }
+							if H.CheckBalancedSep(balsep, Sp, b.BalFactor) {
+								nextBalsepFound = true
+							}
+						} else {
+							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							continue OUTER
+						}
+					}
+					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+					continue INNER
+				}
 
-				log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep}, comps[i], append(compsSp[i], SepSpecial))
-				subtrees = []Decomp{}
-				log.Printf("\n\nCurrent SubGraph: %v\n", H)
-				log.Printf("Current Special Edges: %v\n\n", Sp)
-				continue OUTER
+				log.Printf("Produced Decomp: %+v\n", decomp)
+				// if currentDepth == 1 {
+				// 	fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
+				// }
+
+				subtrees = append(subtrees, decomp)
 			}
 
-			log.Printf("Produced Decomp: %+v\n", decomp)
-			// if currentDepth == 1 {
-			// 	fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
-			// }
-
-			subtrees = append(subtrees, decomp)
+			decomposed = true
 		}
-
-		decomposed = true
 	}
 
 	return rerooting(H, balsep, subtrees)

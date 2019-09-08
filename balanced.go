@@ -136,7 +136,7 @@ func main() {
 		fmt.Println(" as a heuristic")
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
-		log.Printf("Ordering: %v", parsedGraph.String())
+		fmt.Printf("Ordering: %v", parsedGraph.String())
 
 	}
 

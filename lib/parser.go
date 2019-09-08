@@ -1,11 +1,14 @@
 package lib
 
 import (
+	"sync"
+
 	"github.com/alecthomas/participle"
 )
 
 var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
-var encode int       // stores the encoding of the highest int used
+var mutex = sync.RWMutex{}
+var encode int // stores the encoding of the highest int used
 
 type ParseEdge struct {
 	Name     string   `(Int)? @Ident`

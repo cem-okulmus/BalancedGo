@@ -17,6 +17,8 @@ type Node struct {
 }
 
 func (n Node) printBag() string {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	var buffer bytes.Buffer
 	for i, v := range n.Bag {
 		buffer.WriteString(m[v])
@@ -72,7 +74,6 @@ func (n Node) contains(o Node) bool {
 	if reflect.DeepEqual(n, o) {
 		return true
 	}
-
 	// Check recursively if contained in children
 	for _, child := range n.Children {
 		if child.contains(o) {
@@ -99,9 +100,14 @@ func (n Node) bagSubsets() bool {
 
 func (n *Node) getNumber() {
 	if n.num == 0 {
+
+		temp := "num : " + strconv.Itoa(n.num) + " node: " + n.Cover.String()
+		mutex.Lock()
 		n.num = encode
-		m[n.num] = "num : " + strconv.Itoa(n.num) + " node: " + n.Cover.String()
+		m[n.num] = temp
 		encode++
+		mutex.Unlock()
+
 	}
 }
 
@@ -144,7 +150,7 @@ func (n *Node) allChildrenContaining(vert int) []int {
 
 func (n Node) coversEdge(e Edge) bool {
 	// edge contained in current node
-	if Subset(e.Vertices, n.Cover.Vertices()) {
+	if Subset(e.Vertices, n.Bag) {
 		return true
 	}
 
@@ -228,7 +234,9 @@ func (n Node) specialCondition() bool {
 
 	for _, v := range hiddenVertices {
 		if Mem(verticesRooted, v) {
+			mutex.RLock()
 			log.Println("Vertex ", m[v], " violates special condition")
+			mutex.RUnlock()
 			return false
 		}
 	}

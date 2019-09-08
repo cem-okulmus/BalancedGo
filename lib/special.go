@@ -25,6 +25,8 @@ func (s Special) String() string {
 }
 
 func (s Special) StringVertices() string {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
 	for i, v := range s.Vertices {
@@ -49,6 +51,16 @@ func VerticesSpecial(sp []Special) []int {
 	}
 
 	return RemoveDuplicates(output)
+}
+
+func EdgesSpecial(sp []Special) []Edge {
+	var output []Edge
+
+	for i := range sp {
+		output = append(output, sp[i].Edges.Slice()...)
+	}
+
+	return output
 }
 
 func (s Special) areSNeighbours(o Edge, sep []int) bool {

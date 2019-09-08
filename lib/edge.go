@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+var mux sync.Mutex
+
 // An Edge (used here for hyperedge) consists of a collection of vertices and a name
 type Edge struct {
 	Name     int
@@ -17,7 +19,8 @@ type Edge struct {
 
 func (e Edge) FullString() string {
 	var buffer bytes.Buffer
-
+	mutex.RLock()
+	defer mutex.RUnlock()
 	if e.Name > 0 {
 		buffer.WriteString(m[e.Name])
 	}
@@ -39,6 +42,8 @@ func (e Edge) FullString() string {
 }
 
 func (e Edge) String() string {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	if e.Name > 0 {
 		return m[e.Name]
 	}
@@ -142,7 +147,7 @@ func (s Edges) Less(i, j int) bool {
 }
 
 func (s *Edges) Append(es ...Edge) {
-	var mux sync.Mutex
+
 	mux.Lock() // ensure that hash is computed only on one gorutine at a time
 	defer mux.Unlock()
 	for _, e := range es {
@@ -322,7 +327,7 @@ OUTER:
 
 // produces the union of all vertices from a slice of Edge
 func (e *Edges) Vertices() []int {
-	var mux sync.Mutex
+
 	mux.Lock()
 	if len(e.vertices) == 0 {
 		var output []int

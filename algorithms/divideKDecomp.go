@@ -37,8 +37,8 @@ func (c divideComp) String() string {
 }
 
 //similar to getComponents on Graphs, with minor changes to account for divideKDecomp
-func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint.Element, bool) {
-	//	edgesUp := FilterVertices(comp.edges, comp.up)   // all edges in comp connected to Up
+func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint.Element, int) {
+	//edgesUp := FilterVertices(comp.edges, comp.up)   // all edges in comp connected to Up
 	edgesLow := FilterVertices(comp.edges, comp.low) // all edges in comp conneted to low
 
 	var output []divideComp
@@ -102,22 +102,27 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint
 		comps[vertices[vertexRep].Find()] = append(slice, e)
 	}
 
-	upConn := false
+	upConn := 0
 
+	// Perf: You _can_ check comp for up/low connecting without an intersect operation
 	// Store the components
 	for i, _ := range comps {
 		c := divideComp{edges: NewEdges(comps[i])}
 		if len(Inter(comp.up, c.edges.Vertices())) > 0 { // comp Up connecting
-			//	c.edges.Append(DiffEdges(c.edges, edgesUp.Slice()...).Slice()...) // make sure all upEdges stay together
+			//c.edges.Append(DiffEdges(edgesUp, c.edges.Slice()...).Slice()...) // make sure all upEdges stay together
 			c.upConnecting = true
-			upConn = true
+			upConn++
+			if upConn > 1 {
+				return output, vertices, upConn
+			}
 			c.up = Inter(comp.up, c.edges.Vertices())
+			//c.up = comp.up
 			c.low = Inter(sepVert, c.edges.Vertices())
 		} else {
 			if len(Inter(comp.low, c.edges.Vertices())) > 0 { // comp Low connecting
 				//	log.Println("Low connecting comp.", c.edges, " lowEdges", edgesLow, "\nAdding Edges ", DiffEdges(edgesLow, c.edges.Slice()...))
 				c.edges.Append(DiffEdges(edgesLow, c.edges.Slice()...).Slice()...) // make sure all lowEdges stay together
-				c.low = Inter(comp.low, c.edges.Vertices())
+				c.low = comp.low
 			}
 			c.up = Inter(sepVert, c.edges.Vertices())
 		}
@@ -125,7 +130,7 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint
 		output = append(output, c)
 	}
 
-	if !upConn && !Subset(comp.up, sepVert) {
+	if upConn == 0 && !Subset(comp.up, sepVert) {
 		fmt.Println("H: ")
 		for _, e := range comp.edges.Slice() {
 			fmt.Println(e.FullString())
@@ -154,13 +159,24 @@ type DivideKDecomp struct {
 
 func (d DivideKDecomp) CheckBalancedSep(comp divideComp, sep Edges) bool {
 
-	comps, vertices, _ := comp.getComponents(sep)
+	comps, vertices, upConn := comp.getComponents(sep)
+
+	if upConn > 1 {
+		log.Println("More than one upconnecting, not in normal form")
+		return false
+	}
 
 	//check if up and low separated
 	// constant check enough as all vertices in up (resp. low) part of the same comp
 	if len(comp.up) > 0 && len(comp.low) > 0 {
 		if vertices[comp.up[0]] == vertices[comp.low[0]] {
 			log.Println("Up and low not separated")
+			log.Println("Current: ", comp, "\n\n")
+
+			for i := range comps {
+				log.Println(comps[i], "\n")
+			}
+
 			return false
 		}
 	}
@@ -233,13 +249,14 @@ func (d DivideKDecomp) decomposable(comp divideComp) Decomp {
 		return Decomp{Graph: d.Graph,
 			Root: Node{Cover: sep, Bag: sep.Vertices()}}
 	}
+	edges := FilterVertices(d.Graph.Edges, comp.edges.Vertices())
 
-	gen := GetCombin(d.Graph.Edges.Len(), d.K)
+	gen := GetCombin(edges.Len(), d.K)
 
 OUTER:
 	for gen.HasNext() {
 		gen.Confirm()
-		balsep := GetSubset(d.Graph.Edges, gen.Combination)
+		balsep := GetSubset(edges, gen.Combination)
 		if !d.CheckBalancedSep(comp, balsep) {
 			continue
 		}
@@ -261,7 +278,7 @@ OUTER:
 
 			log.Printf("Produced Decomp: %v\n", child)
 
-			if upConn && comps[i].upConnecting {
+			if upConn == 1 && comps[i].upConnecting {
 				parent = child.Root
 			} else {
 				subtrees = append(subtrees, child.Root)
@@ -282,7 +299,7 @@ OUTER:
 			log.Panicln("Parent missing")
 		}
 
-		if upConn {
+		if upConn == 1 {
 			output = reorderComps(parent, SubtreeRootedAtS, balsep.Vertices())
 
 			log.Printf("Reordered Decomp: %v\n", output)

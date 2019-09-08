@@ -248,10 +248,21 @@ func FilterVerticesStrict(edges Edges, vertices []int) Edges {
 func CutEdges(edges Edges, vertices []int) Edges {
 	var output Edges
 
-	for _, e := range edges.Slice() {
-		inter := Inter(e.Vertices, vertices)
+	for i := range edges.Slice() {
+		inter := Inter(edges.Slice()[i].Vertices, vertices)
 		if len(inter) > 0 {
-			output.Append(Edge{Vertices: inter})
+			name := edges.Slice()[i].Name
+			// if len(inter) < len(edges.Slice()[i].Vertices) {
+
+			// 	var mux sync.Mutex
+			// 	mux.Lock() // ensure that hash is computed only on one gorutine at a time
+			// 	name = encode
+			// 	m[encode] = m[edges.Slice()[i].Name] + "'"
+			// 	encode++
+			// 	mux.Unlock()
+
+			// }
+			output.Append(Edge{Name: name, Vertices: inter})
 		}
 	}
 

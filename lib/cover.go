@@ -13,7 +13,7 @@ type Cover struct {
 	K          int          //maximal size of cover
 	covered    map[int]int8 //map if each vertex is covered, and by how many edges
 	Uncovered  int          //number of vertices that needs to be covered
-	inComp     []bool       //indicates for each Edge if its in comp. or not
+	InComp     []bool       //indicates for each Edge if its in comp. or not
 	inCompSel  int          //number of edges inComp already selected
 	covWeights []int        //summed weights from toCover
 	Bound      Edges        //the edges at boundary
@@ -96,7 +96,7 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 	}
 
 	return Cover{K: K, covered: covered, Uncovered: len(vertices),
-		inComp: inComp, covWeights: covWeights, Bound: bound, pos: 0, HasNext: true, first: true}
+		InComp: inComp, covWeights: covWeights, Bound: bound, pos: 0, HasNext: true, first: true}
 
 }
 
@@ -152,7 +152,7 @@ func (c *Cover) NextSubset() int {
 		// fmt.Println("c.inCompSel > 0", c.inCompSel > 0)
 		// fmt.Println("len(c.Subset) < (c.K-1) ", len(c.Subset) < (c.K-1))
 
-		if c.inComp[c.pos] || c.inCompSel > 0 || len(c.Subset) < (c.K-1) {
+		if c.InComp[c.pos] || c.inCompSel > 0 || len(c.Subset) < (c.K-1) {
 			for _, v := range c.Bound.Slice()[c.pos].Vertices {
 				_, ok := c.covered[v]
 				if ok {
@@ -165,7 +165,7 @@ func (c *Cover) NextSubset() int {
 		//Actually add it to the edge
 		if selected {
 			c.Subset = append(c.Subset, c.pos)
-			if c.inComp[c.pos] {
+			if c.InComp[c.pos] {
 				c.inCompSel++
 			}
 
@@ -204,7 +204,7 @@ func (c *Cover) backtrack() bool {
 	c.pos = c.Subset[len(c.Subset)-1]
 
 	c.Subset = c.Subset[:len(c.Subset)-1]
-	if c.inComp[c.pos] {
+	if c.InComp[c.pos] {
 		c.inCompSel--
 	}
 

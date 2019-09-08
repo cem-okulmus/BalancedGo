@@ -1,5 +1,10 @@
 package lib
 
+import (
+	"fmt"
+	"io/ioutil"
+)
+
 type subSet struct {
 	source  []int
 	current CombinationIterator
@@ -105,7 +110,7 @@ func (s *SubEdges) hasNextCombination() bool {
 
 func (s SubEdges) existsSubset(b []int) bool {
 	for _, e := range s.cache {
-		if Subset(b, e) {
+		if Subset(b, e) && Subset(e, b) {
 			return true
 		}
 	}
@@ -113,6 +118,7 @@ func (s SubEdges) existsSubset(b []int) bool {
 }
 
 func (s *SubEdges) hasNext() bool {
+	newSelected := false
 	if s.currentSubset == nil || !s.currentSubset.hasNext() {
 		for s.hasNextCombination() {
 			// fmt.Println("We need a new subset")
@@ -122,14 +128,15 @@ func (s *SubEdges) hasNext() bool {
 			if s.existsSubset(vertices) || len(vertices) == 0 { // || len(vertices) == len(Vertices(s.source))
 				continue //skip
 			} else {
-				s.cache = append(s.cache, vertices)
+				//s.cache = append(s.cache, vertices)
 				s.currentSubset = getSubsetIterator(vertices)
 				s.currentSubset.hasNext()
+				newSelected = true
 				break
 			}
 
 		}
-		if !s.hasNextCombination() {
+		if !newSelected && !s.hasNextCombination() {
 			if !s.emptyReturned {
 				s.emptyReturned = true
 				return true
@@ -139,6 +146,12 @@ func (s *SubEdges) hasNext() bool {
 	}
 
 	s.current = s.currentSubset.getCurrent()
+	if s.existsSubset(s.current.Vertices) {
+		return s.hasNext()
+	} else {
+		s.cache = append(s.cache, s.current.Vertices)
+	}
+
 	return true
 }
 
@@ -198,7 +211,33 @@ func (sep SepSub) GetCurrent() Edges {
 
 // TEST
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+
+}
+
 func test() {
+	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/adlerexample_badorder.hg")
+	check(err)
+
+	parsedGraph, parse := GetGraph(string(dat))
+
+	e1 := parse.GetEdge("E1 (V1, V2, V9)")
+	fmt.Println(e1.FullString(), "\n\n")
+
+	for _, e := range parsedGraph.Edges.Slice() {
+		fmt.Println(e.FullString())
+	}
+
+	test := GetSepSub(parsedGraph.Edges, NewEdges([]Edge{e1}), 2)
+
+	fmt.Println(test.GetCurrent())
+	for test.HasNext() {
+		fmt.Println(test.GetCurrent())
+	}
+	return
 
 	// fmt.Println("Subset test: ")
 	// fmt.Println("========================================")
