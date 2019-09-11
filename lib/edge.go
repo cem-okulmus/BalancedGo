@@ -163,6 +163,9 @@ func (s *Edges) Append(es ...Edge) {
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elementsSlice []Edge) Edges {
+	if len(elementsSlice) == 0 {
+		return Edges{}
+	}
 	elements := Edges{slice: elementsSlice}
 	sort.Sort(elements)
 

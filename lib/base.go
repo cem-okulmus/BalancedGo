@@ -6,6 +6,8 @@ import (
 	"sort"
 )
 
+var Empty struct{}
+
 // func RemoveDuplicates(elements []int) []int {
 // 	// Use map to record duplicates as we find them.
 // 	encountered := make(map[int]struct{})
@@ -176,7 +178,6 @@ OUTER:
 
 func Inter(as, bs []int) []int {
 	encountered_b := make(map[int]struct{})
-	var Empty struct{}
 	for _, b := range bs {
 		encountered_b[b] = Empty
 	}

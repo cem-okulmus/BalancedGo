@@ -46,7 +46,9 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
 	var subtrees []Decomp
-	balsepOrig := balsep
+
+	var cache map[uint32]struct{}
+	cache = make(map[uint32]struct{})
 
 	//find a balanced separator
 OUTER:
@@ -63,6 +65,7 @@ OUTER:
 
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
+		balsepOrig := balsep
 		var sepSub *SepSub
 
 		log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
@@ -86,12 +89,13 @@ OUTER:
 					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
 						det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
 						Sp := append(compsSp[i], SepSpecial)
-						if len(Sp) > 1 {
+						if comps[i].Edges.Len() == 0 {
 							edgesFromSpecial := EdgesSpecial(Sp)
 							comps[i].Edges.Append(edgesFromSpecial...)
 
 						}
-						ch <- det.findDecomp(K, comps[i], []int{}, Sp)
+						det.cache = make(map[uint32]*CompCache)
+						ch <- det.findDecomp(K, comps[i], balsep.Vertices(), Sp)
 					}(K, i, comps, compsSp, SepSpecial)
 				}
 
@@ -105,7 +109,7 @@ OUTER:
 						sepSub = GetSepSub(b.Graph.Edges, balsep, K)
 					}
 					nextBalsepFound := false
-
+				thisLoop:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
@@ -114,7 +118,12 @@ OUTER:
 							// for _, s := range sepSub.Edges {
 							// 	log.Println(s.Combination)
 							// }
+							_, ok := cache[IntHash(balsep.Vertices())]
+							if ok { //skip since already seen
+								continue thisLoop
+							}
 							if H.CheckBalancedSep(balsep, Sp, b.BalFactor) {
+								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
 						} else {
@@ -122,14 +131,18 @@ OUTER:
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+					log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
 				log.Printf("Produced Decomp: %+v\n", decomp)
-				// if currentDepth == 1 {
-				// 	fmt.Println("From detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
-				// }
+				if currentDepth == 0 {
+					log.Println("\nFrom detK with Special Edges ", append(compsSp[i], SepSpecial), ":\n", decomp)
+					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
+					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+					// fmt.Println("Output from Balsep: ", decomp_deux)
+
+				}
 
 				subtrees = append(subtrees, decomp)
 			}
@@ -138,7 +151,17 @@ OUTER:
 		}
 	}
 
-	return rerooting(H, balsep, subtrees)
+	if currentDepth > 0 {
+		return rerooting(H, balsep, subtrees)
+	} else {
+		output := Node{Bag: balsep.Vertices(), Cover: balsep}
+
+		for _, s := range subtrees {
+			output.Children = append(output.Children, s.Root)
+		}
+
+		return Decomp{Graph: H, Root: output}
+	}
 }
 
 func (b BalDetKDecomp) FindGHD(K int) Decomp {

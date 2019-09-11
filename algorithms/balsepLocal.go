@@ -147,7 +147,10 @@ func (g BalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 
 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
 	var subtrees []Decomp
-	balsepOrig := balsep
+
+	var cache map[uint32]struct{}
+	cache = make(map[uint32]struct{})
+
 OUTER:
 	for !decomposed {
 		var found []int
@@ -162,7 +165,7 @@ OUTER:
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
 		var sepSub *SepSub
-
+		balsepOrig := balsep
 		log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
 
 	INNER:
@@ -190,16 +193,24 @@ OUTER:
 						sepSub = GetSepSub(g.Graph.Edges, balsep, K)
 					}
 					nextBalsepFound := false
-
+				thisLoop:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							//clog.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.Edges {
 							// 	log.Println(s.Combination)
 							// }
+							if len(balsep.Vertices()) == 0 {
+								continue thisLoop
+							}
+							_, ok := cache[IntHash(balsep.Vertices())]
+							if ok { //skip since already seen
+								continue thisLoop
+							}
 							if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
 						} else {
@@ -207,7 +218,7 @@ OUTER:
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+					log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 

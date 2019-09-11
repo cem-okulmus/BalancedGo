@@ -64,8 +64,8 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 		}
 	}
 	// TODO: Sort h_edges by size
+	h_edges = removeDuplicateEdges(h_edges.Slice())
 	//fmt.Println("h_edges", h_edges)
-
 	var output SubEdges
 
 	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
