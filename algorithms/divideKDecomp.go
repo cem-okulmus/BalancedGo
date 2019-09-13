@@ -247,7 +247,7 @@ func (d DivideKDecomp) decomposable(comp divideComp) Decomp {
 	if comp.edges.Len() <= d.K {
 		sep := NewEdges(comp.edges.Slice())
 		return Decomp{Graph: d.Graph,
-			Root: Node{Cover: sep, Bag: sep.Vertices()}}
+			Root: Node{Up: comp.up, Low: comp.low, Cover: sep, Bag: sep.Vertices()}}
 	}
 	edges := FilterVertices(d.Graph.Edges, comp.edges.Vertices())
 
@@ -287,7 +287,7 @@ OUTER:
 
 		var output Node
 
-		SubtreeRootedAtS := Node{Cover: balsep, Bag: balsep.Vertices(), Children: subtrees}
+		SubtreeRootedAtS := Node{Up: comp.up, Low: comp.low, Cover: balsep, Bag: balsep.Vertices(), Children: subtrees}
 
 		if reflect.DeepEqual(parent, Node{}) && (!Subset(comp.up, balsep.Vertices())) {
 

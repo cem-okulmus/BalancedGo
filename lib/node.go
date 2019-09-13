@@ -11,9 +11,38 @@ import (
 // and the (edge) cover
 type Node struct {
 	num      int
+	Up       []int
+	Low      []int
 	Bag      []int
 	Cover    Edges
 	Children []Node
+}
+
+func (n Node) printUp() string {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	var buffer bytes.Buffer
+	for i, v := range n.Up {
+		buffer.WriteString(m[v])
+		if i != len(n.Up)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	return buffer.String()
+}
+func (n Node) printLow() string {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	var buffer bytes.Buffer
+	for i, v := range n.Low {
+		buffer.WriteString(m[v])
+		if i != len(n.Low)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	return buffer.String()
 }
 
 func (n Node) printBag() string {
@@ -44,7 +73,7 @@ func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("\n" + indent(i) + "Bag: {")
-	buffer.WriteString(n.printBag())
+	buffer.WriteString(n.printBag() + "} Up:{ " + n.printUp() + "} Low:{" + n.printLow())
 
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
 	for i, e := range n.Cover.Slice() {

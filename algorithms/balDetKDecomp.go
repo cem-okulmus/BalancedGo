@@ -92,7 +92,6 @@ OUTER:
 						if comps[i].Edges.Len() == 0 {
 							edgesFromSpecial := EdgesSpecial(Sp)
 							comps[i].Edges.Append(edgesFromSpecial...)
-
 						}
 						det.cache = make(map[uint32]*CompCache)
 						ch <- det.findDecomp(K, comps[i], balsep.Vertices(), Sp)

@@ -11,7 +11,7 @@ var mutex = sync.RWMutex{}
 var encode int // stores the encoding of the highest int used
 
 type ParseEdge struct {
-	Name     string   `(Int)? @Ident`
+	Name     string   ` @(Ident|Int)`
 	Vertices []string `"(" ( @(Ident|Int)  ","? )* ")"`
 }
 
