@@ -31,6 +31,23 @@ func check(e error) {
 
 }
 
+func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string) {
+	decomp.RestoreSubedges()
+	fmt.Println("Result \n", decomp)
+	fmt.Println("Time", msec, " ms")
+	fmt.Println("Width: ", decomp.CheckWidth())
+	fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+	if len(gml) > 0 {
+		f, err := os.Create(gml)
+		check(err)
+
+		defer f.Close()
+		f.WriteString(decomp.ToGML())
+		f.Sync()
+
+	}
+}
+
 var Version string
 var Build string
 
@@ -56,6 +73,7 @@ func main() {
 	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
 	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
 	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
+	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
 
 	flag.Parse()
 
@@ -111,6 +129,7 @@ func main() {
 	check(err)
 
 	parsedGraph, _ := GetGraph(string(dat))
+	log.Println("BIP: ", parsedGraph.GetBIP())
 	var reducedGraph Graph
 
 	start := time.Now()
@@ -172,22 +191,6 @@ func main() {
 		}
 
 	}
-	//fmt.Println("Graph ", parsedGraph)
-	//fmt.Println("Min Distance", getMinDistances(parsedGraph))
-	//return
-
-	// count := 0
-	// for _, e := range parsedGraph.Edges {
-	// 	isOW, _ := e.OWcheck(parsedGraph.Edges)
-	// 	if isOW {
-	// 		count++
-	// 	}
-	// }
-	// fmt.Println("No of OW Edges: ", count)
-
-	// collapsedGraph, _ := parsedGraph.typeCollapse()
-
-	// fmt.Println("No of vertices collapsable: ", len(parsedGraph.Vertices())-len(collapsedGraph.Vertices()))
 
 	if *computeSubedges {
 		parsedGraph = parsedGraph.ComputeSubEdges(*width)
@@ -216,11 +219,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Result \n", decomp)
-		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.CheckWidth())
-		fmt.Println("GHD-Width: ", decomp.Blowup().CheckWidth())
-		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		outputStanza(decomp, msec, parsedGraph, *gml)
 		return
 	}
 
@@ -234,10 +233,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Result \n", decomp)
-		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.CheckWidth())
-		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		outputStanza(decomp, msec, parsedGraph, *gml)
 		return
 	}
 
@@ -256,11 +252,9 @@ func main() {
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		decomp.RestoreSubedges()
 
-		fmt.Println("Result \n", decomp)
-		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.CheckWidth())
-		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		outputStanza(decomp, msec, parsedGraph, *gml)
 		return
 	}
 
@@ -274,10 +268,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Result \n", decomp)
-		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", decomp.CheckWidth())
-		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		outputStanza(decomp, msec, parsedGraph, *gml)
 		return
 	}
 
@@ -297,50 +288,28 @@ func main() {
 			decomp = global.FindGHD(*width)
 		case 5:
 			decomp = local.FindGHDParallelFull(*width)
-			//decomp.RestoreSubedges()
 		case 6:
 			decomp = local.FindGHDParallelSearch(*width)
-			//decomp.RestoreSubedges()
 		case 7:
 			decomp = local.FindGHDParallelComp(*width)
-			//decomp.RestoreSubedges()
 		case 8:
 			decomp = local.FindGHD(*width)
-		//	decomp.RestoreSubedges()
 		default:
 			panic("Not a valid choice")
 		}
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		fmt.Println("Graph \n", parsedGraph)
-
-		fmt.Println("Result \n", decomp)
-		fmt.Println("Time", msec, " ms")
-		fmt.Println("Width: ", *width)
-		fmt.Println("Correct: ", decomp.Correct(parsedGraph))
+		outputStanza(decomp, msec, parsedGraph, *gml)
 		return
 	}
 
+	//   SIMPLE BENCHMARKING SUITE FOR LOCAL BALSEP
+	//  ============================================
+
 	var output string
 
-	// f, err := os.OpenFile("result.csv", os.O_APPEND|os.O_WRONLY, 0666)
-	// if os.IsNotExist(err) {
-	// 	f, err = os.Create("result.csv")
-	// 	check(err)
-	// 	f.WriteString("graph;edges;vertices;width;time parallel (ms) F;decomposed;time parallel S (ms);decomposed;time parallel C (ms);decomposed; time sequential (ms);decomposed\n")
-	// }
-	// defer f.Close()
-
-	//fmt.Println("Width: ", *width)
-	//fmt.Println("graphPath: ", *graphPath)
-
 	output = output + *graphPath + ";"
-
-	//f.WriteString(*graphPath + ";")
-	//f.WriteString(fmt.Sprintf("%v;", *width))
-
-	//fmt.Printf("parsedGraph %+v\n", parsedGraph)
 
 	output = output + fmt.Sprintf("%v;", parsedGraph.Edges.Len())
 	output = output + fmt.Sprintf("%v;", len(parsedGraph.Edges.Vertices()))
@@ -350,10 +319,6 @@ func main() {
 	start = time.Now()
 	decomp := local.FindGHDParallelFull(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
-
-	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
-	//fmt.Println("Correct decomposition:", decomp.correct())
 	d = time.Now().Sub(start)
 	msec := d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
@@ -362,10 +327,6 @@ func main() {
 	start = time.Now()
 	decomp = local.FindGHDParallelSearch(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
-
-	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
-	//fmt.Println("Correct decomposition:", decomp.correct())
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
@@ -374,10 +335,6 @@ func main() {
 	start = time.Now()
 	decomp = local.FindGHDParallelComp(*width)
 
-	//fmt.Printf("Decomp of parsedGraph:\n%v\n", decomp.Root)
-
-	//fmt.Println("Elapsed time for parallel:", time.Now().Sub(start))
-	//fmt.Println("Correct decomposition:", decomp.correct())
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
@@ -385,14 +342,10 @@ func main() {
 	start = time.Now()
 	decomp = local.FindGHD(*width)
 
-	//fmt.Printf("Decomp of parsedGraph: %v\n", decomp.Root)
 	d = time.Now().Sub(start)
 	msec = d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
 	output = output + fmt.Sprintf("%v\n", decomp.Correct(parsedGraph))
-	//fmt.Println("Elapsed time for sequential:", time.Now().Sub(start))
-	//fmt.Println("Correct decomposition:", decomp.correct())
 
 	fmt.Print(output)
-
 }

@@ -141,13 +141,13 @@ func (n *Node) getNumber() {
 }
 
 // Think about how to make the contains check faster than linear
-func (n *Node) getConGraph() Edges {
+func (n *Node) getConGraph(withLoops bool) Edges {
 	var output Edges
 
-	//m[num+encode] = n.Cover.String()
-
 	n.getNumber()
-	output.Append(Edge{Vertices: []int{n.num, n.num}}) // add loop (needed )
+	if withLoops { // loops needed for connectivty check
+		output.Append(Edge{Vertices: []int{n.num, n.num}})
+	}
 
 	for i, _ := range n.Children {
 		n.Children[i].getNumber()
@@ -155,7 +155,7 @@ func (n *Node) getConGraph() Edges {
 	}
 
 	for _, c := range n.Children {
-		edgesChild := c.getConGraph()
+		edgesChild := c.getConGraph(withLoops)
 		output.Append(edgesChild.Slice()...)
 	}
 
@@ -164,7 +164,6 @@ func (n *Node) getConGraph() Edges {
 
 func (n *Node) allChildrenContaining(vert int) []int {
 	var output []int
-	//m[num+encode+1] = strconv.Itoa(num)
 
 	if Mem(n.Bag, vert) {
 		output = append(output, n.num)
@@ -291,19 +290,24 @@ func (n Node) noSCViolation() bool {
 func (n *Node) RestoreEdges(edges Edges) Node {
 	var nuCover Edges
 
+OUTER:
 	for _, e2 := range n.Cover.Slice() {
+		if e2.Name != 0 {
+			nuCover.Append(e2)
+			continue
+		}
 		for _, e := range edges.Slice() {
 			if Subset(e2.Vertices, e.Vertices) {
 				nuCover.Append(e)
+				continue OUTER
 			}
 		}
 	}
 
 	var nuChildern []Node
 
-	for _, c := range n.Children {
-
-		nuChildern = append(nuChildern, c.RestoreEdges(edges))
+	for i := range n.Children {
+		nuChildern = append(nuChildern, n.Children[i].RestoreEdges(edges))
 	}
 
 	return Node{Bag: n.Bag, Cover: nuCover, Children: nuChildern}

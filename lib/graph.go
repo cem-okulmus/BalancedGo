@@ -336,3 +336,23 @@ func (g Graph) ComputeSubEdges(K int) Graph {
 	output.Edges = removeDuplicateEdges(output.Edges.Slice())
 	return output
 }
+
+func (g Graph) GetBIP() int {
+	var output int
+
+	edges := g.Edges.Slice()
+
+	for i := range edges {
+		for j := range edges {
+			if j <= i {
+				continue
+			}
+			tmp := len(Inter(edges[i].Vertices, edges[j].Vertices))
+			if tmp > output {
+				output = tmp
+			}
+		}
+	}
+
+	return output
+}

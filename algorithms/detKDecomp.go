@@ -41,7 +41,7 @@ func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
 	compCachePrev, _ := d.cache[sep.Hash()]
 	for i := range compCachePrev.Fail {
 		if comp.Edges.Hash() == compCachePrev.Fail[i] {
-			log.Println("Comp ", comp, " known as negative for sep ", sep)
+			log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
 			return true
 		}
 
@@ -108,7 +108,7 @@ func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decom
 	bound := FilterVertices(d.Graph.Edges, conn)
 
 	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
-	log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
+	log.Printf("Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
 	log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	// Base case if H <= K
@@ -183,23 +183,28 @@ OUTER:
 					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
-					// cacheMux.RLock()
-					// _, ok := d.cache[sepActual.Hash()]
-					// cacheMux.RUnlock()
-					// if !ok {
-					// 	var newCache CompCache
-					// 	cacheMux.Lock()
-					// 	d.cache[sepActual.Hash()] = &newCache
-					// 	cacheMux.Unlock()
+					cacheMux.RLock()
+					_, ok := d.cache[sepActual.Hash()]
+					cacheMux.RUnlock()
+					if !ok {
+						var newCache CompCache
+						cacheMux.Lock()
+						d.cache[sepActual.Hash()] = &newCache
+						cacheMux.Unlock()
 
-					// } else {
-					// 	for j := range comps {
-					// 		if d.checkNegative(sepActual, comps[j]) {
-
-					// 			continue OUTER
-					// 		}
-					// 	}
-					// }
+					} else {
+						for j := range comps {
+							if d.checkNegative(sepActual, comps[j]) {
+								//fmt.Println("Skipping a sep", sepActual)
+								if addEdges {
+									i_add++
+									continue addingEdges
+								} else {
+									continue OUTER
+								}
+							}
+						}
+					}
 
 					// if ok {
 					// 	for i := range compCachePrev.Fail {
@@ -232,10 +237,10 @@ OUTER:
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
-							//d.addNegative(sepActual, comps[i])
+							d.addNegative(sepActual, comps[i])
 							log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
-							log.Printf("\n\nCurrent oldSep: %v\n", oldSep)
-							log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len())
+							log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
+							log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
 							log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
@@ -250,6 +255,7 @@ OUTER:
 										sepActual = sepSub.GetCurrent()
 										sepActual.Append(sepConst.Slice()...)
 										log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
+										//log.Println("Sep const: ", sepConst, "sepChang ", sepChanging)
 										// log.Println("SubSep: ")
 										// for _, s := range sepSub.Edges {
 										// 	log.Println(s.Combination)
@@ -259,7 +265,12 @@ OUTER:
 										}
 									} else {
 										log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: sepActualOrigin}, Sp)
-										continue OUTER
+										if addEdges {
+											i_add++
+											continue addingEdges
+										} else {
+											continue OUTER
+										}
 									}
 								}
 								log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
@@ -279,23 +290,6 @@ OUTER:
 						log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)
 					}
-
-					// if !Subset(conn, sepActual.Vertices()) {
-					// 	fmt.Println("Subset of sep ", Subset(conn, sep.Vertices()))
-					// 	fmt.Println("Conn \n", PrintVertices(conn))
-					// 	fmt.Println("Vertices of Sep \n", PrintVertices(sep.Vertices()))
-					// 	fmt.Println("sep at start t \n", originalSep)
-					// 	fmt.Println("sep after caching \n", originalSep2)
-					// 	fmt.Println("sep just before caching \n", originalSep3)
-					// 	fmt.Println("sep before comp calc \n", originalSep4)
-					// 	fmt.Println("sep before sepACtual \n", originalSep5)
-					// 	fmt.Println("the actual fuck \n", originalSep6)
-
-					// 	fmt.Println("Sep ", sep.FullString())
-					// 	fmt.Println("SepA ", sepActual.FullString())
-
-					// 	log.Panicln("Cover messed up! 281")
-					// }
 
 					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}

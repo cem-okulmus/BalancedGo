@@ -112,8 +112,11 @@ func getMinDistances(vertices []int, edges Edges) ([][]int, map[int]int) {
 		changed := false
 		for k := range vertices {
 			for l := range vertices {
+				if isInf(output[k][l]) {
+					continue
+				}
 				for m := range vertices {
-					if isInf(output[k][l]) || isInf(output[l][m]) {
+					if isInf(output[l][m]) {
 						continue
 					}
 					newdist := output[k][l] + output[l][m]

@@ -64,7 +64,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 		}
 	}
 	// TODO: Sort h_edges by size
-	//h_edges = removeDuplicateEdges(h_edges.Slice())
+	h_edges = removeDuplicateEdges(h_edges.Slice())
 	//fmt.Println("h_edges", h_edges)
 	var output SubEdges
 
@@ -110,7 +110,7 @@ func (s *SubEdges) hasNextCombination() bool {
 
 func (s SubEdges) existsSubset(b []int) bool {
 	for _, e := range s.cache {
-		if Subset(b, e) { // && Subset(e, b) {
+		if Subset(b, e) && Subset(e, b) {
 			return true
 		}
 	}
@@ -124,12 +124,11 @@ func (s *SubEdges) hasNext() bool {
 			// fmt.Println("We need a new subset")
 			// fmt.Println("current:", GetSubset(s.source, s.Combination))
 			edges := GetSubset(s.source, s.combination)
-			//vertices := edges.Vertices()
-			vertices := RemoveDuplicates(edges.Vertices())
-			if len(vertices) == 0 || len(vertices) == s.source.Len() || s.existsSubset(vertices) {
+			vertices := edges.Vertices()
+			if len(vertices) == 0 || s.existsSubset(vertices) {
 				continue //skip
 			} else {
-				s.cache = append(s.cache, vertices)
+				//s.cache = append(s.cache, vertices)
 				s.currentSubset = getSubsetIterator(vertices)
 				s.currentSubset.hasNext()
 				newSelected = true
@@ -147,11 +146,11 @@ func (s *SubEdges) hasNext() bool {
 	}
 
 	s.current = s.currentSubset.getCurrent()
-	// if s.existsSubset(s.current.Vertices) {
-	// 	return s.hasNext()
-	// } else {
-	// 	s.cache = append(s.cache, s.current.Vertices)
-	// }
+	if s.existsSubset(s.current.Vertices) || len(s.current.Vertices) == s.source.Len() {
+		return s.hasNext()
+	} else {
+		s.cache = append(s.cache, s.current.Vertices)
+	}
 
 	return true
 }

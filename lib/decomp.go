@@ -22,7 +22,7 @@ func (d *Decomp) RestoreSubedges() {
 }
 
 func (d Decomp) connected(vert int) bool {
-	conGraph := d.Root.getConGraph()
+	conGraph := d.Root.getConGraph(true)
 	var containingNodes = d.Root.allChildrenContaining(vert)
 	var edgesContaining = FilterVertices(conGraph, containingNodes)
 

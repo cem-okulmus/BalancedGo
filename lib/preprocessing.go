@@ -24,7 +24,7 @@ func (_ edgeOp) isGYÖ() {}
 
 func (e edgeOp) String() string {
 	mutex.RLock()
-	mutex.RUnlock()
+	defer mutex.RUnlock()
 	return fmt.Sprintf("(%v ⊆ %v)", m[e.subedge.Name], m[e.parent.Name])
 }
 
@@ -37,7 +37,7 @@ func (_ vertOp) isGYÖ() {}
 
 func (v vertOp) String() string {
 	mutex.RLock()
-	mutex.RUnlock()
+	defer mutex.RUnlock()
 	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], m[v.edge.Name])
 }
 
