@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/alecthomas/participle"
+	"github.com/alecthomas/participle/lexer"
+	"github.com/alecthomas/participle/lexer/ebnf"
 )
 
 var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
@@ -11,8 +13,8 @@ var mutex = sync.RWMutex{}
 var encode int // stores the encoding of the highest int used
 
 type ParseEdge struct {
-	Name     string   ` @(Ident|Int)`
-	Vertices []string `"(" ( @(Ident|Int)  ","? )* ")"`
+	Name     string   ` @(Ident|Number)`
+	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 }
 
 type ParseGraph struct {
@@ -21,7 +23,20 @@ type ParseGraph struct {
 }
 
 func GetGraph(s string) (Graph, ParseGraph) {
-	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1))
+
+	graphLexer := lexer.Must(ebnf.New(`
+    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
+    Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
+    Number = ("." | digit) {"." | digit} .
+    Whitespace = " " | "\t" | "\n" | "\r" .
+    stuff = ":" | "@" | ";" | "-" .
+    Punct = "!"…"/"  .
+
+    alpha = "a"…"z" | "A"…"Z" .
+    digit = "0"…"9" .`))
+
+	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+		participle.Elide("Comment", "Whitespace"))
 	var output Graph
 	pgraph := ParseGraph{}
 	parser.ParseString(s, &pgraph)

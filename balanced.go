@@ -31,9 +31,9 @@ func check(e error) {
 
 }
 
-func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string) {
+func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string, K int) {
 	decomp.RestoreSubedges()
-	fmt.Println("Result \n", decomp)
+	fmt.Println("Result (ran with K=", K, ")\n", decomp)
 	fmt.Println("Time", msec, " ms")
 	fmt.Println("Width: ", decomp.CheckWidth())
 	fmt.Println("Correct: ", decomp.Correct(parsedGraph))
@@ -220,7 +220,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width)
 		return
 	}
 
@@ -234,7 +234,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width)
 		return
 	}
 
@@ -254,7 +254,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width)
 		return
 	}
 
@@ -268,7 +268,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width)
 		return
 	}
 
@@ -300,7 +300,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width)
 		return
 	}
 
