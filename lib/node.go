@@ -297,7 +297,7 @@ OUTER:
 			continue
 		}
 		for _, e := range edges.Slice() {
-			if Subset(e2.Vertices, e.Vertices) {
+			if Subset(e2.Vertices, e.Vertices) && e.Name != 0 {
 				nuCover.Append(e)
 				continue OUTER
 			}

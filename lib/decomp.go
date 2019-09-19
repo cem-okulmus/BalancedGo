@@ -7,8 +7,9 @@ import (
 // A Decomp (short for Decomposition) consists of a labelled tree which
 // subdivides a graph in a certain way
 type Decomp struct {
-	Graph Graph
-	Root  Node
+	Graph         Graph
+	Root          Node
+	SkipRerooting bool //needed for BalDetK
 }
 
 func (d Decomp) String() string {

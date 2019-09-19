@@ -71,6 +71,7 @@ func main() {
 	bench := flag.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
 	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
+	localBIP := flag.Bool("localbip", false, "To be used in combination with \"det\": turns on subedge handling")
 	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
 	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
 	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
@@ -227,7 +228,7 @@ func main() {
 		var decomp Decomp
 		start := time.Now()
 
-		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest}
+		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
 		decomp = balDet.FindGHD(*width)
 
 		d := time.Now().Sub(start)
@@ -247,12 +248,11 @@ func main() {
 		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
 		// encode = encode + 2
 
-		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: false}
+		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 		decomp = det.FindHD(*width, Sp)
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-		decomp.RestoreSubedges()
 
 		outputStanza(decomp, msec, parsedGraph, *gml)
 		return

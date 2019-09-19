@@ -197,7 +197,7 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							//clog.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.Edges {
 							// 	log.Println(s.Combination)

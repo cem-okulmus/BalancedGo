@@ -100,16 +100,17 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 	return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges, Children: []Node{children}}}
 }
 
-// TODO add caching to this
 func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decomp {
 	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 	conn := Inter(oldSep, verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep)
 	bound := FilterVertices(d.Graph.Edges, conn)
 
-	log.Printf("\n\nCurrent oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
-	log.Printf("Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	log.Printf("Current Special Edges: %v\n\n", Sp)
+	log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
+	log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
+	log.Printf("D Current Special Edges: %v\n\n", Sp)
+	log.Println("D Hedges ", H)
+	log.Println("D Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(Sp) <= 2 {
@@ -205,28 +206,6 @@ OUTER:
 							}
 						}
 					}
-
-					// if ok {
-					// 	for i := range compCachePrev.Fail {
-					// 		for j := range comps {
-					// 			if comps[j].Edges.Hash() == compCachePrev.Fail[i] {
-					// 				log.Println("Comp ", comps, " known as negative for sep ", sepActual)
-					// 				continue OUTER
-					// 			}
-					// 		}
-					// 	}
-
-					// 	for i := range compCachePrev.Succ {
-					// 		for j := range comps {
-					// 			if comps[j].Edges.Hash() == compCachePrev.Succ[i] {
-					// 				log.Println("Comp ", comps, " cut be a CutNode")
-					// 			} else {
-					// 				log.Println("Comp ", comps, " never tested on before ", sepActual)
-					// 			}
-					// 		}
-					// 	}
-
-					// }
 
 					log.Printf("Comps of Sep: %v\n", comps)
 
