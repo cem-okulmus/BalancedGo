@@ -31,10 +31,14 @@ func check(e error) {
 
 }
 
-func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string, K int) {
+func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64) {
 	decomp.RestoreSubedges()
-	fmt.Println("Result (ran with K=", K, ")\n", decomp)
-	fmt.Println("Time", msec, " ms")
+	fmt.Println("Result ( ran with K =", K, ")\n", decomp)
+	if heuristic > 0.0 {
+		fmt.Println("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
+	} else {
+		fmt.Println("Time: ", msec, " ms")
+	}
 	fmt.Println("Width: ", decomp.CheckWidth())
 	fmt.Println("Correct: ", decomp.Correct(parsedGraph))
 	if len(gml) > 0 {
@@ -132,6 +136,7 @@ func main() {
 	parsedGraph, _ := GetGraph(string(dat))
 	log.Println("BIP: ", parsedGraph.GetBIP())
 	var reducedGraph Graph
+	var heuristic float64
 
 	start := time.Now()
 	switch *useHeuristic {
@@ -155,6 +160,7 @@ func main() {
 		}
 		fmt.Println(" as a heuristic")
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		heuristic = msec
 		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
 		fmt.Printf("Ordering: %v\n", parsedGraph.String())
 
@@ -217,10 +223,11 @@ func main() {
 			panic("Not a valid choice")
 		}
 
+		decomp = decomp.Blowup()
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -234,7 +241,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -254,7 +261,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -268,7 +275,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -300,7 +307,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width)
+		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 

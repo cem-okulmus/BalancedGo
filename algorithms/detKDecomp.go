@@ -13,6 +13,7 @@ type CompCache struct {
 	Fail []uint32
 }
 
+//TODO put this into the struct
 var cacheMux sync.RWMutex
 
 type DetKDecomp struct {

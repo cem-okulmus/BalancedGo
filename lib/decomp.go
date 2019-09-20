@@ -25,7 +25,7 @@ func (d *Decomp) RestoreSubedges() {
 func (d Decomp) connected(vert int) bool {
 	conGraph := d.Root.getConGraph(true)
 	var containingNodes = d.Root.allChildrenContaining(vert)
-	var edgesContaining = FilterVertices(conGraph, containingNodes)
+	var edgesContaining = FilterVerticesStrict(conGraph, containingNodes)
 
 	// log.Printf("All nodes containing %s\n", m[vert])
 	// for _, n := range containingNodes {
@@ -33,7 +33,7 @@ func (d Decomp) connected(vert int) bool {
 	// }
 
 	// log.Printf("All edges")
-	// for _, e := range edgesContaining {
+	// for _, e := range edgesContaining.Slice() {
 	// 	log.Printf("%v ,", e)
 	// }
 
@@ -129,23 +129,20 @@ func (d *Decomp) Blowup() Decomp {
 	// iterate over decomp in BFS to add union
 	for len(current) > 0 {
 		children := []Node{}
-		for _, n := range current {
-			lambda := n.Cover
-			nchildren := n.Children
-			for _, c := range nchildren {
-				// fmt.Println("Cover prior: ", c.Cover)
-				c.Cover.Append(lambda.Slice()...)
-				c.Cover = removeDuplicateEdges(c.Cover.Slice()) // merge lambda with direct ancestor
+		for i := range current {
+			lambda := current[i].Cover
+			nchildren := current[i].Children
+			for j := range nchildren {
+				nchildren[j].Cover.Append(lambda.Slice()...)
+				nchildren[j].Cover = removeDuplicateEdges(nchildren[j].Cover.Slice()) // merge lambda with direct ancestor
 
-				// fmt.Println("Cover after: ", c.Cover)
-				c.Bag = c.Cover.Vertices()     // fix the bag
-				children = append(children, c) // build up the next level of the tree
+				nchildren[j].Bag = nchildren[j].Cover.Vertices() // fix the bag
+				children = append(children, nchildren[j])        // build up the next level of the tree
 			}
-			n.Children = nchildren
+			current[i].Children = nchildren
 		}
 		current = children
 	}
 
-	// fmt.Println("GHD WIDTH: ", output.checkWidth())
 	return output
 }

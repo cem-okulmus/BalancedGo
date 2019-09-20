@@ -23,34 +23,6 @@ type Cover struct {
 	first      bool
 }
 
-// func DivideCompEdges(GEdges Edges, HEdges Edges, Connector []int) Edges {
-// 	covered := make(map[int]bool)
-// 	var inner Edges
-// 	var bound Edges
-
-// 	for _, v := range HEdges.Vertices() {
-// 		covered[v] = true
-// 	}
-
-// 	for _, e := range GEdges.Slice() {
-// 		innerEdge := false
-
-// 		for _, v := range e.Vertices {
-// 			if covered[v] {
-// 				innerEdge := true
-// 				break
-// 			}
-// 		}
-
-// 		if innerEdge {
-// 			inner.append(e)
-// 		} else {
-// 			outer.append(e)
-// 		}
-// 	}
-
-// }
-
 func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 
 	covered := make(map[int]int8)
