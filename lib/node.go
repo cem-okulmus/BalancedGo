@@ -183,8 +183,8 @@ func (n Node) coversEdge(e Edge) bool {
 	}
 
 	// Check recursively if contained in children
-	for _, child := range n.Children {
-		if child.coversEdge(e) {
+	for i := range n.Children {
+		if n.Children[i].coversEdge(e) {
 			return true
 		}
 	}
@@ -192,24 +192,13 @@ func (n Node) coversEdge(e Edge) bool {
 	return false
 }
 
-func (n Node) ancestorOnI(o Node, i int) Node {
-	if !o.Cover.Contains(i) {
-		return o
-	}
-	if !(reflect.DeepEqual(o, n.parent(o))) && n.parent(o).Cover.Contains(i) {
-		return n.ancestorOnI(n.parent(o), i)
-	}
-
-	return o
-}
-
 func (n Node) parent(o Node) Node {
 	// Check recursively if contained in children
-	for _, child := range n.Children {
-		if reflect.DeepEqual(child, o) {
+	for i := range n.Children {
+		if reflect.DeepEqual(n.Children[i], o) {
 			return n
-		} else if child.contains(o) {
-			return child.parent(o)
+		} else if n.Children[i].contains(o) {
+			return n.Children[i].parent(o)
 		}
 
 	}

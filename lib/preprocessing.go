@@ -130,11 +130,11 @@ func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 		return n, true // Won't work without deep copy
 	}
 
-	for _, child := range n.Children {
-		res, b := child.restoreEdgeOp(e)
+	for i := range n.Children {
+		res, b := n.Children[i].restoreEdgeOp(e)
 		if b {
-			child = res // updating this element!
-			return Node{Bag: n.Bag, Cover: n.Cover, Children: n.Children}, true
+			n.Children[i] = res // updating this element!
+			return n, true      // Won't work without deep copy
 		}
 	}
 
@@ -146,16 +146,15 @@ func (n Node) restoreVertex(v vertOp) (Node, bool) {
 		return Node{Bag: append(n.Bag, v.vertex), Cover: n.Cover, Children: n.Children}, true
 	}
 
-	for _, child := range n.Children {
-		res, b := child.restoreVertex(v)
+	for i := range n.Children {
+		res, b := n.Children[i].restoreVertex(v)
 		if b {
-			child = res // updating this element!
-			return Node{Bag: n.Bag, Cover: n.Cover, Children: n.Children}, true
+			n.Children[i] = res // updating this element!
+			return n, true
 		}
 	}
 
 	return Node{}, false
-
 }
 
 /*
@@ -211,4 +210,37 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 	}
 
 	return Graph{Edges: newEdges}, restorationMap, count
+}
+
+func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
+	if Mem(n.Bag, target) {
+		n.Bag = append(n.Bag, oldVertices...)
+		return n, true
+	}
+
+	for i := range n.Children {
+		res, b := n.Children[i].addVertices(target, oldVertices)
+		if b {
+			n.Children[i] = res // replace child with updated res
+			return n, true
+		}
+	}
+
+	return Node{}, false
+
+}
+
+func (n Node) restoreTypes(restoreMap map[int][]int) (Node, bool) {
+
+	output := n
+
+	for k, v := range restoreMap {
+		res, b := output.addVertices(k, v)
+		if !b {
+			return Node{}, false
+		}
+		output = res
+	}
+
+	return output, true
 }
