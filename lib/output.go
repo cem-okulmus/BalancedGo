@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"strings"
 )
 
 func (n Node) toGML() string {
@@ -47,5 +48,10 @@ func (d Decomp) ToGML() string {
 
 	buffer.WriteString("\n]\n")
 
-	return buffer.String()
+	result := buffer.String()
+
+	//simple fix to match DetK GML output exactly
+	result = strings.ReplaceAll(result, "(", "{")
+	result = strings.ReplaceAll(result, ")", "}")
+	return result
 }
