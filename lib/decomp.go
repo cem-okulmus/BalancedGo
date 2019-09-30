@@ -133,8 +133,9 @@ func (d *Decomp) Blowup() Decomp {
 			lambda := current[i].Cover
 			nchildren := current[i].Children
 			for j := range nchildren {
-				nchildren[j].Cover.Append(lambda.Slice()...)
-				nchildren[j].Cover = removeDuplicateEdges(nchildren[j].Cover.Slice()) // merge lambda with direct ancestor
+				var nuCover []Edge
+				nuCover = append(nchildren[j].Cover.Slice(), lambda.Slice()...) // merge lambda with direct ancestor
+				nchildren[j].Cover = removeDuplicateEdges(nuCover)
 
 				nchildren[j].Bag = nchildren[j].Cover.Vertices() // fix the bag
 				children = append(children, nchildren[j])        // build up the next level of the tree

@@ -44,29 +44,29 @@ func (v vertOp) String() string {
 //TODO fix this to run in linear time
 // Performs one part of GYÖ reduct
 func (g Graph) removeEdges() (Graph, []GYÖReduct) {
-	var output Edges
-	var removed Edges
+	var output []Edge
+	var removed []Edge
 	var ops []GYÖReduct
 
 OUTER:
 	for _, e1 := range g.Edges.Slice() {
 		for _, e2 := range g.Edges.Slice() {
-			if e1.Name != e2.Name && !e2.containedIn(removed.Slice()) && Subset(e1.Vertices, e2.Vertices) {
+			if e1.Name != e2.Name && !e2.containedIn(removed) && Subset(e1.Vertices, e2.Vertices) {
 				ops = append(ops, edgeOp{subedge: e1, parent: e2})
-				removed.Append(e1)
+				removed = append(removed, e1)
 				continue OUTER
 			}
 		}
 
-		output.Append(e1)
+		output = append(output, e1)
 	}
 
-	return Graph{Edges: output}, ops
+	return Graph{Edges: NewEdges(output)}, ops
 }
 
 func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
-	var edges Edges
+	var edges []Edge
 
 	for _, e1 := range g.Edges.Slice() {
 		var vertices []int
@@ -81,12 +81,12 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 			vertices = append(vertices, v)
 		}
 		if len(vertices) > 0 {
-			edges.Append(Edge{Name: e1.Name, Vertices: vertices})
+			edges = append(edges, Edge{Name: e1.Name, Vertices: vertices})
 		}
 
 	}
 
-	return Graph{Edges: edges}, ops
+	return Graph{Edges: NewEdges(edges)}, ops
 }
 
 func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
@@ -199,17 +199,17 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 		}
 	}
 
-	var newEdges Edges
+	var newEdges []Edge
 
 	for _, e := range g.Edges.Slice() {
 		var vertices []int
 		for _, v := range e.Vertices {
 			vertices = append(vertices, substituteMap[v])
 		}
-		newEdges.Append(Edge{Name: e.Name, Vertices: RemoveDuplicates(vertices)})
+		newEdges = append(newEdges, Edge{Name: e.Name, Vertices: RemoveDuplicates(vertices)})
 	}
 
-	return Graph{Edges: newEdges}, restorationMap, count
+	return Graph{Edges: NewEdges(newEdges)}, restorationMap, count
 }
 
 func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {

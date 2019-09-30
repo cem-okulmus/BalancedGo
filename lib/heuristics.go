@@ -15,15 +15,15 @@ func GetMSCOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
 	}
-	var selected Edges
+	var selected []Edge
 	chosen := make([]bool, edges.Len())
 
 	//randomly select last edge in the ordering
 	i := rand.Intn(edges.Len())
 	chosen[i] = true
-	selected.Append(edges.Slice()[i])
+	selected = append(selected, edges.Slice()[i])
 
-	for selected.Len() < edges.Len() {
+	for len(selected) < edges.Len() {
 		var candidates []int
 		maxcard := 0
 
@@ -43,7 +43,7 @@ func GetMSCOrder(edges Edges) Edges {
 		nextInOrder := candidates[rand.Intn(len(candidates))]
 		//nextInOrder := candidates[0]
 
-		selected.Append(edges.Slice()[nextInOrder])
+		selected = append(selected, edges.Slice()[nextInOrder])
 		chosen[nextInOrder] = true
 	}
 
@@ -52,7 +52,7 @@ func GetMSCOrder(edges Edges) Edges {
 	// 	selected[i], selected[j] = selected[j], selected[i]
 	// }
 
-	return selected
+	return NewEdges(selected)
 }
 
 //Order the edges by how much  they increase shortest paths within the hypergraph

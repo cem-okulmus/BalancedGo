@@ -55,21 +55,21 @@ type SubEdges struct {
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
-	var h_edges Edges
+	var h_edges []Edge
 
 	for _, j := range edges.Slice() {
 		inter := Inter(j.Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
-			h_edges.Append(Edge{Vertices: inter})
+			h_edges = append(h_edges, Edge{Vertices: inter})
 		}
 	}
 	// TODO: Sort h_edges by size
-	h_edges = removeDuplicateEdges(h_edges.Slice())
+	source := removeDuplicateEdges(h_edges)
 	//fmt.Println("h_edges", h_edges)
 	var output SubEdges
 
 	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
-	output.source = h_edges
+	output.source = source
 	if k > output.source.Len() {
 		k = output.source.Len()
 	}
@@ -200,13 +200,13 @@ func (sep *SepSub) HasNext() bool {
 }
 
 func (sep SepSub) GetCurrent() Edges {
-	var output Edges
+	var output []Edge
 
 	for _, s := range sep.Edges {
-		output.Append(s.getCurrent())
+		output = append(output, s.getCurrent())
 	}
 
-	return output
+	return NewEdges(output)
 }
 
 // TEST

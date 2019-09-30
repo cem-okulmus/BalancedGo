@@ -138,34 +138,34 @@ func main() {
 	var reducedGraph Graph
 	var heuristic float64
 
-	start := time.Now()
-	switch *useHeuristic {
-	case 1:
-		parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
-	case 2:
-		parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
-	case 3:
-		parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
-	}
-	d := time.Now().Sub(start)
+	// Sorting Edges to find separators faster
+	if *useHeuristic > 0 {
+		var heuristicMessage string
 
-	if *useHeuristic > 0 && !*bench {
+		start := time.Now()
 		switch *useHeuristic {
 		case 1:
-			fmt.Print("Using degree ordering")
+			parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
+			heuristicMessage = "Using degree ordering as a heuristic"
 		case 2:
-			fmt.Print("Using max seperator ordering")
+			parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
+			heuristicMessage = "Using max seperator ordering as a heuristic"
 		case 3:
-			fmt.Print("Using MSC ordering")
+			parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
+			heuristicMessage = "Using MSC ordering as a heuristic"
 		}
-		fmt.Println(" as a heuristic")
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-		heuristic = msec
-		fmt.Printf("Time for heuristic: %.5f ms\n", msec)
-		fmt.Printf("Ordering: %v\n", parsedGraph.String())
+		d := time.Now().Sub(start)
 
+		if !*bench {
+			fmt.Println(heuristicMessage)
+			msec := d.Seconds() * float64(time.Second/time.Millisecond)
+			heuristic = msec
+			fmt.Printf("Time for heuristic: %.5f ms\n", msec)
+			fmt.Printf("Ordering: %v\n", parsedGraph.String())
+		}
 	}
 
+	// Performing Type Collapse
 	if *typeC {
 		count := 0
 		reducedGraph, _, count = parsedGraph.TypeCollapse()
@@ -180,6 +180,7 @@ func main() {
 		}
 	}
 
+	// Performing GYÖ reduction
 	if *gyö {
 
 		var ops []GYÖReduct
@@ -199,6 +200,7 @@ func main() {
 
 	}
 
+	// Add all subdedges to graph
 	if *computeSubedges {
 		parsedGraph = parsedGraph.ComputeSubEdges(*width)
 
@@ -323,10 +325,10 @@ func main() {
 	output = output + fmt.Sprintf("%v;", *width)
 
 	// Parallel Execution FULL
-	start = time.Now()
+	start := time.Now()
 	decomp := local.FindGHDParallelFull(*width)
 
-	d = time.Now().Sub(start)
+	d := time.Now().Sub(start)
 	msec := d.Seconds() * float64(time.Second/time.Millisecond)
 	output = output + fmt.Sprintf("%.5f;", msec)
 

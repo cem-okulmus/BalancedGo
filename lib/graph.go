@@ -46,11 +46,11 @@ func (g *Graph) Vertices() []int {
 }
 
 func GetSubset(edges Edges, s []int) Edges {
-	var output Edges
+	var output []Edge
 	for _, i := range s {
-		output.Append(edges.Slice()[i])
+		output = append(output, edges.Slice()[i])
 	}
-	return output
+	return NewEdges(output)
 }
 
 func (g Graph) GetSubset(s []int) Edges {
@@ -220,33 +220,33 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 }
 
 func FilterVertices(edges Edges, vertices []int) Edges {
-	var output Edges
+	var output []Edge
 
 	for _, e := range edges.Slice() {
 		if len(Inter(e.Vertices, vertices)) > 0 {
-			output.Append(e)
+			output = append(output, e)
 		}
 	}
 
-	return output
+	return NewEdges(output)
 
 }
 
 func FilterVerticesStrict(edges Edges, vertices []int) Edges {
-	var output Edges
+	var output []Edge
 
 	for _, e := range edges.Slice() {
 		if Subset(e.Vertices, vertices) {
-			output.Append(e)
+			output = append(output, e)
 		}
 	}
 
-	return output
+	return NewEdges(output)
 
 }
 
 func CutEdges(edges Edges, vertices []int) Edges {
-	var output Edges
+	var output []Edge
 
 	for i := range edges.Slice() {
 		inter := Inter(edges.Slice()[i].Vertices, vertices)
@@ -262,11 +262,11 @@ func CutEdges(edges Edges, vertices []int) Edges {
 			// 	mux.Unlock()
 
 			// }
-			output.Append(Edge{Name: name, Vertices: inter})
+			output = append(output, Edge{Name: name, Vertices: inter})
 		}
 	}
 
-	return output
+	return NewEdges(output)
 
 }
 
@@ -320,7 +320,7 @@ func (g Graph) CheckNextSep(sep Edges, oldSep Edges, Sp []Special) bool {
 }
 
 func (g Graph) ComputeSubEdges(K int) Graph {
-	var output = g
+	var output = g.Edges.Slice()
 
 	for _, e := range g.Edges.Slice() {
 		edgesWihoutE := DiffEdges(g.Edges, e)
@@ -328,13 +328,12 @@ func (g Graph) ComputeSubEdges(K int) Graph {
 		for gen.HasNext() {
 			subset := GetSubset(edgesWihoutE, gen.Combination)
 			var tuple = subset.Vertices()
-			output.Edges.Append(Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
+			output = append(output, Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
 			gen.Confirm()
 		}
 	}
 
-	output.Edges = removeDuplicateEdges(output.Edges.Slice())
-	return output
+	return Graph{Edges: removeDuplicateEdges(output)}
 }
 
 func (g Graph) GetBIP() int {

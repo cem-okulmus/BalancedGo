@@ -13,31 +13,29 @@ type CompCache struct {
 	Fail []uint32
 }
 
-//TODO put this into the struct
-var cacheMux sync.RWMutex
-
 type DetKDecomp struct {
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
 	cache     map[uint32]*CompCache
+	cacheMux  sync.RWMutex
 }
 
 func (d *DetKDecomp) addPositive(sep Edges, comp Graph) {
-	cacheMux.Lock()
+	d.cacheMux.Lock()
 	d.cache[sep.Hash()].Succ = append(d.cache[sep.Hash()].Succ, comp.Edges.Hash())
-	cacheMux.Unlock()
+	d.cacheMux.Unlock()
 }
 
 func (d *DetKDecomp) addNegative(sep Edges, comp Graph) {
-	cacheMux.Lock()
+	d.cacheMux.Lock()
 	d.cache[sep.Hash()].Fail = append(d.cache[sep.Hash()].Fail, comp.Edges.Hash())
-	cacheMux.Unlock()
+	d.cacheMux.Unlock()
 }
 
 func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
-	cacheMux.RLock()
-	defer cacheMux.RUnlock()
+	d.cacheMux.RLock()
+	defer d.cacheMux.RUnlock()
 
 	compCachePrev, _ := d.cache[sep.Hash()]
 	for i := range compCachePrev.Fail {
@@ -52,8 +50,8 @@ func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
 }
 
 func (d *DetKDecomp) checkPositive(sep Edges, comp Graph) bool {
-	cacheMux.RLock()
-	defer cacheMux.RUnlock()
+	d.cacheMux.RLock()
+	defer d.cacheMux.RUnlock()
 
 	compCachePrev, _ := d.cache[sep.Hash()]
 	for i := range compCachePrev.Fail {
@@ -101,7 +99,7 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 	return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges, Children: []Node{children}}}
 }
 
-func (d DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decomp {
+func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decomp {
 	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 	conn := Inter(oldSep, verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep)
@@ -163,18 +161,18 @@ OUTER:
 
 				sepActualOrigin := sepActual
 				var sepSub *SepSub
-				var sepConst Edges
-				var sepChanging Edges
+				var sepConst []Edge
+				var sepChanging []Edge
 				if d.SubEdge {
 					for i, v := range gen.Subset {
 						if gen.InComp[v] {
-							sepChanging.Append(sep.Slice()[i])
+							sepChanging = append(sepChanging, sep.Slice()[i])
 						} else {
-							sepConst.Append(sep.Slice()[i])
+							sepConst = append(sepConst, sep.Slice()[i])
 						}
 					}
 					if addEdges {
-						sepChanging.Append(H.Edges.Slice()[i_add])
+						sepChanging = append(sepChanging, sep.Slice()[i_add])
 					}
 				}
 
@@ -185,14 +183,14 @@ OUTER:
 					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
-					cacheMux.RLock()
+					d.cacheMux.RLock()
 					_, ok := d.cache[sepActual.Hash()]
-					cacheMux.RUnlock()
+					d.cacheMux.RUnlock()
 					if !ok {
 						var newCache CompCache
-						cacheMux.Lock()
+						d.cacheMux.Lock()
 						d.cache[sepActual.Hash()] = &newCache
-						cacheMux.Unlock()
+						d.cacheMux.Unlock()
 
 					} else {
 						for j := range comps {
@@ -225,7 +223,7 @@ OUTER:
 
 							if d.SubEdge {
 								if sepSub == nil {
-									sepSub = GetSepSub(d.Graph.Edges, sepChanging, K)
+									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), K)
 								}
 
 								nextBalsepFound := false
@@ -233,7 +231,7 @@ OUTER:
 								for !nextBalsepFound {
 									if sepSub.HasNext() {
 										sepActual = sepSub.GetCurrent()
-										sepActual.Append(sepConst.Slice()...)
+										sepActual = NewEdges(append(sepActual.Slice(), sepConst...))
 										log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
 										//log.Println("Sep const: ", sepConst, "sepChang ", sepChanging)
 										// log.Println("SubSep: ")

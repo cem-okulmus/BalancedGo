@@ -140,7 +140,7 @@ func Mem32(as []uint32, b uint32) bool {
 }
 
 func DiffEdges(a Edges, e ...Edge) Edges {
-	var output Edges
+	var output []Edge
 	///	log.Println("Edges ", a, "Other ", e)
 
 	var hashes []uint32
@@ -150,13 +150,13 @@ func DiffEdges(a Edges, e ...Edge) Edges {
 
 	for i := range a.Slice() {
 		if !Mem32(hashes, a.Slice()[i].Hash()) {
-			output.Append(a.Slice()[i])
+			output = append(output, a.Slice()[i])
 		}
 	}
 
 	//	log.Println("Result ", output)
 
-	return output
+	return NewEdges(output)
 
 }
 

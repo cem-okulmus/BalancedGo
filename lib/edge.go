@@ -6,12 +6,14 @@ import (
 	"math"
 	"reflect"
 	"sort"
+	"sync"
 )
 
 // An Edge (used here for hyperedge) consists of a collection of vertices and a name
 type Edge struct {
 	Name     int
 	Vertices []int // use integers for vertices
+	hashMux  sync.Mutex
 }
 
 func (e Edge) FullString() string {
@@ -67,6 +69,7 @@ type Edges struct {
 	slice    []Edge
 	vertices []int
 	hash     *uint32
+	hashMux  sync.Mutex
 }
 
 func NewEdges(slice []Edge) Edges {
@@ -143,20 +146,20 @@ func (s Edges) Less(i, j int) bool {
 	return false //edges at i and j identical
 }
 
-func (s *Edges) Append(es ...Edge) {
+// func (s *Edges) Append(es ...Edge) {
 
-	// mux.Lock() // ensure that hash is computed only on one gorutine at a time
-	// defer mux.Unlock()
-	for _, e := range es {
-		s.slice = append(s.slice, e)
-	}
-	if len(s.vertices) > 0 {
-		s.vertices = s.vertices[:0] // do this to preserve allocated memory
-	}
-	if s.hash != nil {
-		s.hash = nil
-	}
-}
+// 	// mux.Lock() // ensure that hash is computed only on one gorutine at a time
+// 	// defer mux.Unlock()
+// 	for _, e := range es {
+// 		s.slice = append(s.slice, e)
+// 	}
+// 	if len(s.vertices) > 0 {
+// 		s.vertices = s.vertices[:0] // do this to preserve allocated memory
+// 	}
+// 	if s.hash != nil {
+// 		s.hash = nil
+// 	}
+// }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elementsSlice []Edge) Edges {

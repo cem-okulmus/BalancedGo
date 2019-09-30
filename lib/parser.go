@@ -38,6 +38,7 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
 		participle.Elide("Comment", "Whitespace"))
 	var output Graph
+	var edges []Edge
 	pgraph := ParseGraph{}
 	parser.ParseString(s, &pgraph)
 	encoding := make(map[int]string)
@@ -63,8 +64,9 @@ func GetGraph(s string) (Graph, ParseGraph) {
 				encode++
 			}
 		}
-		output.Edges.Append(Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
+		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
 	}
+	output.Edges = NewEdges(edges)
 	m = encoding
 	return output, pgraph
 }

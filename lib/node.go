@@ -72,9 +72,10 @@ func indent(i int) string {
 func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
-	buffer.WriteString("\n" + indent(i) + "Bag: {")
-	buffer.WriteString(n.printBag() + "} Up:{ " + n.printUp() + "} Low:{" + n.printLow())
-
+	buffer.WriteString("\n" + indent(i) + "Bag: {" + n.printBag())
+	if len(n.Up) > 0 || len(n.Low) > 0 {
+		buffer.WriteString("} Up:{ " + n.printUp() + "} Low:{" + n.printLow())
+	}
 	buffer.WriteString("}\n" + indent(i) + "Cover: {")
 	for i, e := range n.Cover.Slice() {
 		buffer.WriteString(e.String())
@@ -142,24 +143,24 @@ func (n *Node) getNumber() {
 
 // Think about how to make the contains check faster than linear
 func (n *Node) getConGraph(withLoops bool) Edges {
-	var output Edges
+	var output []Edge
 
 	n.getNumber()
 	if withLoops { // loops needed for connectivty check
-		output.Append(Edge{Vertices: []int{n.num, n.num}})
+		output = append(output, Edge{Vertices: []int{n.num, n.num}})
 	}
 
 	for i, _ := range n.Children {
 		n.Children[i].getNumber()
-		output.Append(Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
+		output = append(output, Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
 	}
 
 	for _, c := range n.Children {
 		edgesChild := c.getConGraph(withLoops)
-		output.Append(edgesChild.Slice()...)
+		output = append(output, edgesChild.Slice()...)
 	}
 
-	return output
+	return NewEdges(output)
 }
 
 func (n *Node) allChildrenContaining(vert int) []int {
@@ -267,8 +268,8 @@ func (n Node) noSCViolation() bool {
 		return false
 	}
 
-	for _, c := range n.Children {
-		if !c.specialCondition() {
+	for i := range n.Children {
+		if !n.Children[i].specialCondition() {
 			return false
 		}
 	}
@@ -277,17 +278,17 @@ func (n Node) noSCViolation() bool {
 }
 
 func (n *Node) RestoreEdges(edges Edges) Node {
-	var nuCover Edges
+	var nuCover []Edge
 
 OUTER:
 	for _, e2 := range n.Cover.Slice() {
 		if e2.Name != 0 {
-			nuCover.Append(e2)
+			nuCover = append(nuCover, e2)
 			continue
 		}
 		for _, e := range edges.Slice() {
 			if Subset(e2.Vertices, e.Vertices) && e.Name != 0 {
-				nuCover.Append(e)
+				nuCover = append(nuCover, e)
 				continue OUTER
 			}
 		}
@@ -299,7 +300,7 @@ OUTER:
 		nuChildern = append(nuChildern, n.Children[i].RestoreEdges(edges))
 	}
 
-	return Node{Bag: n.Bag, Cover: nuCover, Children: nuChildern}
+	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
 }
 
 func (n *Node) CheckLeaves(vertices []int, subtree Node) (bool, *Node) {

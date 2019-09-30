@@ -9,7 +9,7 @@ import (
 )
 
 // implements hashes for basic types (used for hash table implementations)
-var hashMux = sync.Mutex{}
+var hashMux sync.Mutex
 
 func IntHash(vertices []int) uint32 {
 	arrBytes := []byte{}
@@ -45,7 +45,7 @@ func (e *Edges) Hash() uint32 {
 		return *e.hash
 	}
 
-	hashMux.Lock() // ensure that hash is computed only on one gorutine at a time
+	e.hashMux.Lock() // ensure that hash is computed only on one gorutine at a time
 	if e.hash == nil {
 		cpy := make([]Edge, len(e.slice))
 		copy(cpy, e.slice)
@@ -64,7 +64,7 @@ func (e *Edges) Hash() uint32 {
 		result := h.Sum32()
 		e.hash = &result
 	}
-	hashMux.Unlock()
+	e.hashMux.Unlock()
 
 	return *e.hash
 }
