@@ -137,7 +137,7 @@ OUTER:
 				//	decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					log.Printf("balDet REJECTING %v: couldn't decompose a compnent of H %v \n", Graph{Edges: balsep}, H)
+					log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
 					log.Println("\n\nCurrent Depth: ", currentDepth)
 					log.Printf("Current SubGraph: %+v\n", H)
 					log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -175,13 +175,14 @@ OUTER:
 
 				//TODO: Reroot only after all subtrees received
 				if currentDepth == 0 && decomp.SkipRerooting {
-					log.Println("\nFrom detK on", comps[i], " with Special Edges ", compsSp[i], ":\n", decomp)
+					log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
 					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
 					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
 					// fmt.Println("Output from Balsep: ", decomp_deux)
 				} else {
-					log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
+					decomp.Root = decomp.Root.Children[0]
+					log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
 
 				subtrees = append(subtrees, decomp)

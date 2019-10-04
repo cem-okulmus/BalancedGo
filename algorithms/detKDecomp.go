@@ -112,7 +112,7 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 	log.Println("D Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
-	if H.Edges.Len() == 0 && len(Sp) <= 2 {
+	if H.Edges.Len() == 0 && len(Sp) <= 1 {
 		return baseCaseDetK(d.Graph, H, Sp)
 	}
 
