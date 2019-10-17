@@ -18,7 +18,7 @@ func baseCaseSmart(g Graph, H Graph, Sp []Special) Decomp {
 	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var output Decomp
 
-	if H.Edges.Len() == 1 && len(Sp) == 0 {
+	if H.Edges.Len() <= 2 && len(Sp) == 0 {
 		output = Decomp{Graph: H,
 			Root: Node{Bag: H.Vertices(), Cover: H.Edges}}
 	} else if H.Edges.Len() == 1 && len(Sp) == 1 {

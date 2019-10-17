@@ -172,7 +172,7 @@ OUTER:
 						}
 					}
 					if addEdges {
-						sepChanging = append(sepChanging, sep.Slice()[i_add])
+						sepChanging = append(sepChanging, H.Edges.Slice()[i_add])
 					}
 				}
 
@@ -194,7 +194,7 @@ OUTER:
 
 					} else {
 						for j := range comps {
-							if d.checkNegative(sepActual, comps[j]) {
+							if d.checkNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
 								//fmt.Println("Skipping a sep", sepActual)
 								if addEdges {
 									i_add++

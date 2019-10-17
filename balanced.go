@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"time"
 
 	. "github.com/cem-okulmus/BalancedGo/algorithms"
@@ -31,17 +32,30 @@ func check(e error) {
 
 }
 
-func outputStanza(decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64) {
+func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64) {
 	decomp.RestoreSubedges()
+
+	fmt.Println("Used algorithm: " + algorithm)
 	fmt.Println("Result ( ran with K =", K, ")\n", decomp)
 	if heuristic > 0.0 {
-		fmt.Println("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
+		fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
+		if msec+heuristic > 60000.0 {
+			fmt.Println("(", msec+heuristic/60000.0, "min )")
+		} else {
+			fmt.Println("")
+		}
 	} else {
-		fmt.Println("Time: ", msec, " ms")
+		fmt.Print("Time: ", msec, " ms")
+		if msec > 60000.0 {
+			fmt.Println("(", msec/60000.0, "min )")
+		} else {
+			fmt.Println("")
+		}
 	}
+
 	fmt.Println("Width: ", decomp.CheckWidth())
 	fmt.Println("Correct: ", decomp.Correct(parsedGraph))
-	if len(gml) > 0 {
+	if decomp.Correct(parsedGraph) && len(gml) > 0 {
 		f, err := os.Create(gml)
 		check(err)
 
@@ -79,6 +93,7 @@ func main() {
 	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
 	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
 	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
+	pace := flag.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
 
 	flag.Parse()
 
@@ -103,7 +118,7 @@ func main() {
 
 	// Outpt usage message if graph and width not specified
 	if *graphPath == "" || *width <= 0 {
-		fmt.Fprintf(os.Stderr, "Usage of BalancedGo (v%s, %s): \n", Version, Build)
+		fmt.Fprintf(os.Stderr, "Usage of BalancedGo (v%s, https://github.com/cem-okulmus/BalancedGo/commit/%s): \n", Version, Build)
 		flag.VisitAll(func(f *flag.Flag) {
 			if f.Name != "width" && f.Name != "graph" {
 				return
@@ -133,7 +148,12 @@ func main() {
 	dat, err := ioutil.ReadFile(*graphPath)
 	check(err)
 
-	parsedGraph, _ := GetGraph(string(dat))
+	var parsedGraph Graph
+	if !*pace {
+		parsedGraph, _ = GetGraph(string(dat))
+	} else {
+		parsedGraph = GetGraphPACE(string(dat))
+	}
 	log.Println("BIP: ", parsedGraph.GetBIP())
 	var reducedGraph Graph
 	var heuristic float64
@@ -229,7 +249,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza("Akatov", decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -243,7 +263,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza("BalSep / DetK - Hybrid with Depth "+strconv.Itoa(*balDetTest), decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -263,7 +283,14 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
+		var name string
+		if det.SubEdge {
+			name = "DetK with local BIP"
+		} else {
+			name = "DetK"
+		}
+
+		outputStanza(name, decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -277,7 +304,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza("DivideK", decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -309,7 +336,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza(decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza("BalSep with Choice "+strconv.Itoa(*choose), decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
