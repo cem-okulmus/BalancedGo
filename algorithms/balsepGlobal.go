@@ -470,3 +470,11 @@ func (g BalSepGlobal) FindGHDParallelSearch(K int) Decomp {
 func (g BalSepGlobal) FindGHDParallelComp(K int) Decomp {
 	return g.findDecompParallelComp(K, g.Graph, []Special{})
 }
+
+func (g BalSepGlobal) FindDecomp(K int) Decomp {
+	return g.findDecompParallelFull(K, g.Graph, []Special{})
+}
+
+func (g BalSepGlobal) Name() string {
+	return "BalSep Global"
+}

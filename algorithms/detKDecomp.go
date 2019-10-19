@@ -284,3 +284,15 @@ func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
 	d.cache = make(map[uint32]*CompCache)
 	return d.findDecomp(K, d.Graph, []int{}, Sp)
 }
+
+func (d DetKDecomp) FindDecomp(K int) Decomp {
+	return d.FindHD(K, []Special{})
+}
+
+func (d DetKDecomp) Name() string {
+	if d.SubEdge {
+		return "DetK with local BIP"
+	} else {
+		return "DetK"
+	}
+}

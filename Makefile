@@ -11,7 +11,7 @@ GOBIN := $(GOBASE)/bin
 GOFILES := $(wildcard *.go)
 
 # Use linker flags to provide version/build settings
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
+LDFLAGS=-ldflags "-s -w  -X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
 
 # Redirect error output to a file, so we can show it in development mode.
 STDERR := /tmp/.$(PROJECTNAME)-stderr.txt

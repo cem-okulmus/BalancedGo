@@ -113,3 +113,11 @@ func (b BalKDecomp) FindBD(K int) Decomp {
 func (b BalKDecomp) FindBDFullParallel(K int) Decomp {
 	return b.findDecompParallelFull(K, b.Graph)
 }
+
+func (b BalKDecomp) FindDecomp(K int) Decomp {
+	return b.findDecompParallelFull(K, b.Graph)
+}
+
+func (b BalKDecomp) Name() string {
+	return "Akatov"
+}

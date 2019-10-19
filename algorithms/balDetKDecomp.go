@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"strconv"
 
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
@@ -204,4 +205,12 @@ OUTER:
 
 func (b BalDetKDecomp) FindGHD(K int) Decomp {
 	return b.findDecompBalSep(K, b.Depth, b.Graph, []Special{})
+}
+
+func (b BalDetKDecomp) FindDecomp(K int) Decomp {
+	return b.FindGHD(K)
+}
+
+func (b BalDetKDecomp) Name() string {
+	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(b.Depth+1)
 }

@@ -8,7 +8,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"strconv"
 	"time"
 
 	. "github.com/cem-okulmus/BalancedGo/algorithms"
@@ -79,7 +78,9 @@ func main() {
 	computeSubedges := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
-	choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
+	// choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
+	localBal := flag.Bool("local", false, "Test out local BalSep")
+	globalBal := flag.Bool("global", false, "Test out global BalSep")
 	balanceFactorFlag := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
 	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
 	gyö := flag.Bool("g", false, "perform a GYÖ reduct and show the resulting graph")
@@ -94,6 +95,7 @@ func main() {
 	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
 	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flag.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
+	exact := flag.Bool("exact", false, "Compute exact width (width flag not needed)")
 
 	flag.Parse()
 
@@ -117,20 +119,24 @@ func main() {
 	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
-	if *graphPath == "" || *width <= 0 {
+	if *graphPath == "" || (*width <= 0 && !*exact) {
 		fmt.Fprintf(os.Stderr, "Usage of BalancedGo (v%s, https://github.com/cem-okulmus/BalancedGo/commit/%s): \n", Version, Build)
 		flag.VisitAll(func(f *flag.Flag) {
-			if f.Name != "width" && f.Name != "graph" {
+			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" {
 				return
 			}
 			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
-			fmt.Printf("  -%-10s \t<%s>\n", f.Name, s[6:len(s)-5])
+			if s[6:len(s)-5] != "bool" {
+				fmt.Printf("  -%-10s \t<%s>\n", f.Name, s[6:len(s)-5])
+			} else {
+				fmt.Printf("  -%-10s \n", f.Name)
+			}
 			fmt.Println("\t" + f.Usage)
 		})
 
 		fmt.Println("\nOptional Arguments: ")
 		flag.VisitAll(func(f *flag.Flag) {
-			if f.Name == "width" || f.Name == "graph" {
+			if f.Name == "width" || f.Name == "graph" || f.Name == "exact" {
 				return
 			}
 			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
@@ -227,116 +233,63 @@ func main() {
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
+	var solver Algorithm
+
 	if *akatovTest {
-		var decomp Decomp
-		start := time.Now()
 		bal := BalKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
-
-		switch *choose {
-		case 1:
-			decomp = bal.FindBDFullParallel(*width)
-		// case 2:
-		// 	decomp = global.FindGHDParallelSearch(*width)
-		// case 3:
-		// 	decomp = global.FindGHDParallelComp(*width)
-		case 4:
-			decomp = bal.FindBD(*width)
-		default:
-			panic("Not a valid choice")
-		}
-
-		decomp = decomp.Blowup()
-		d := time.Now().Sub(start)
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-
-		outputStanza("Akatov", decomp, msec, parsedGraph, *gml, *width, heuristic)
-		return
+		solver = bal
 	}
 
 	if *balDetTest > 0 {
-		var decomp Decomp
-		start := time.Now()
-
 		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
-		decomp = balDet.FindGHD(*width)
-
-		d := time.Now().Sub(start)
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-
-		outputStanza("BalSep / DetK - Hybrid with Depth "+strconv.Itoa(*balDetTest), decomp, msec, parsedGraph, *gml, *width, heuristic)
-		return
+		solver = balDet
 	}
 
 	if *detKTest {
-		var decomp Decomp
-		start := time.Now()
-
-		var Sp []Special
-		// m[encode] = "test"
-		// m[encode+1] = "test2"
-		// Sp = []Special{Special{Vertices: []int{16, 18}, Edges: []Edge{Edge{Name: encode, Vertices: []int{16, 18}}}}, Special{Vertices: []int{15, 17, 19}, Edges: []Edge{Edge{Name: encode + 1, Vertices: []int{15, 17, 19}}}}}
-		// encode = encode + 2
-
 		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
-		decomp = det.FindHD(*width, Sp)
-
-		d := time.Now().Sub(start)
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-
-		var name string
-		if det.SubEdge {
-			name = "DetK with local BIP"
-		} else {
-			name = "DetK"
-		}
-
-		outputStanza(name, decomp, msec, parsedGraph, *gml, *width, heuristic)
-		return
+		solver = det
 	}
 
 	if *divideTest {
-		var decomp Decomp
-		start := time.Now()
-
 		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
-		decomp = div.FindDecomp()
-
-		d := time.Now().Sub(start)
-		msec := d.Seconds() * float64(time.Second/time.Millisecond)
-
-		outputStanza("DivideK", decomp, msec, parsedGraph, *gml, *width, heuristic)
-		return
+		solver = div
 	}
 
-	global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}
-	local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
-	if *choose != 0 {
+	if *globalBal {
+		global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}
+		solver = global
+	}
+
+	if *localBal {
+		local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
+		solver = local
+	}
+
+	if solver != nil {
 		var decomp Decomp
 		start := time.Now()
-		switch *choose {
-		case 1:
-			decomp = global.FindGHDParallelFull(*width)
-		case 2:
-			decomp = global.FindGHDParallelSearch(*width)
-		case 3:
-			decomp = global.FindGHDParallelComp(*width)
-		case 4:
-			decomp = global.FindGHD(*width)
-		case 5:
-			decomp = local.FindGHDParallelFull(*width)
-		case 6:
-			decomp = local.FindGHDParallelSearch(*width)
-		case 7:
-			decomp = local.FindGHDParallelComp(*width)
-		case 8:
-			decomp = local.FindGHD(*width)
-		default:
-			panic("Not a valid choice")
+
+		if *exact {
+			k := 1
+			solved := false
+			for !solved {
+				decomp = solver.FindDecomp(k)
+				solved = decomp.Correct(parsedGraph)
+				k++
+			}
+			*width = k - 1 // for correct output
+		} else {
+			decomp = solver.FindDecomp(*width)
 		}
+
+		if *akatovTest {
+			decomp.Blowup()
+		}
+
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		outputStanza("BalSep with Choice "+strconv.Itoa(*choose), decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return
 	}
 
@@ -344,6 +297,7 @@ func main() {
 	//  ============================================
 
 	var output string
+	local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
 
 	output = output + *graphPath + ";"
 
