@@ -26,9 +26,9 @@ func decrease(count int) int {
 }
 
 func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []Special) Decomp {
-	log.Println("Current Depth: ", currentDepth)
-	log.Printf("Current SubGraph: %+v\n", H)
-	log.Printf("Current Special Edges: %+v\n\n", Sp)
+	// log.Println("Current Depth: ", currentDepth)
+	// log.Printf("Current SubGraph: %+v\n", H)
+	// log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
 	if H.Edges.Len()+len(Sp) <= 2 {
@@ -67,16 +67,16 @@ OUTER:
 
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
-		balsepOrig := balsep
+		//	balsepOrig := balsep
 		var sepSub *SepSub
 
-		log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
+		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
 
 	INNER:
 		for !decomposed {
 			comps, compsSp, _ := H.GetComponents(balsep, Sp)
 
-			log.Printf("Comps of Sep: %+v\n", comps)
+			// log.Printf("Comps of Sep: %+v\n", comps)
 
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
@@ -138,10 +138,10 @@ OUTER:
 				//	decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
-					log.Println("\n\nCurrent Depth: ", currentDepth)
-					log.Printf("Current SubGraph: %+v\n", H)
-					log.Printf("Current Special Edges: %+v\n\n", Sp)
+					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
+					// log.Println("\n\nCurrent Depth: ", currentDepth)
+					// log.Printf("Current SubGraph: %+v\n", H)
+					// log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 					subtrees = []Decomp{}
 					if sepSub == nil {
@@ -152,11 +152,11 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
-							// log.Println("SubSep: ")
-							// for _, s := range sepSub.Edges {
-							// 	log.Println(s.Combination)
-							// }
+							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							//						// log.Println("SubSep: ")
+							//						// for _, s := range sepSub.Edges {
+							//						// 	log.Println(s.Combination)
+							//						// }
 							_, ok := cache[IntHash(balsep.Vertices())]
 							if ok { //skip since already seen
 								continue thisLoop
@@ -166,24 +166,24 @@ OUTER:
 								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							//		log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
+					//			log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
 				//TODO: Reroot only after all subtrees received
 				if currentDepth == 0 && decomp.SkipRerooting {
-					log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
-					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
-					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
-					// fmt.Println("Output from Balsep: ", decomp_deux)
+					//			log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
+					//			// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
+					//			// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+					//			// fmt.Println("Output from Balsep: ", decomp_deux)
 				} else {
 					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
 					decomp.Root = decomp.Root.Children[0]
-					log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
+					//			log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
 
 				subtrees = append(subtrees, decomp)

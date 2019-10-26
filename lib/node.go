@@ -269,7 +269,7 @@ func (n Node) noSCViolation() bool {
 	}
 
 	for i := range n.Children {
-		if !n.Children[i].specialCondition() {
+		if !n.Children[i].noSCViolation() {
 			return false
 		}
 	}

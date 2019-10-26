@@ -53,8 +53,9 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 	}
 
 	fmt.Println("Width: ", decomp.CheckWidth())
-	fmt.Println("Correct: ", decomp.Correct(parsedGraph))
-	if decomp.Correct(parsedGraph) && len(gml) > 0 {
+	correct := decomp.Correct(parsedGraph)
+	fmt.Println("Correct: ", correct)
+	if correct && len(gml) > 0 {
 		f, err := os.Create(gml)
 		check(err)
 
