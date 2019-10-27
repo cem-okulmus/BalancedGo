@@ -6,7 +6,7 @@ Takes as input a hypergraph in [HyperBench format](http://hyperbench.dbai.tuwien
 
 ## Installation
 Needs Go >= 1.12, look [here](https://golang.org/dl/) for Linux, MacOS or Windows versions.   
-Simply run `make` 
+Simply run `make`, alternatitvely on platforms without the make tool, run `go build`
 
 ## Usage 
 **Usage of BalancedGo:**
