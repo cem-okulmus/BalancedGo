@@ -97,7 +97,18 @@ func GetGraph(s string) (Graph, ParseGraph) {
 
 func (p *ParseGraph) GetEdge(input string) Edge {
 
-	var parser = participle.MustBuild(&ParseEdge{}, participle.UseLookahead(1))
+	graphLexer := lexer.Must(ebnf.New(`
+    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
+    Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
+    Number = ("." | digit) {"." | digit} .
+    Whitespace = " " | "\t" | "\n" | "\r" .
+    stuff = ":" | "@" | ";" | "-" .
+    Punct = "!"…"/"  .
+    alpha = "a"…"z" | "A"…"Z" .
+    digit = "0"…"9" .`))
+
+	var parser = participle.MustBuild(&ParseEdge{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+		participle.Elide("Comment", "Whitespace"))
 	pEdge := ParseEdge{}
 	parser.ParseString(input, &pEdge)
 	var vertices []int
