@@ -303,21 +303,20 @@ OUTER:
 	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
 }
 
-func (n *Node) CheckLeaves(vertices []int, subtree Node) (bool, *Node) {
-	if len(n.Children) == 0 {
-		if Subset(vertices, n.Bag) {
-			n.Children = []Node{subtree}
-			return true, n
-		}
+func (n *Node) CombineNodes(vertices []int, subtree Node) *Node {
+
+	if Subset(vertices, n.Bag) {
+		n.Children = append(n.Children, subtree)
+		return n
 	}
 
 	for i := range n.Children {
-		ok, result := n.Children[i].CheckLeaves(vertices, subtree)
-		if ok {
+		result := n.Children[i].CombineNodes(vertices, subtree)
+		if !reflect.DeepEqual(*result, Node{}) {
 			n.Children[i] = *result
-			return ok, n
+			return n
 		}
 	}
 
-	return false, &Node{}
+	return &Node{}
 }
