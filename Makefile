@@ -1,4 +1,4 @@
-# Based on example Makefile from https://github.com/azer/go-makefile-example by Azer Koçulu
+# Based on example Makefile from https://github.com/azer/go-makefile-example by Azer Koçulu test
 -include .env
 
 VERSION := $(shell git tag | sort -V | tail -1)
