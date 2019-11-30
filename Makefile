@@ -1,7 +1,8 @@
 # Based on example Makefile from https://github.com/azer/go-makefile-example by Azer Koçulu
 -include .env
 
-VERSION := $(shell git log -1 --format=%cd --date=short)
+VERSION := $(shell git tag | sort -V | tail -1)
+DATE := $(shell git log -1 --format=%cd --date=short)
 BUILD := $(shell git rev-parse --short HEAD)
 PROJECTNAME := $(shell basename "$(PWD)")
 
@@ -11,7 +12,7 @@ GOBIN := $(GOBASE)/bin
 GOFILES := $(wildcard *.go)
 
 # Use linker flags to provide version/build settings
-LDFLAGS=-ldflags "-s -w  -X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
+LDFLAGS=-ldflags "-s -w  -X=main.Date=$(DATE) -X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
 
 # Redirect error output to a file, so we can show it in development mode.
 STDERR := /tmp/.$(PROJECTNAME)-stderr.txt
