@@ -39,16 +39,20 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 	if heuristic > 0.0 {
 		fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
 		if msec+heuristic > 60000.0 {
-			fmt.Print("(", (msec+heuristic)/60000.0, "min )")
+			fmt.Println("(", msec+heuristic/60000.0, "min )")
+		} else {
+			fmt.Println("")
 		}
 	} else {
 		fmt.Print("Time: ", msec, " ms")
 		if msec > 60000.0 {
-			fmt.Print("(", msec/60000.0, "min )")
+			fmt.Println("(", msec/60000.0, "min )")
+		} else {
+			fmt.Println("")
 		}
 	}
 
-	fmt.Println("\nWidth: ", decomp.CheckWidth())
+	fmt.Println("Width: ", decomp.CheckWidth())
 	correct := decomp.Correct(parsedGraph)
 	fmt.Println("Correct: ", correct)
 	if correct && len(gml) > 0 {
@@ -63,7 +67,6 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 }
 
 var Version string
-var Date string
 var Build string
 
 func main() {
@@ -118,8 +121,7 @@ func main() {
 
 	// Outpt usage message if graph and width not specified
 	if *graphPath == "" || (*width <= 0 && !*exact) {
-		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/", Build, " ,", Date, ")")
-		fmt.Fprintln(os.Stderr, out)
+		fmt.Fprintf(os.Stderr, "Usage of BalancedGo (v%s, https://github.com/cem-okulmus/BalancedGo/commit/%s): \n", Version, Build)
 		flag.VisitAll(func(f *flag.Flag) {
 			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" {
 				return
@@ -172,17 +174,12 @@ func main() {
 		case 1:
 			parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
 			heuristicMessage = "Using degree ordering as a heuristic"
-			break
 		case 2:
 			parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
 			heuristicMessage = "Using max seperator ordering as a heuristic"
-			break
 		case 3:
-			a := GetMSCOrder(parsedGraph.Edges)
-			parsedGraph.Edges = a
-			fmt.Println("Received, ", a)
+			parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
 			heuristicMessage = "Using MSC ordering as a heuristic"
-			break
 		}
 		d := time.Now().Sub(start)
 

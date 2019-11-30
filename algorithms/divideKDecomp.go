@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/spakin/disjoint"
 )
 
 type divideComp struct {
@@ -32,75 +33,122 @@ func (c divideComp) String() string {
 	buffer.WriteString(fmt.Sprintln(c.upConnecting))
 
 	return buffer.String()
+
 }
 
-func (comp divideComp) getComponents(sep Edges) ([]divideComp, bool) {
-
-	//special case
-	if Subset(comp.edges.Vertices(), sep.Vertices()) {
-		return []divideComp{}, true
-	}
-
-	log.Println("Testing ", sep)
-
-	SpecialUp := Special{Vertices: comp.up}
-	SpecialLow := Special{Vertices: comp.low}
-	Sp := []Special{SpecialLow, SpecialUp}
-
-	log.Println("Sp ", Sp)
-	comps, compsSP, _ := Graph{Edges: comp.edges}.GetComponents(sep, Sp)
+//similar to getComponents on Graphs, with minor changes to account for divideKDecomp
+func (comp divideComp) getComponents(sep Edges) ([]divideComp, map[int]*disjoint.Element, int) {
+	//edgesUp := FilterVertices(comp.edges, comp.up)   // all edges in comp connected to Up
+	edgesLow := FilterVertices(comp.edges, comp.low) // all edges in comp conneted to low
 
 	var output []divideComp
 
-	// take care of remaining components
-OUTER:
-	for i := range comps {
+	var vertices = make(map[int]*disjoint.Element)
+	var comps = make(map[*disjoint.Element][]Edge)
 
-		c := divideComp{}
+	sepVert := sep.Vertices()
+	sepCache := make(map[int]bool, len(sepVert))
+	//fmt.Println("Current separator ", Edge{Vertices: sepVert})
+	for _, v := range sepVert {
+		sepCache[v] = true
+	}
 
-		if len(compsSP[i]) > 0 { // one up or low component
-			if comps[i].Edges.Len() == 0 { // skip empty component
-				continue OUTER
+	//  Set up the disjoint sets for each node
+	for _, i := range comp.edges.Vertices() {
+		vertices[i] = disjoint.NewElement()
+	}
+
+	// Merge together the connected components
+	for _, e := range comp.edges.Slice() {
+		for i := 0; i < len(e.Vertices); i++ {
+			if sepCache[e.Vertices[i]] {
+				continue
 			}
-			if len(compsSP[i]) == 2 { // reject case, up and low not seperated
-				return output, false
-			}
-			if reflect.DeepEqual(compsSP[i][0], SpecialUp) { // Upper component
-				c.upConnecting = true
-				compEdges := comps[i].Edges.Slice()
-				// u := sep.Both(comp.edges)
-				// u2 := sep.Intersect(comp.up)
-				// compEdges = append(compEdges, u...)
-				// compEdges = append(compEdges, u2...)
-				compEdges = append(compEdges, sep.Slice()...)
-				c.edges = NewEdges(compEdges)
-				// fmt.Println("Up,", comp.up, "vertices ", c.edges.Vertices())
-				c.up = comp.up
-				c.low = Inter(sep.Vertices(), c.edges.Vertices())
-			} else if reflect.DeepEqual(compsSP[i][0], SpecialLow) { // lower component
-				if !Subset(comp.low, comps[i].Edges.Vertices()) {
-					compEdges := comps[i].Edges.Slice()
-					l := sep.Intersect(comp.low)
-					c.edges = NewEdges(append(compEdges, l...))
-				} else {
-					c.edges = comps[i].Edges
+			for j := i + 1; j < len(e.Vertices); j++ {
+				if sepCache[e.Vertices[j]] {
+					continue
 				}
-				c.low = comp.low
-				c.up = Inter(sep.Vertices(), c.edges.Vertices())
-			} else {
-				log.Panicln("Reflect not working!")
+				//			fmt.Println("Union of ", m[e.Vertices[i]], "and ", m[e.Vertices[j]])
+				disjoint.Union(vertices[e.Vertices[i]], vertices[e.Vertices[j]])
+				// j = i-1
+				break
 			}
-		} else {
-			c.edges = comps[i].Edges
-			c.up = Inter(sep.Vertices(), c.edges.Vertices())
-
 		}
-		c.edges.RemoveDuplicates()
+	}
+
+	//sort each edge to a corresponding component
+	for _, e := range comp.edges.Slice() {
+		var vertexRep int
+		found := false
+		for _, v := range e.Vertices {
+			if sepCache[v] {
+				continue
+			}
+			vertexRep = v
+			found = true
+			break
+		}
+		if !found {
+			continue
+		}
+
+		slice, ok := comps[vertices[vertexRep].Find()]
+		if !ok {
+			newslice := make([]Edge, 0, comp.edges.Len())
+			comps[vertices[vertexRep].Find()] = newslice
+			slice = newslice
+		}
+
+		comps[vertices[vertexRep].Find()] = append(slice, e)
+	}
+
+	upConn := 0
+
+	// Perf: You _can_ check comp for up/low connecting without an intersect operation
+	// Store the components
+	for i, _ := range comps {
+		c := divideComp{edges: NewEdges(comps[i])}
+		if len(Inter(comp.up, c.edges.Vertices())) > 0 { // comp Up connecting
+			//c.edges.Append(DiffEdges(edgesUp, c.edges.Slice()...).Slice()...) // make sure all upEdges stay together
+			c.upConnecting = true
+			upConn++
+			if upConn > 1 {
+				return output, vertices, upConn
+			}
+			c.up = Inter(comp.up, c.edges.Vertices())
+			//c.up = comp.up
+			c.low = Inter(sepVert, c.edges.Vertices())
+		} else {
+			if len(Inter(comp.low, c.edges.Vertices())) > 0 { // comp Low connecting
+				//	log.Println("Low connecting comp.", c.edges, " lowEdges", edgesLow, "\nAdding Edges ", DiffEdges(edgesLow, c.edges.Slice()...))
+				c.edges.Append(DiffEdges(edgesLow, c.edges.Slice()...).Slice()...) // make sure all lowEdges stay together
+				c.low = comp.low
+			}
+			c.up = Inter(sepVert, c.edges.Vertices())
+		}
 
 		output = append(output, c)
 	}
 
-	return output, true
+	if upConn == 0 && !Subset(comp.up, sepVert) {
+		fmt.Println("H: ")
+		for _, e := range comp.edges.Slice() {
+			fmt.Println(e.FullString())
+		}
+
+		fmt.Println("Sep, ", sep, "Vertices: ", PrintVertices(sepVert))
+		fmt.Println("compUp", PrintVertices(comp.up))
+		i := 0
+		for _, c := range comps {
+			cEdges := NewEdges(c)
+			fmt.Println("Component ", cEdges, " vertices: ", PrintVertices(cEdges.Vertices()))
+			i++
+		}
+
+		log.Panicln("something is rotten in the state of this program")
+	}
+
+	return output, vertices, upConn
 }
 
 type DivideKDecomp struct {
@@ -109,18 +157,35 @@ type DivideKDecomp struct {
 	BalFactor int
 }
 
-func (d DivideKDecomp) CheckBalancedSep(comp divideComp, comps []divideComp, valid bool) bool {
+func (d DivideKDecomp) CheckBalancedSep(comp divideComp, sep Edges) bool {
+
+	comps, vertices, upConn := comp.getComponents(sep)
+
+	if upConn > 1 {
+		log.Println("More than one upconnecting, not in normal form")
+		return false
+	}
+
 	//check if up and low separated
 	// constant check enough as all vertices in up (resp. low) part of the same comp
-	if !valid {
-		log.Println("Up and low not separated")
-		log.Println("Current: ", comp, "\n\n")
+	if len(comp.up) > 0 && len(comp.low) > 0 {
+		if vertices[comp.up[0]] == vertices[comp.low[0]] {
+			log.Println("Up and low not separated")
+			log.Println("Current: ", comp, "\n\n")
 
-		for i := range comps {
-			log.Println(comps[i], "\n")
+			for i := range comps {
+				log.Println(comps[i], "\n")
+			}
+
+			return false
 		}
+	}
 
-		return false
+	//ensure that connection to upper node is still intact
+	for i := range comps {
+		if comps[i].upConnecting && !reflect.DeepEqual(comp.up, comps[i].up) {
+			return false
+		}
 	}
 
 	// TODO, make this work only a single loop
@@ -128,34 +193,28 @@ func (d DivideKDecomp) CheckBalancedSep(comp divideComp, comps []divideComp, val
 		// log.Printf("Components of sep %+v\n", comps)
 		for i := range comps {
 
-			if comps[i].edges.Len() == comp.edges.Len() { // not made any progres
-				log.Println("No progress made")
-				return false
-			}
-
-			if comps[i].edges.Len() > (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K {
-				log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
+			if comps[i].edges.Len() > (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor) {
+				//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
 				return false
 			}
 		}
 	} else {
 		for i := range comps {
-			if comps[i].edges.Len() == comp.edges.Len() { // not made any progres
-				log.Println("No progress made")
-				return false
-			}
 			if len(comps[i].low) == 0 {
+				if comps[i].edges.Len() == comp.edges.Len() { // must make some progres
+					return false
+				}
+
 				continue
 			}
-			if comps[i].edges.Len() > (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K {
-				log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
-				log.Println("Not enough progress made")
+			if comps[i].edges.Len() > (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor) {
+				//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep, comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
 				return false
 			}
 		}
-		// if len(Inter(sep.Vertices(), comp.edges.Vertices())) == 0 { //make some progress
-		// 	return false
-		// }
+		if len(Inter(sep.Vertices(), comp.edges.Vertices())) == 0 { //make some progress
+			return false
+		}
 	}
 
 	return true
@@ -164,10 +223,10 @@ func (d DivideKDecomp) CheckBalancedSep(comp divideComp, comps []divideComp, val
 //TODO check if this kind of manipulation actually works outside of current scope
 func reorderComps(parent Node, subtree Node, up []int) Node {
 	log.Println("Two Nodes enter: ", parent, subtree)
-	// up = Inter(up, parent.Vertices())
+	up = Inter(up, parent.Vertices())
 	//finding connecting leaf in parent
-	leaf := parent.CombineNodes(up, subtree)
-	if reflect.DeepEqual(*leaf, Node{}) {
+	found, leaf := parent.CheckLeaves(up, subtree)
+	if !found {
 		fmt.Println("\n \n comp ", PrintVertices(up))
 		fmt.Println("parent ", parent)
 
@@ -178,59 +237,37 @@ func reorderComps(parent Node, subtree Node, up []int) Node {
 	// leaf.Children = []Node{subtree}
 	log.Println("Leaf ", leaf)
 	log.Println("One Node leaves: ", parent)
-	return *leaf
-}
-
-// TODO: Remove the blind special edge here in the post process step
-func (d DivideKDecomp) baseCase(comp divideComp) Decomp {
-	det := DetKDecomp{Graph: d.Graph, BalFactor: d.BalFactor, SubEdge: false}
-
-	det.cache = make(map[uint32]*CompCache)
-	var H Graph
-
-	H.Edges = comp.edges
-
-	return det.findDecomp(d.K, H, comp.up, []Special{Special{Vertices: comp.low}})
+	return parent
 }
 
 func (d DivideKDecomp) decomposable(comp divideComp) Decomp {
-	if !Subset(comp.low, comp.edges.Vertices()) || !Subset(comp.up, comp.edges.Vertices()) {
-		log.Println("comp ", comp)
-		log.Panicln("connecting set not inside edges")
-	}
-
 	log.Printf("\n\nCurrent SubGraph: %v\n", comp)
 
 	//base case: size of comp <= K
-
-	if comp.edges.Len() <= 2*d.K {
-		output := d.baseCase(comp)
-		if reflect.DeepEqual(output, Decomp{}) {
-			log.Printf("REJECTING base: couldn't decompose %v \n", comp)
-			return Decomp{}
-		}
-		return output
+	if comp.edges.Len() <= d.K {
+		sep := NewEdges(comp.edges.Slice())
+		return Decomp{Graph: d.Graph,
+			Root: Node{Up: comp.up, Low: comp.low, Cover: sep, Bag: sep.Vertices()}}
 	}
 	edges := FilterVertices(d.Graph.Edges, comp.edges.Vertices())
 
-	gen := GetCombinUnextend(edges.Len(), d.K)
+	gen := GetCombin(edges.Len(), d.K)
 
 OUTER:
 	for gen.HasNext() {
 		gen.Confirm()
 		balsep := GetSubset(edges, gen.Combination)
-		comps, valid := comp.getComponents(balsep)
-
-		if !d.CheckBalancedSep(comp, comps, valid) {
+		if !d.CheckBalancedSep(comp, balsep) {
 			continue
 		}
 		log.Println("Chosen Sep ", balsep)
+
+		comps, _, upConn := comp.getComponents(balsep)
 
 		log.Printf("Comps of Sep: %v\n", comps)
 
 		var parent Node
 		var subtrees []Node
-		var upconnecting bool
 		for i, _ := range comps {
 			child := d.decomposable(comps[i])
 			if reflect.DeepEqual(child, Decomp{}) {
@@ -241,12 +278,8 @@ OUTER:
 
 			log.Printf("Produced Decomp: %v\n", child)
 
-			if comps[i].upConnecting {
-				upconnecting = true
+			if upConn == 1 && comps[i].upConnecting {
 				parent = child.Root
-				parent.Up = comps[i].up
-				parent.Low = comps[i].low
-
 			} else {
 				subtrees = append(subtrees, child.Root)
 			}
@@ -266,18 +299,13 @@ OUTER:
 			log.Panicln("Parent missing")
 		}
 
-		if upconnecting { // TODO this made a distintion on upconnecting
-			output = reorderComps(parent, SubtreeRootedAtS, parent.Low)
+		if upConn == 1 {
+			output = reorderComps(parent, SubtreeRootedAtS, balsep.Vertices())
 
 			log.Printf("Reordered Decomp: %v\n", output)
 		} else {
 			output = SubtreeRootedAtS
 		}
-
-		output.Up = make([]int, len(comp.up))
-		copy(output.Up, output.Up)
-		output.Low = make([]int, len(comp.low))
-		copy(output.Low, comp.low)
 
 		return Decomp{Graph: d.Graph, Root: output}
 	}
@@ -286,44 +314,6 @@ OUTER:
 
 }
 
-func (d DivideKDecomp) FindDecomp(K int) Decomp {
-	output := d.decomposable(divideComp{edges: d.Graph.Edges})
-	// output.Root.Up = []int{1, 2, 3}
-	fmt.Println("Why not working?")
-	fmt.Println("Decomps ", output)
-	return output
-}
-
-func (d DivideKDecomp) Name() string {
-	return "DivideK"
-}
-
-func test3() {
-	_, parseGraph := GetGraph("hypergraphs/grid2d_15.hg")
-
-	e1 := parseGraph.GetEdge("e1(A,B)")
-	e2 := parseGraph.GetEdge("e2(C,B)")
-	e3 := parseGraph.GetEdge("e3(C,E)")
-	e4 := parseGraph.GetEdge("e4(F,E)")
-	edges := NewEdges([]Edge{e1, e2, e3, e4})
-
-	spE1 := parseGraph.GetEdge("e5(A,C,D)")
-	spE2 := parseGraph.GetEdge("e6(D,C,F)")
-	spEdges := NewEdges([]Edge{spE1, spE2})
-
-	sp := Special{Edges: spEdges, Vertices: spEdges.Vertices()}
-	Sp := []Special{sp}
-
-	component := Graph{Edges: edges}
-
-	sep := NewEdges([]Edge{e3, e4})
-
-	comp, compSp, _ := component.GetComponents(sep, Sp)
-
-	for i := range comp {
-		fmt.Println("Compnent: ", comp[i])
-		fmt.Println("Special: ", compSp[i])
-	}
-
-	return
+func (d DivideKDecomp) FindDecomp() Decomp {
+	return d.decomposable(divideComp{edges: d.Graph.Edges})
 }

@@ -76,11 +76,6 @@ func NewEdges(slice []Edge) Edges {
 	return Edges{slice: slice}
 }
 
-func (e *Edges) RemoveDuplicates() {
-	output := removeDuplicateEdges(e.slice)
-	e.slice = output.slice
-}
-
 func (e *Edges) Clear() {
 	e.vertices = e.vertices[:0]
 }
@@ -331,38 +326,6 @@ OUTER:
 		}
 	}
 	return false
-}
-
-func (e Edges) Intersect(set []int) []Edge {
-	var output []Edge
-
-	for i := range e.Slice() {
-		if len(Inter(e.Slice()[i].Vertices, set)) > 0 {
-			output = append(output, e.Slice()[i])
-		}
-	}
-
-	return output
-}
-
-//TODO: This assumes both edges are free of duplicates
-func (e Edges) Both(other Edges) []Edge {
-	var output []Edge
-
-	table := make(map[uint32]int)
-
-	for i := range e.Slice() {
-		table[e.Slice()[i].Hash()]++
-	}
-
-	for i := range other.Slice() {
-		table[other.Slice()[i].Hash()]++
-		if table[other.Slice()[i].Hash()] == 2 {
-			output = append(output, other.Slice()[i])
-		}
-	}
-
-	return output
 }
 
 // produces the union of all vertices from a slice of Edge
