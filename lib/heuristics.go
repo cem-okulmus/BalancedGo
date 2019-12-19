@@ -177,7 +177,7 @@ func GetMaxSepOrder(edges Edges) Edges {
 	return edges
 }
 
-func edgeDegree(edges Edges, edge Edge) int {
+func edgeVertexDegree(edges Edges, edge Edge) int {
 	var output int
 
 	for _, v := range edge.Vertices {
@@ -191,6 +191,31 @@ func GetDegreeOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
 	}
-	sort.Slice(edges.Slice(), func(i, j int) bool { return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j]) })
+	sort.Slice(edges.Slice(), func(i, j int) bool {
+		return edgeVertexDegree(edges, edges.Slice()[i]) > edgeVertexDegree(edges, edges.Slice()[j])
+	})
 	return edges
+}
+
+func edgeDegree(edges Edges, edge Edge) int {
+	output := 0
+
+	for i := range edges.Slice() {
+		if edges.Slice()[i].areNeighbours(edge) {
+			output++
+		}
+	}
+
+	return output
+}
+
+func GetEdgeDegreeOrder(edges Edges) Edges {
+	if edges.Len() <= 1 {
+		return edges
+	}
+	sort.Slice(edges.Slice(), func(i, j int) bool {
+		return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j])
+	})
+	return edges
+
 }

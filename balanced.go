@@ -80,7 +80,7 @@ func main() {
 	localBal := flag.Bool("local", false, "Test out local BalSep")
 	globalBal := flag.Bool("global", false, "Test out global BalSep")
 	balanceFactorFlag := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
-	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO")
+	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
 	gyö := flag.Bool("g", false, "perform a GYÖ reduct and show the resulting graph")
 	typeC := flag.Bool("t", false, "perform a Type Collapse and show the resulting graph")
 	//hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
@@ -178,10 +178,12 @@ func main() {
 			heuristicMessage = "Using max seperator ordering as a heuristic"
 			break
 		case 3:
-			a := GetMSCOrder(parsedGraph.Edges)
-			parsedGraph.Edges = a
-			fmt.Println("Received, ", a)
+			parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
 			heuristicMessage = "Using MSC ordering as a heuristic"
+			break
+		case 4:
+			parsedGraph.Edges = GetEdgeDegreeOrder(parsedGraph.Edges)
+			heuristicMessage = "Using edge degree ordering as a heuristic"
 			break
 		}
 		d := time.Now().Sub(start)

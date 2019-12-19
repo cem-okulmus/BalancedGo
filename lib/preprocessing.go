@@ -103,7 +103,7 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 		//Perform vertex removal
 		g2, ops2 := g1.removeVertices()
 		// fmt.Println("After Vertex Removal:")
-		// for _, e := range g2.Edges {
+		// for _, e := range g2.Edges.Slice() {
 		// 	fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 		// }
 
