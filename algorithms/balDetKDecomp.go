@@ -170,7 +170,7 @@ OUTER:
 							continue OUTER
 						}
 					}
-					//			log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
+					// 		log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
@@ -183,7 +183,7 @@ OUTER:
 				} else {
 					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
 					decomp.Root = decomp.Root.Children[0]
-					//			log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
+					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
 
 				subtrees = append(subtrees, decomp)
