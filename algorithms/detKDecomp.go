@@ -251,7 +251,7 @@ OUTER:
 									if sepSub.HasNext() {
 										sepActual = sepSub.GetCurrent()
 										sepActual = NewEdges(append(sepActual.Slice(), sepConst...))
-										log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
+										// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
 										//log.Println("Sep const: ", sepConst, "sepChang ", sepChanging)
 										// log.Println("SubSep: ")
 										// for _, s := range sepSub.Edges {
@@ -261,7 +261,7 @@ OUTER:
 											nextBalsepFound = true
 										}
 									} else {
-										log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: sepActualOrigin}, Sp)
+										// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: sepActualOrigin}, Sp)
 										if addEdges {
 											i_add++
 											continue addingEdges
@@ -270,7 +270,7 @@ OUTER:
 										}
 									}
 								}
-								log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
+								// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
 								continue subEdges
 							}
 
