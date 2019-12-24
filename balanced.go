@@ -31,10 +31,14 @@ func check(e error) {
 
 }
 
+var Version string
+var Date string
+var Build string
+
 func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64) {
 	decomp.RestoreSubedges()
 
-	fmt.Println("Used algorithm: " + algorithm)
+	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
 	fmt.Println("Result ( ran with K =", K, ")\n", decomp)
 	if heuristic > 0.0 {
 		fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
@@ -61,10 +65,6 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 
 	}
 }
-
-var Version string
-var Date string
-var Build string
 
 func main() {
 
