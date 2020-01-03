@@ -12,16 +12,20 @@ import (
 var hashMux sync.Mutex
 
 func IntHash(vertices []int) uint32 {
-	arrBytes := []byte{}
+	var output uint32
+	// arrBytes := []byte{}
 	//sort.Ints(vertices)
 	for _, item := range vertices {
+
+		h := fnv.New32a()
 		bs := make([]byte, 4)
 		binary.PutVarint(bs, int64(item))
-		arrBytes = append(arrBytes, bs...)
+		// arrBytes = append(arrBytes, bs...)
+		h.Write(bs)
+		output = output + h.Sum32()
+
 	}
-	h := fnv.New32a()
-	h.Write(arrBytes)
-	return h.Sum32()
+	return output
 
 }
 

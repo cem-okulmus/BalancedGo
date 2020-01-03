@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"io/ioutil"
+	"sort"
 )
 
 type subSet struct {
@@ -50,23 +51,33 @@ type SubEdges struct {
 	gen           *CombinationIterator
 	combination   []int
 	currentSubset *subSet
-	cache         [][]int
+	cache         map[uint32]struct{}
 	emptyReturned bool
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	var h_edges []Edge
 
-	for _, j := range edges.Slice() {
-		inter := Inter(j.Vertices, e.Vertices)
+	for j := range edges.Slice() {
+		inter := Inter(edges.Slice()[j].Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
 			h_edges = append(h_edges, Edge{Vertices: inter})
 		}
 	}
+
+	// fmt.Println("Neighbourhood: ")
+	// for i := range h_edges {
+	// 	fmt.Println(h_edges[i].FullString())
+	// }
+	// fmt.Println("\n")
+
 	// TODO: Sort h_edges by size
+	sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
+
 	source := removeDuplicateEdges(h_edges)
 	//fmt.Println("h_edges", h_edges)
 	var output SubEdges
+	output.cache = make(map[uint32]struct{})
 
 	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
 	output.source = source
@@ -80,6 +91,7 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 	output.initial = e
 	output.k = k
 	output.combination = make([]int, k)
+	output.cache[IntHash(edges.Vertices())] = Empty // initial cache
 	//output.cache = append(output.cache, Vertices(edges))
 
 	return output
@@ -109,11 +121,11 @@ func (s *SubEdges) hasNextCombination() bool {
 }
 
 func (s SubEdges) existsSubset(b []int) bool {
-	for _, e := range s.cache {
-		if Subset(b, e) && Subset(e, b) {
-			return true
-		}
-	}
+	// hashOfB := IntHash(b)
+	// if _, ok := s.cache[hashOfB]; ok {
+	// 	return true
+	// }
+
 	return false
 }
 
@@ -149,7 +161,7 @@ func (s *SubEdges) hasNext() bool {
 	if s.existsSubset(s.current.Vertices) || len(s.current.Vertices) == s.source.Len() {
 		return s.hasNext()
 	} else {
-		s.cache = append(s.cache, s.current.Vertices)
+		s.cache[IntHash(s.current.Vertices)] = Empty // add used combination to cache
 	}
 
 	return true
@@ -168,10 +180,13 @@ func (s SubEdges) getCurrent() Edge {
 
 type SepSub struct {
 	Edges []SubEdges
+
+	cache map[uint32]struct{}
 }
 
 func GetSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
+	output.cache = make(map[uint32]struct{})
 
 	for _, e := range sep.Slice() {
 		output.Edges = append(output.Edges, getSubEdgeIterator(edges, e, k))
@@ -186,7 +201,9 @@ func (sep *SepSub) HasNext() bool {
 	// fmt.Println("len", len(sep.Edges))
 	for i < len(sep.Edges) {
 		if sep.Edges[i].hasNext() {
-			//fmt.Println("increased subedge ", i)
+			// if sep.alreadyChecked() {
+			// 	return sep.HasNext()
+			// }
 			return true
 		} else {
 			sep.Edges[i].reset()
@@ -197,6 +214,18 @@ func (sep *SepSub) HasNext() bool {
 	}
 
 	return false
+}
+
+func (sep *SepSub) alreadyChecked() bool {
+	currentEdges := sep.GetCurrent()
+	currentVertices := currentEdges.Vertices()
+	hashOfV := IntHash(currentVertices)
+	if _, ok := sep.cache[hashOfV]; ok {
+		return true
+	}
+	sep.cache[hashOfV] = Empty // add new vertex set to cache
+	return false
+
 }
 
 func (sep SepSub) GetCurrent() Edges {
@@ -219,12 +248,12 @@ func check(e error) {
 }
 
 func test() {
-	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/adlerexample_badorder.hg")
+	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/rand_q0037.hg")
 	check(err)
 
 	parsedGraph, parse := GetGraph(string(dat))
 
-	e1 := parse.GetEdge("E1 (V1, V2, V9)")
+	e1 := parse.GetEdge("54020(1,2,5,6,7,8,9,10,12,14,17,18,19,22,23,25)")
 	fmt.Println(e1.FullString(), "\n\n")
 
 	for _, e := range parsedGraph.Edges.Slice() {
@@ -232,11 +261,14 @@ func test() {
 	}
 
 	test := GetSepSub(parsedGraph.Edges, NewEdges([]Edge{e1}), 2)
-
+	count := 1
 	fmt.Println(test.GetCurrent())
 	for test.HasNext() {
-		fmt.Println(test.GetCurrent())
+		// fmt.Println(test.GetCurrent())
+		count++
 	}
+
+	fmt.Println("\n\n Tested ", count, " many subedges")
 	return
 
 	// fmt.Println("Subset test: ")

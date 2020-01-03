@@ -20,6 +20,7 @@ func searchSubEdge(g *BalSepLocal, H *Graph, Sp []Special, balsepOrig Edges, sep
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	// log.Printf("Current Special Edges: %v\n\n", Sp)
 	if sepSub == nil {
+		balsep = CutEdges(balsep, H.Vertices())
 		sepSub = GetSepSub(g.Graph.Edges, balsep, K)
 	}
 	nextBalsepFound := false
