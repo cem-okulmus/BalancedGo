@@ -203,12 +203,16 @@ OUTER:
 
 }
 
-func (b BalDetKDecomp) FindGHD(K int) Decomp {
-	return b.findDecompBalSep(K, b.Depth, b.Graph, []Special{})
+func (b BalDetKDecomp) FindGHD(K int, Sp []Special) Decomp {
+	return b.findDecompBalSep(K, b.Depth, b.Graph, Sp)
 }
 
 func (b BalDetKDecomp) FindDecomp(K int) Decomp {
-	return b.FindGHD(K)
+	return b.FindGHD(K, []Special{})
+}
+
+func (b BalDetKDecomp) FindDecompUpdate(K int, Sp []Special) Decomp {
+	return b.FindGHD(K, Sp)
 }
 
 func (b BalDetKDecomp) Name() string {

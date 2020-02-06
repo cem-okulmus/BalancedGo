@@ -93,6 +93,7 @@ func main() {
 	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
 	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flag.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
+	update := flag.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
 	exact := flag.Bool("exact", false, "Compute exact width (width flag not needed)")
 
 	flag.Parse()
@@ -154,7 +155,12 @@ func main() {
 	check(err)
 
 	var parsedGraph Graph
-	if !*pace {
+	var specialEdges []Special
+
+	if *update {
+		parsedGraph, specialEdges = GetGraphUpdate(string(dat))
+
+	} else if !*pace {
 		parsedGraph, _ = GetGraph(string(dat))
 	} else {
 		parsedGraph = GetGraphPACE(string(dat))
@@ -237,6 +243,31 @@ func main() {
 		parsedGraph = parsedGraph.ComputeSubEdges(*width)
 
 		fmt.Println("Graph with subedges \n", parsedGraph)
+	}
+
+	if *update {
+		var solver UpdateAlgorithm
+
+		if *balDetTest > 0 {
+			balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
+			solver = balDet
+		} else {
+			log.Panicln("No update Algorithm chosen!")
+		}
+
+		if solver != nil {
+			var decomp Decomp
+			start := time.Now()
+
+			decomp = solver.FindDecompUpdate(*width, specialEdges)
+
+			d := time.Now().Sub(start)
+			msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
+			return
+		}
+
 	}
 
 	var solver Algorithm

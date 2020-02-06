@@ -25,7 +25,6 @@ type ParseGraph struct {
 }
 
 // Implement PACE 2019 format
-//TODO Look up how to match multiple values in same line to different fields
 
 type ParseEdgePACE struct {
 	Name     int   ` @Number`
@@ -41,6 +40,29 @@ type ParseGraphPACE struct {
 	Info  ParseGraphPACEInfo `@@`
 	Edges []ParseEdgePACE    `(@@) *`
 	m     map[int]int
+}
+
+// Updated PACE 2019 format, with initial Special Edges
+
+type ParseEdgeUpdate struct {
+	Name     int   ` @Number`
+	Vertices []int ` ( @Number   )* "\n" `
+}
+
+type ParseSpecialEdgeUpdate struct {
+	Vertices []int `"s" ( @Number   )* "\n" `
+}
+
+type ParseGraphUpdateInfo struct {
+	Vertices int `"p htd":Begin @(Number) `
+	Edges    int `@(Number) "\n"`
+}
+
+type ParseGraphUpdate struct {
+	Info         ParseGraphUpdateInfo     `@@`
+	Edges        []ParseEdgeUpdate        `(@@) *`
+	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
+	m            map[int]int
 }
 
 func GetGraph(s string) (Graph, ParseGraph) {
@@ -192,4 +214,94 @@ func GetGraphPACE(s string) Graph {
 
 	// log.Panicln("")
 	return output
+}
+
+func GetGraphUpdate(s string) (Graph, []Special) {
+
+	graphLexer := lexer.Must(ebnf.New(`
+    Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
+    Begin = "p htd" .
+    Special = "s" .
+    Number = ("." | digit) {"." | digit} .
+    Whitespace = " " | "\t" | "\r" .
+    stuff = ":" | "@" | ";" | "-" .
+    Punct = "!"…"/"  .
+    Newline = "\n" .
+
+    digit = "0"…"9" .`))
+
+	var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+		participle.Elide("Comment", "Whitespace"))
+	var output Graph
+	var edges []Edge
+	var special []Special
+	pgraph := ParseGraphUpdate{}
+	err := parser.ParseString(s, &pgraph)
+	if err != nil {
+		fmt.Println("Couldn't parse input: ")
+		panic(err)
+	}
+	encode = 1 // initialize to 1
+
+	encoding := make(map[int]string)
+	pgraph.m = make(map[int]int)
+
+	for _, e := range pgraph.Edges {
+		encoding[encode] = "E" + strconv.Itoa(e.Name)
+		pgraph.m[e.Name] = encode
+		encode++
+	}
+
+	for _, e := range pgraph.Edges {
+		var outputEdge []int
+		for _, n := range e.Vertices {
+			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			if ok {
+				outputEdge = append(outputEdge, i)
+			} else {
+				pgraph.m[n+pgraph.Info.Edges] = encode
+				encoding[encode] = "V" + strconv.Itoa(n)
+				outputEdge = append(outputEdge, encode)
+				encode++
+
+			}
+		}
+		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
+	}
+
+	for _, s := range pgraph.SpecialEdges {
+		var outputSpecialEdge []int
+		for _, n := range s.Vertices {
+			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			if ok {
+				outputSpecialEdge = append(outputSpecialEdge, i)
+			} else {
+				pgraph.m[n+pgraph.Info.Edges] = encode
+				encoding[encode] = "V" + strconv.Itoa(n)
+				outputSpecialEdge = append(outputSpecialEdge, encode)
+				encode++
+			}
+		}
+		encoding[encode] = "Dummy Cover"
+		dummyEdges := NewEdges([]Edge{Edge{Name: encode, Vertices: outputSpecialEdge}})
+		encode++
+		special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
+	}
+
+	m = encoding
+
+	output.Edges = NewEdges(edges)
+
+	// log.Println("Edges", pgraph.Info.Edges)
+	// log.Println("Vertices", pgraph.Info.Vertices)
+
+	// for _, e := range output.Edges.Slice() {
+	// 	log.Println(e.FullString())
+	// }
+
+	// for _, e := range special {
+	// 	log.Println(e)
+	// }
+
+	return output, special
 }
