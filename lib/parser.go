@@ -49,7 +49,7 @@ type ParseEdgeUpdate struct {
 	Vertices []int ` ( @Number   )* "\n" `
 }
 
-type ParseSpecialEdgeUpdate struct {
+type ParseSpookyEdgeUpdate struct {
 	Vertices []int `"s" ( @Number   )* "\n" `
 }
 
@@ -63,11 +63,11 @@ type ParseGraphUpdateInfo struct {
 }
 
 type ParseGraphUpdate struct {
-	Info         ParseGraphUpdateInfo     `@@`
-	Edges        []ParseEdgeUpdate        `(@@) *`
-	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
-	GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
-	m            map[int]int
+	Info        ParseGraphUpdateInfo    `@@`
+	Edges       []ParseEdgeUpdate       `(@@) *`
+	SpookyEdges []ParseSpookyEdgeUpdate `(@@) *`
+	GhostEdges  []ParseGhostEdgeUpdate  `(@@) *`
+	m           map[int]int
 }
 
 func GetGraph(s string) (Graph, ParseGraph) {
@@ -221,7 +221,7 @@ func GetGraphPACE(s string) Graph {
 	return output
 }
 
-func GetGraphUpdate(s string) (Graph, Graph, []Special) {
+func GetGraphUpdate(s string) (Graph, Graph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
@@ -242,7 +242,8 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	var ghostGraph Graph
 	var edges []Edge
 	var ghostEdges []Edge
-	var special []Special
+	var spookyEdges []Edge
+
 	pgraph := ParseGraphUpdate{}
 	err := parser.ParseString(s, &pgraph)
 	if err != nil {
@@ -277,7 +278,7 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
 	}
 
-	ghostNum := 0
+	ghostNum := 1
 	for _, e := range pgraph.GhostEdges {
 		var outputEdge []int
 		for _, n := range e.Vertices {
@@ -292,34 +293,35 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 
 			}
 		}
-		encoding[encode] = "ghostEdge" + strconv.Itoa(ghostNum)
+		encoding[encode] = "ghostEdge " + strconv.Itoa(ghostNum)
 		ghostEdges = append(ghostEdges, Edge{Name: encode, Vertices: outputEdge})
 		encode++
 		ghostNum++
 	}
 
-	for _, s := range pgraph.SpecialEdges {
-		var outputSpecialEdge []int
+	spookNum := 1
+	for _, s := range pgraph.SpookyEdges {
+		var outputEdge []int
 		for _, n := range s.Vertices {
 			i, ok := pgraph.m[n+pgraph.Info.Edges]
 			if ok {
-				outputSpecialEdge = append(outputSpecialEdge, i)
+				outputEdge = append(outputEdge, i)
 			} else {
 				pgraph.m[n+pgraph.Info.Edges] = encode
 				encoding[encode] = "V" + strconv.Itoa(n)
-				outputSpecialEdge = append(outputSpecialEdge, encode)
+				outputEdge = append(outputEdge, encode)
 				encode++
 			}
 		}
-		encoding[encode] = "Dummy Cover"
-		dummyEdges := NewEdges([]Edge{Edge{Name: encode, Vertices: outputSpecialEdge}})
+		encoding[encode] = "spookyEdge " + strconv.Itoa(spookNum)
+		spookyEdges = append(spookyEdges, Edge{Name: encode, Vertices: outputEdge})
 		encode++
-		special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
+		spookNum++
 	}
 
 	m = encoding
 
-	output.Edges = NewEdges(edges)
+	output.Edges = NewEdges(append(edges, spookyEdges...))
 	ghostGraph.Edges = NewEdges(append(edges, ghostEdges...))
 
 	// log.Println("Edges", pgraph.Info.Edges)
@@ -333,5 +335,5 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	// 	log.Println(e)
 	// }
 
-	return ghostGraph, output, special
+	return ghostGraph, output
 }

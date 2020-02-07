@@ -159,7 +159,7 @@ func main() {
 	var specialEdges []Special
 
 	if *update {
-		parsedGraph, currentGraph, specialEdges = GetGraphUpdate(string(dat))
+		parsedGraph, currentGraph = GetGraphUpdate(string(dat))
 
 	} else if !*pace {
 		parsedGraph, _ = GetGraph(string(dat))
