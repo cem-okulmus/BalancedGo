@@ -155,10 +155,11 @@ func main() {
 	check(err)
 
 	var parsedGraph Graph
+	var currentGraph Graph
 	var specialEdges []Special
 
 	if *update {
-		parsedGraph, specialEdges = GetGraphUpdate(string(dat))
+		parsedGraph, currentGraph, specialEdges = GetGraphUpdate(string(dat))
 
 	} else if !*pace {
 		parsedGraph, _ = GetGraph(string(dat))
@@ -259,12 +260,12 @@ func main() {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solver.FindDecompUpdate(*width, specialEdges)
+			decomp = solver.FindDecompUpdate(*width, currentGraph, specialEdges)
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
+			outputStanza(solver.Name(), decomp, msec, currentGraph, *gml, *width, heuristic)
 			return
 		}
 

@@ -53,6 +53,10 @@ type ParseSpecialEdgeUpdate struct {
 	Vertices []int `"s" ( @Number   )* "\n" `
 }
 
+type ParseGhostEdgeUpdate struct {
+	Vertices []int `"g" ( @Number   )* "\n" `
+}
+
 type ParseGraphUpdateInfo struct {
 	Vertices int `"p htd":Begin @(Number) `
 	Edges    int `@(Number) "\n"`
@@ -62,6 +66,7 @@ type ParseGraphUpdate struct {
 	Info         ParseGraphUpdateInfo     `@@`
 	Edges        []ParseEdgeUpdate        `(@@) *`
 	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
+	GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
 	m            map[int]int
 }
 
@@ -216,12 +221,13 @@ func GetGraphPACE(s string) Graph {
 	return output
 }
 
-func GetGraphUpdate(s string) (Graph, []Special) {
+func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
     Begin = "p htd" .
     Special = "s" .
+    Ghost = "g" .
     Number = ("." | digit) {"." | digit} .
     Whitespace = " " | "\t" | "\r" .
     stuff = ":" | "@" | ";" | "-" .
@@ -233,7 +239,9 @@ func GetGraphUpdate(s string) (Graph, []Special) {
 	var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
 		participle.Elide("Comment", "Whitespace"))
 	var output Graph
+	var ghostGraph Graph
 	var edges []Edge
+	var ghostEdges []Edge
 	var special []Special
 	pgraph := ParseGraphUpdate{}
 	err := parser.ParseString(s, &pgraph)
@@ -269,6 +277,27 @@ func GetGraphUpdate(s string) (Graph, []Special) {
 		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
 	}
 
+	ghostNum := 0
+	for _, e := range pgraph.GhostEdges {
+		var outputEdge []int
+		for _, n := range e.Vertices {
+			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			if ok {
+				outputEdge = append(outputEdge, i)
+			} else {
+				pgraph.m[n+pgraph.Info.Edges] = encode
+				encoding[encode] = "V" + strconv.Itoa(n)
+				outputEdge = append(outputEdge, encode)
+				encode++
+
+			}
+		}
+		encoding[encode] = "ghostEdge" + strconv.Itoa(ghostNum)
+		ghostEdges = append(ghostEdges, Edge{Name: encode, Vertices: outputEdge})
+		encode++
+		ghostNum++
+	}
+
 	for _, s := range pgraph.SpecialEdges {
 		var outputSpecialEdge []int
 		for _, n := range s.Vertices {
@@ -291,6 +320,7 @@ func GetGraphUpdate(s string) (Graph, []Special) {
 	m = encoding
 
 	output.Edges = NewEdges(edges)
+	ghostGraph.Edges = NewEdges(append(edges, ghostEdges...))
 
 	// log.Println("Edges", pgraph.Info.Edges)
 	// log.Println("Vertices", pgraph.Info.Vertices)
@@ -303,5 +333,5 @@ func GetGraphUpdate(s string) (Graph, []Special) {
 	// 	log.Println(e)
 	// }
 
-	return output, special
+	return ghostGraph, output, special
 }
