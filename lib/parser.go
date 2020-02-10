@@ -270,14 +270,14 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	}
 
 	for _, e := range pgraph.Ghost {
-		encoding[encode] = e.Name + " 👻"
-		pgraph.m[e.Name] = encode
+		encoding[encode] = "👻" + e.Name
+		pgraph.m["👻"+e.Name] = encode
 		encode++
 	}
 
 	for _, e := range pgraph.Special {
 		encoding[encode] = e.Name + " ★"
-		pgraph.m[e.Name] = encode
+		pgraph.m[e.Name+" ★"] = encode
 		encode++
 	}
 
@@ -311,7 +311,7 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 
 			}
 		}
-		ghostEdges = append(ghostEdges, Edge{Name: pgraph.m[e.Name+" 👻"], Vertices: outputEdge})
+		ghostEdges = append(ghostEdges, Edge{Name: pgraph.m["👻"+e.Name], Vertices: outputEdge})
 	}
 
 	for _, s := range pgraph.Special {
