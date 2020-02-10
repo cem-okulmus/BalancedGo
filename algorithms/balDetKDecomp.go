@@ -2,6 +2,7 @@
 package algorithms
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -26,9 +27,9 @@ func decrease(count int) int {
 }
 
 func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []Special) Decomp {
-	// log.Println("Current Depth: ", currentDepth)
-	// log.Printf("Current SubGraph: %+v\n", H)
-	// log.Printf("Current Special Edges: %+v\n\n", Sp)
+	log.Println("Current Depth: ", (b.Depth - currentDepth))
+	log.Printf("Current SubGraph: %+v\n", H)
+	log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
 	if H.Edges.Len()+len(Sp) <= 2 {
@@ -70,13 +71,13 @@ OUTER:
 		//	balsepOrig := balsep
 		var sepSub *SepSub
 
-		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
+		log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
 
 	INNER:
 		for !decomposed {
 			comps, compsSp, _ := H.GetComponents(balsep, Sp)
 
-			// log.Printf("Comps of Sep: %+v\n", comps)
+			log.Printf("Comps of Sep: %+v\n", comps)
 
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
@@ -138,10 +139,10 @@ OUTER:
 				//	decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
-					// log.Println("\n\nCurrent Depth: ", currentDepth)
-					// log.Printf("Current SubGraph: %+v\n", H)
-					// log.Printf("Current Special Edges: %+v\n\n", Sp)
+					log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
+					log.Println("\n\nCurrent Depth: ", (b.Depth - currentDepth))
+					log.Printf("Current SubGraph: %+v\n", H)
+					log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 					subtrees = []Decomp{}
 					if sepSub == nil {
@@ -176,14 +177,14 @@ OUTER:
 
 				//TODO: Reroot only after all subtrees received
 				if currentDepth == 0 && decomp.SkipRerooting {
-					//			log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
-					//			// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
-					//			// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
-					//			// fmt.Println("Output from Balsep: ", decomp_deux)
+					log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
+					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
+					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+					// fmt.Println("Output from Balsep: ", decomp_deux)
 				} else {
 					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
 					decomp.Root = decomp.Root.Children[0]
-					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
+					log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
 
 				subtrees = append(subtrees, decomp)
@@ -212,6 +213,9 @@ func (b BalDetKDecomp) FindDecomp(K int) Decomp {
 }
 
 func (b BalDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
+
+	fmt.Println("Ghost edges", b.Graph.Edges)
+
 	return b.FindGHD(K, currentGraph, Sp)
 }
 
