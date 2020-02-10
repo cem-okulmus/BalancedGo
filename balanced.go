@@ -66,6 +66,35 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 	}
 }
 
+func testUpdate() {
+
+	dat, err := ioutil.ReadFile("hypergraphs/updateTestSub.hg")
+	check(err)
+
+	parsedGraph, thing := GetGraph(string(dat))
+	fmt.Println(parsedGraph)
+
+	special := thing.GetEdge("special(xL6JL9J, xL3JL8J, xL3JL9J, xL7JL10J)")
+	e1 := thing.GetEdge("E36(xL6JL11J,xL4JL11J,xL5JL11J)")
+	e2 := thing.GetEdge("E42(xL2JL10J,xL3JL10J,xL1JL10J)")
+	e3 := thing.GetEdge("E58(xL8JL11J,xL9JL11J)")
+
+	Sp := []Special{Special{Vertices: special.Vertices}}
+
+	sep := NewEdges([]Edge{e1, e2, e3})
+
+	fmt.Println("Special ", PrintVertices(VerticesSpecial(Sp)))
+	fmt.Println("sep ", sep)
+
+	comps, _, _ := parsedGraph.GetComponents(sep, Sp)
+
+	for _, c := range comps {
+
+		fmt.Println("Comp ", c)
+	}
+
+}
+
 func main() {
 
 	// m = make(map[int]string)

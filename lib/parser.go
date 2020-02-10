@@ -45,30 +45,39 @@ type ParseGraphPACE struct {
 // Updated PACE 2019 format, with initial Special Edges
 
 type ParseEdgeUpdate struct {
-	Name     int   ` @Number`
-	Vertices []int ` ( @Number   )* "\n" `
+	Name     string   ` @(Ident|Number)`
+	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 }
 
 type ParseSpecialEdgeUpdate struct {
-	Vertices []int `"s" ( @Number   )* "\n" `
+	Name     string   ` @(Ident|Number)`
+	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 }
 
 type ParseGhostEdgeUpdate struct {
-	Vertices []int `"g" ( @Number   )* "\n" `
-}
-
-type ParseGraphUpdateInfo struct {
-	Vertices int `"p htd":Begin @(Number) `
-	Edges    int `@(Number) "\n"`
+	Name     string   ` @(Ident|Number)`
+	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 }
 
 type ParseGraphUpdate struct {
-	Info         ParseGraphUpdateInfo     `@@`
-	Edges        []ParseEdgeUpdate        `(@@) *`
-	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
-	GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
-	m            map[int]int
+	Edges   []ParseEdgeUpdate        `( @@ ","?)* "."`
+	Ghost   []ParseSpecialEdgeUpdate `("👻" ( @@ ","?)*)?`
+	Special []ParseGhostEdgeUpdate   `"★" ( @@ ","?)*`
+	m       map[string]int
 }
+
+// type ParseGraphUpdateInfo struct {
+// 	Vertices int `"p htd":Begin @(Number) `
+// 	Edges    int `@(Number) "\n"`
+// }
+
+// type ParseGraphUpdate struct {
+// 	Info         ParseGraphUpdateInfo     `@@`
+// 	Edges        []ParseEdgeUpdate        `(@@) *`
+// 	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
+// 	GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
+// 	m            map[int]int
+// }
 
 func GetGraph(s string) (Graph, ParseGraph) {
 
@@ -224,16 +233,15 @@ func GetGraphPACE(s string) Graph {
 func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 
 	graphLexer := lexer.Must(ebnf.New(`
-    Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
-    Begin = "p htd" .
-    Special = "s" .
-    Ghost = "g" .
+    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
+    Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
     Number = ("." | digit) {"." | digit} .
-    Whitespace = " " | "\t" | "\r" .
+    Whitespace = " " | "\t" | "\n" | "\r" .
     stuff = ":" | "@" | ";" | "-" .
     Punct = "!"…"/"  .
-    Newline = "\n" .
-
+    alpha = "a"…"z" | "A"…"Z" .
+    SpecialSep = "★" .
+    GhostSep  = "👻" .
     digit = "0"…"9" .`))
 
 	var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
@@ -253,10 +261,22 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	encode = 1 // initialize to 1
 
 	encoding := make(map[int]string)
-	pgraph.m = make(map[int]int)
+	pgraph.m = make(map[string]int)
 
 	for _, e := range pgraph.Edges {
-		encoding[encode] = "E" + strconv.Itoa(e.Name)
+		pgraph.m[e.Name] = encode
+		encoding[encode] = e.Name
+		encode++
+	}
+
+	for _, e := range pgraph.Ghost {
+		encoding[encode] = e.Name + " 👻"
+		pgraph.m[e.Name] = encode
+		encode++
+	}
+
+	for _, e := range pgraph.Special {
+		encoding[encode] = e.Name + " ★"
 		pgraph.m[e.Name] = encode
 		encode++
 	}
@@ -264,57 +284,50 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	for _, e := range pgraph.Edges {
 		var outputEdge []int
 		for _, n := range e.Vertices {
-			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			i, ok := pgraph.m[n]
 			if ok {
 				outputEdge = append(outputEdge, i)
 			} else {
-				pgraph.m[n+pgraph.Info.Edges] = encode
-				encoding[encode] = "V" + strconv.Itoa(n)
+				pgraph.m[n] = encode
+				encoding[encode] = n
 				outputEdge = append(outputEdge, encode)
 				encode++
-
 			}
 		}
 		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
 	}
 
-	ghostNum := 1
-	for _, e := range pgraph.GhostEdges {
+	for _, e := range pgraph.Ghost {
 		var outputEdge []int
 		for _, n := range e.Vertices {
-			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			i, ok := pgraph.m[n]
 			if ok {
 				outputEdge = append(outputEdge, i)
 			} else {
-				pgraph.m[n+pgraph.Info.Edges] = encode
-				encoding[encode] = "V" + strconv.Itoa(n)
+				pgraph.m[n] = encode
+				encoding[encode] = n
 				outputEdge = append(outputEdge, encode)
 				encode++
 
 			}
 		}
-		encoding[encode] = "ghostEdge " + strconv.Itoa(ghostNum)
-		ghostEdges = append(ghostEdges, Edge{Name: encode, Vertices: outputEdge})
-		encode++
-		ghostNum++
+		ghostEdges = append(ghostEdges, Edge{Name: pgraph.m[e.Name+" 👻"], Vertices: outputEdge})
 	}
 
-	for _, s := range pgraph.SpecialEdges {
+	for _, s := range pgraph.Special {
 		var outputSpecialEdge []int
 		for _, n := range s.Vertices {
-			i, ok := pgraph.m[n+pgraph.Info.Edges]
+			i, ok := pgraph.m[n]
 			if ok {
 				outputSpecialEdge = append(outputSpecialEdge, i)
 			} else {
-				pgraph.m[n+pgraph.Info.Edges] = encode
-				encoding[encode] = "V" + strconv.Itoa(n)
+				pgraph.m[n] = encode
+				encoding[encode] = n
 				outputSpecialEdge = append(outputSpecialEdge, encode)
 				encode++
 			}
 		}
-		encoding[encode] = "Dummy Cover"
-		dummyEdges := NewEdges([]Edge{Edge{Name: encode, Vertices: outputSpecialEdge}})
-		encode++
+		dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ★"], Vertices: outputSpecialEdge}})
 		special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
 	}
 
