@@ -62,7 +62,7 @@ type ParseGhostEdgeUpdate struct {
 type ParseGraphUpdate struct {
 	Edges   []ParseEdgeUpdate        `( @@ ","?)* "."`
 	Ghost   []ParseSpecialEdgeUpdate `("👻" ( @@ ","?)*)?`
-	Special []ParseGhostEdgeUpdate   `"★" ( @@ ","?)*`
+	Special []ParseGhostEdgeUpdate   `"✨" ( @@ ","?)*`
 	m       map[string]int
 }
 
@@ -240,7 +240,7 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
     stuff = ":" | "@" | ";" | "-" .
     Punct = "!"…"/"  .
     alpha = "a"…"z" | "A"…"Z" .
-    SpecialSep = "★" .
+    SpecialSep = "✨" .
     GhostSep  = "👻" .
     digit = "0"…"9" .`))
 
@@ -276,8 +276,8 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	}
 
 	for _, e := range pgraph.Special {
-		encoding[encode] = e.Name + " ★"
-		pgraph.m[e.Name+" ★"] = encode
+		encoding[encode] = e.Name + " ✨"
+		pgraph.m[e.Name+" ✨"] = encode
 		encode++
 	}
 
@@ -327,7 +327,7 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 				encode++
 			}
 		}
-		dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ★"], Vertices: outputSpecialEdge}})
+		dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ✨"], Vertices: outputSpecialEdge}})
 		special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
 	}
 
