@@ -281,8 +281,7 @@ func main() {
 		if *balDetTest > 0 {
 			balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
 			solver = balDet
-		}
-		if *detKTest {
+		} else if *detKTest {
 			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 			solver = det
 		} else {
