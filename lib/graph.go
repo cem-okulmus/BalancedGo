@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 
 	"github.com/google/go-cmp/cmp"
@@ -217,6 +218,116 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	}
 
 	return outputG, outputS, vertices
+}
+
+// Uses Disjoint Set data structure to compute connected components
+func (g Graph) GetComponentsIsolated(sep Edges, up []int, low []int) ([]Graph, int, int, []Edge) {
+	var outputG []Graph
+	var outputEdgesinS []Edge
+
+	var vertices = make(map[int]*disjoint.Element)
+	var comps = make(map[*disjoint.Element][]Edge)
+	upCompIndex := -1
+	lowCompIndex := -1
+	var upComp *disjoint.Element
+	var lowComp *disjoint.Element
+
+	balsepVert := Diff(sep.Vertices(), append(up, low...))
+	balSepCache := make(map[int]bool, len(balsepVert))
+	fmt.Println("Current separator ", PrintVertices(balsepVert))
+	for _, v := range balsepVert {
+		balSepCache[v] = true
+	}
+
+	//  Set up the disjoint sets for each node
+	for _, i := range g.Edges.Vertices() {
+		vertices[i] = disjoint.NewElement()
+	}
+
+	//up
+	for i := 0; i < len(up)-1; i++ {
+		for j := i + 1; j < len(up); j++ {
+			disjoint.Union(vertices[up[i]], vertices[up[j]])
+			break
+		}
+	}
+	//low
+	for i := 0; i < len(low)-1; i++ {
+		for j := i + 1; j < len(low); j++ {
+			disjoint.Union(vertices[low[i]], vertices[low[j]])
+			break
+		}
+	}
+
+	// Merge together the connected components
+	for e := range g.Edges.Slice() {
+		for i := 0; i < len(g.Edges.Slice()[e].Vertices); i++ {
+			if balSepCache[g.Edges.Slice()[e].Vertices[i]] {
+				continue
+			}
+			for j := i + 1; j < len(g.Edges.Slice()[e].Vertices); j++ {
+				if balSepCache[g.Edges.Slice()[e].Vertices[j]] {
+					continue
+				}
+				disjoint.Union(vertices[g.Edges.Slice()[e].Vertices[i]], vertices[g.Edges.Slice()[e].Vertices[j]])
+				break
+			}
+		}
+	}
+
+	//sort each edge to a corresponding component
+	for i := range g.Edges.Slice() {
+		var vertexRep int
+		found := false
+		for _, v := range g.Edges.Slice()[i].Vertices {
+			if balSepCache[v] {
+				continue
+			}
+			vertexRep = v
+			found = true
+			break
+		}
+		if !found {
+			outputEdgesinS = append(outputEdgesinS, g.Edges.Slice()[i])
+			continue
+		}
+
+		slice, ok := comps[vertices[vertexRep].Find()]
+		if !ok {
+			newslice := make([]Edge, 0, g.Edges.Len())
+			comps[vertices[vertexRep].Find()] = newslice
+			slice = newslice
+		}
+
+		comps[vertices[vertexRep].Find()] = append(slice, g.Edges.Slice()[i])
+
+	}
+
+	if len(up) > 0 {
+		upComp = vertices[up[0]].Find()
+		fmt.Println("Found upcomp", upComp)
+	}
+	if len(low) > 0 {
+		lowComp = vertices[low[0]].Find()
+		fmt.Println("Found lowcomp", lowComp)
+	}
+
+	currentIndex := 0
+	// Store the components as graphs
+	for k, _ := range comps {
+		if k == upComp {
+			upCompIndex = currentIndex
+		}
+		if k == lowComp {
+			lowCompIndex = currentIndex
+		}
+
+		g := Graph{Edges: Edges{slice: comps[k]}}
+		outputG = append(outputG, g)
+		currentIndex++
+	}
+
+	return outputG, upCompIndex, lowCompIndex, outputEdgesinS
 }
 
 func FilterVertices(edges Edges, vertices []int) Edges {

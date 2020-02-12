@@ -18,6 +18,7 @@ type DetKDecomp struct {
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
+	Divide    bool
 	cache     map[uint32]*CompCache
 	cacheMux  sync.RWMutex
 }
@@ -80,7 +81,7 @@ func connectingSep(sep []int, conn []int, comp []int) bool {
 
 //Note: as implemented this breaks Special Condition (bag must be limited by oldSep)
 func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
-	//	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
+	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var children Node
 
 	switch len(Sp) {
@@ -108,11 +109,12 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 	compVertices := Diff(verticesCurrent, oldSep)
 	bound := FilterVertices(d.Graph.Edges, conn)
 
-	// log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
-	// log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	// log.Printf("D Current Special Edges: %v\n\n", Sp)
-	// log.Println("D Hedges ", H)
-	// log.Println("D Comp Vertices: ", PrintVertices(compVertices))
+	log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
+	log.Printf("D Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
+	log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
+	log.Printf("D Current Special Edges: %v\n\n", Sp)
+	log.Println("D Hedges ", H)
+	log.Println("D Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(Sp) <= 1 {
@@ -139,7 +141,7 @@ OUTER:
 			log.Panicln("Cover messed up! 137")
 		}
 
-		// log.Println("Next Cover ", sep)
+		log.Println("Next Cover ", sep)
 
 		addEdges := false
 
@@ -182,7 +184,7 @@ OUTER:
 			subEdges:
 				for true {
 
-					// log.Println("Sep chosen ", sepActual, " out ", out)
+					log.Println("Sep chosen ", sepActual, " out ", out)
 					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
@@ -209,7 +211,7 @@ OUTER:
 						}
 					}
 
-					// log.Printf("Comps of Sep: %v\n", comps)
+					log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
 					var subtrees []Node
 					bag := Inter(sepActual.Vertices(), verticesExtended)
@@ -231,15 +233,20 @@ OUTER:
 					// 	}
 					// }
 
+					lowFlag := false
 					for i := range comps {
+						if comps[i].Edges.Len() == 0 && d.Divide {
+							lowFlag = true //since special Edge would connect to current sep, if accepting
+							continue
+						}
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
 							d.addNegative(sepActual, comps[i])
-							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
-							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
-							// log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
-							// log.Printf("Current Special Edges: %v\n\n", Sp)
+							log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
+							log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
+							log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
+							log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
 								if sepSub == nil {
@@ -289,7 +296,7 @@ OUTER:
 						subtrees = append(subtrees, decomp.Root)
 					}
 
-					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
+					return Decomp{Graph: H, Root: Node{LowConnecting: lowFlag, Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
 
