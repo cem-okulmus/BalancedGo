@@ -1,6 +1,7 @@
 package algorithms
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"sync"
@@ -299,13 +300,13 @@ OUTER:
 	return Decomp{} // Reject if no separator could be found
 }
 
-func (d DetKDecomp) FindHD(K int, Sp []Special) Decomp {
+func (d DetKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
 	d.cache = make(map[uint32]*CompCache)
-	return d.findDecomp(K, d.Graph, []int{}, Sp)
+	return d.findDecomp(K, currentGraph, []int{}, Sp)
 }
 
 func (d DetKDecomp) FindDecomp(K int) Decomp {
-	return d.FindHD(K, []Special{})
+	return d.FindHD(K, d.Graph, []Special{})
 }
 
 func (d DetKDecomp) Name() string {
@@ -314,4 +315,9 @@ func (d DetKDecomp) Name() string {
 	} else {
 		return "DetK"
 	}
+}
+
+func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
+	fmt.Println("Ghost edges", b.Graph.Edges)
+	return d.FindHD(K, d.Graph, Sp)
 }
