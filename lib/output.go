@@ -8,6 +8,27 @@ import (
 	"strings"
 )
 
+func (g Graph) ToPACE() string {
+	var buffer bytes.Buffer
+
+	initialLine := "p htd " + fmt.Sprint(len(g.Edges.Vertices())) + fmt.Sprint(" ", g.Edges.Len()) + "\n"
+
+	buffer.WriteString(initialLine)
+
+	for _, e := range g.Edges.Slice() {
+		var line = fmt.Sprint(e.Name, " ")
+
+		for _, v := range e.Vertices {
+			line = line + fmt.Sprint(" ", v)
+		}
+
+		line = line + "\n"
+		buffer.WriteString(line)
+	}
+
+	return buffer.String()
+}
+
 func (n Node) toGML() string {
 
 	var buffer bytes.Buffer
