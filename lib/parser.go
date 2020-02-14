@@ -84,9 +84,9 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
     Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
-    Number = ("." | digit | "_"){"." | digit | "_"} .
+    Number = ("." | digit | "_"){"." | digit | stuff } .
     Whitespace = " " | "\t" | "\n" | "\r" .
-    stuff = ":" | "@" | ";" | "-" .
+    stuff = ":" | "@" | ";" | "-" | "_" .
     Punct = "!"…"/"  .
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .`))
@@ -136,9 +136,9 @@ func (p *ParseGraph) GetEdge(input string) Edge {
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
     Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
-    Number = ("." | digit | "_"){"." | digit | "_"} .
+    Number = ("." | digit | "_"){"." | digit | stuff } .
     Whitespace = " " | "\t" | "\n" | "\r" .
-    stuff = ":" | "@" | ";" | "-" .
+    stuff = ":" | "@" | ";" | "-" | "_" .
     Punct = "!"…"/"  .
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .`))
@@ -169,9 +169,9 @@ func GetGraphPACE(s string) Graph {
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
     Begin = "p htd" .
-    Number = ("." | digit | "_"){"." | digit | "_"} .
-    Whitespace = " " | "\t" | "\r" .
-    stuff = ":" | "@" | ";" | "-" .
+    Number = ("." | digit | "_"){"." | digit | stuff } .
+    Whitespace = " " | "\t" | "\n" | "\r" .
+    stuff = ":" | "@" | ";" | "-" | "_" .
     Punct = "!"…"/"  .
     Newline = "\n" .
 
