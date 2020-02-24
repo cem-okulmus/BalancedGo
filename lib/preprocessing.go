@@ -75,7 +75,7 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 		for _, v := range e1.Vertices {
 			//		fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.Edges, v))
 			if getDegree(g.Edges, v) == 1 {
-				ops = append(ops, vertOp{vertex: v, edge: e1})
+				ops = append(ops, vertOp{vertex: v, edge: Edge{Name: e1.Name, Vertices: vertices}})
 				continue INNER
 			}
 			vertices = append(vertices, v)
@@ -125,7 +125,7 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 }
 
 func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
-	if e.parent.containedIn(n.Cover.Slice()) {
+	if Subset(e.parent.Vertices, n.Bag) {
 		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: Edges{slice: []Edge{e.subedge}}})
 		return n, true // Won't work without deep copy
 	}
@@ -138,12 +138,29 @@ func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 		}
 	}
 
-	return Node{}, false
+	return n, false
 }
 
 func (n Node) restoreVertex(v vertOp) (Node, bool) {
-	if Subset(v.edge.Vertices, n.Bag) {
-		return Node{Bag: append(n.Bag, v.vertex), Cover: n.Cover, Children: n.Children}, true
+	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
+		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
+		return Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
+	}
+
+	if v.edge.containedIn(n.Cover.Slice()) {
+
+		nuCover := []Edge{}
+
+		for _, e := range n.Cover.Slice() {
+			if e.Name == v.edge.Name {
+				edge := Edge{Name: e.Name, Vertices: append(e.Vertices, v.vertex)}
+				nuCover = append(nuCover, edge)
+			} else {
+				nuCover = append(nuCover, e)
+			}
+		}
+
+		return Node{Bag: append(n.Bag, v.vertex), Cover: NewEdges(nuCover), Children: n.Children}, true
 	}
 
 	for i := range n.Children {
@@ -154,7 +171,27 @@ func (n Node) restoreVertex(v vertOp) (Node, bool) {
 		}
 	}
 
-	return Node{}, false
+	return n, false
+}
+
+func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
+
+	output := n
+	result := true
+
+	for _, r := range reducts {
+		switch v := r.(type) {
+		case vertOp:
+			output, result = output.restoreVertex(v)
+		case edgeOp:
+			output, result = output.restoreEdgeOp(v)
+		}
+		if !result {
+			return output, false
+		}
+	}
+
+	return output, true
 }
 
 /*

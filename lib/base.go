@@ -211,6 +211,9 @@ func Inter(as, bs []int) []int {
 // }
 
 func Subset(as []int, bs []int) bool {
+	if len(as) == 0 {
+		return true
+	}
 	encountered_b := make(map[int]struct{})
 	var Empty struct{}
 	for _, b := range bs {

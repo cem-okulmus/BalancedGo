@@ -274,7 +274,7 @@ func (e Edge) contains(v int) bool {
 
 func (e Edge) containedIn(l []Edge) bool {
 	for _, o := range l {
-		if reflect.DeepEqual(o, e) {
+		if o.Name == e.Name {
 			return true
 		}
 	}
