@@ -266,7 +266,7 @@ func main() {
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-			if decomp.CheckWidth() > 0 {
+			if decomp.Correct(parsedGraph) {
 				var result bool
 				decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
 				if !result {
@@ -344,7 +344,7 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-		if decomp.CheckWidth() > 0 {
+		if decomp.Correct(parsedGraph) {
 			var result bool
 			decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
 			if !result {
