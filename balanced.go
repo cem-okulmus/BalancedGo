@@ -201,11 +201,11 @@ func main() {
 			fmt.Printf("Ordering: %v\n", parsedGraph.String())
 		}
 	}
-
+	var removalMap map[int][]int
 	// Performing Type Collapse
 	if *typeC {
 		count := 0
-		reducedGraph, _, count = parsedGraph.TypeCollapse()
+		reducedGraph, removalMap, count = parsedGraph.TypeCollapse()
 		parsedGraph = reducedGraph
 		if !*bench { // be silent when benchmarking
 			fmt.Println("\n\n", *graphPath)
@@ -217,10 +217,10 @@ func main() {
 		}
 	}
 
+	var ops []GYÖReduct
 	// Performing GYÖ reduction
 	if *gyö {
 
-		var ops []GYÖReduct
 		if *typeC {
 			reducedGraph, ops = reducedGraph.GYÖReduct()
 		} else {
@@ -266,7 +266,23 @@ func main() {
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
 
-			outputStanza(solver.Name(), decomp, msec, currentGraph, *gml, *width, heuristic)
+			if decomp.CheckWidth() > 0 {
+				var result bool
+				decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
+				if !result {
+					fmt.Println("Partial decomp:", decomp.Root)
+
+					log.Panicln("GYÖ reduction failed")
+				}
+				decomp.Root, result = decomp.Root.RestoreTypes(removalMap)
+				if !result {
+					fmt.Println("Partial decomp:", decomp.Root)
+
+					log.Panicln("Type Collapse reduction failed")
+				}
+			}
+
+			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
 			return
 		}
 
@@ -327,6 +343,22 @@ func main() {
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+
+		if decomp.CheckWidth() > 0 {
+			var result bool
+			decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
+			if !result {
+				fmt.Println("Partial decomp:", decomp.Root)
+
+				log.Panicln("GYÖ reduction failed")
+			}
+			decomp.Root, result = decomp.Root.RestoreTypes(removalMap)
+			if !result {
+				fmt.Println("Partial decomp:", decomp.Root)
+
+				log.Panicln("Type Collapse reduction failed")
+			}
+		}
 
 		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
 		return

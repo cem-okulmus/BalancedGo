@@ -249,25 +249,44 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 	return Graph{Edges: NewEdges(newEdges)}, restorationMap, count
 }
 
+func (e Edges) addVertex(target int, oldVertices []int) Edges {
+	edges := e.Slice()
+
+	for i := range edges {
+		if Mem(edges[i].Vertices, target) {
+			edges[i].Vertices = append(edges[i].Vertices, oldVertices...)
+		}
+	}
+
+	return NewEdges(edges)
+}
+
 func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
+	found := false
 	if Mem(n.Bag, target) {
 		n.Bag = append(n.Bag, oldVertices...)
-		return n, true
+		n.Cover = n.Cover.addVertex(target, oldVertices)
+		found = true
+		found = true
 	}
 
 	for i := range n.Children {
 		res, b := n.Children[i].addVertices(target, oldVertices)
 		if b {
 			n.Children[i] = res // replace child with updated res
-			return n, true
+			found = true
 		}
 	}
 
-	return Node{}, false
+	if !found {
+		return Node{}, false
+	} else {
+		return n, true
+	}
 
 }
 
-func (n Node) restoreTypes(restoreMap map[int][]int) (Node, bool) {
+func (n Node) RestoreTypes(restoreMap map[int][]int) (Node, bool) {
 
 	output := n
 
