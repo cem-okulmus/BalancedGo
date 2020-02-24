@@ -12,6 +12,7 @@ import (
 
 type divideComp struct {
 	up           []int
+	length       int
 	edges        Edges
 	low          []int
 	upConnecting bool
@@ -51,42 +52,42 @@ func postProcess(tree Node, parentBag []int) Node {
 }
 
 func (comp divideComp) getComponents(sep Edges) ([]divideComp, bool) {
+	var output []divideComp
 
-	log.Println("Edges coming in, ", comp.edges)
+	// log.Println("Edges coming in, ", comp.edges)
 
 	//special case
 	if Subset(comp.edges.Vertices(), sep.Vertices()) {
 		return []divideComp{}, true
 	}
 
-	log.Println("Testing ", sep)
+	var mustCover = Inter(comp.up, comp.low)
+	if !Subset(mustCover, sep.Vertices()) {
+		return output, false
+	}
+
+	// log.Println("Testing ", sep)
 
 	var up []int
 	var low []int
 	if !Subset(comp.up, sep.Vertices()) {
 		up = comp.up // ignore up connection if sep already fully covers it
-	} else {
-		fmt.Print("no up ")
-		fmt.Println(PrintVertices(sep.Vertices()), "covers all of ", PrintVertices(comp.up))
 	}
 	if !Subset(comp.low, sep.Vertices()) {
 		low = comp.low // ignore low connection if sep already fully covers it
-	} else {
-		fmt.Print("no low ")
-		fmt.Println(PrintVertices(sep.Vertices()), "covers all of ", PrintVertices(comp.low))
 	}
 
-	comps, upIndex, lowIndex, isolatedComp := Graph{Edges: comp.edges}.GetComponentsIsolated(sep, up, low)
+	sepBoth := NewEdges(sep.Both(comp.edges))
 
-	log.Println("Edges coming out, ", len(comps), " many comps:")
+	comps, upIndex, lowIndex, isolatedComp := Graph{Edges: comp.edges}.GetComponentsIsolated(sep, sepBoth, up, low)
 
-	for i := range comps {
-		log.Println("comp ", comps[i].Edges)
-	}
+	// log.Println("Edges coming out, ", len(comps), " many comps:")
 
-	log.Println("UpIndex ", upIndex, " LowIndex", lowIndex)
+	// for i := range comps {
+	// 	log.Println("comp ", comps[i].Edges)
+	// }
 
-	var output []divideComp
+	// log.Println("UpIndex ", upIndex, " LowIndex", lowIndex)
 
 	if upIndex != -1 && upIndex == lowIndex { // reject case, up and low not seperated
 		return output, false
@@ -97,22 +98,20 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, bool) {
 	// take care of component, calculating connection sets
 	for i := range comps {
 		c := divideComp{}
+		c.length = comps[i].Edges.Len() - len(sep.Both(comps[i].Edges))
 
 		if i == upIndex { // Upper component
 			c.upConnecting = true
 			compEdges := comps[i].Edges.Slice()
-			compEdges = append(compEdges, isolatedComp...)
-			temp := NewEdges(compEdges)
-			c.low = Inter(sep.Vertices(), temp.Vertices())
-			fmt.Println("low is ", PrintVertices(c.low))
+			c.low = Inter(sep.Vertices(), comps[i].Edges.Vertices())
 
-			c.edges = NewEdges(append(compEdges, sep.Both(comp.edges)...))
-			fmt.Println("alternative low is ", PrintVertices(Inter(sep.Vertices(), c.edges.Vertices())))
+			c.edges = NewEdges(append(compEdges, sepBoth.Slice()...))
+			c.edges.RemoveDuplicates()
 
 			c.up = comp.up
 		} else if i == lowIndex { // lower component
 			c.edges = comps[i].Edges
-			c.low = comp.low
+			c.low = Inter(comp.low, c.edges.Vertices())
 			c.up = Inter(sep.Vertices(), c.edges.Vertices())
 			unionOfUps = append(unionOfUps, c.up...)
 		} else {
@@ -121,20 +120,23 @@ func (comp divideComp) getComponents(sep Edges) ([]divideComp, bool) {
 			unionOfUps = append(unionOfUps, c.up...)
 
 		}
-		c.edges.RemoveDuplicates()
 
 		output = append(output, c)
 	}
-	if upIndex != -1 {
+	if upIndex != -1 && len(unionOfUps) > 0 {
 		output[upIndex].low = append(output[upIndex].low, unionOfUps...)
+		output[upIndex].low = Inter(output[upIndex].edges.Vertices(), output[upIndex].low)
 		output[upIndex].low = RemoveDuplicates(output[upIndex].low)
-	}
 
-	// if len(low) > 0 && len(up) > 0 && !Subset(unionOfUps, chosenLow) {
-	// 	fmt.Println("union of ups", PrintVertices(unionOfUps))
-	// 	fmt.Println("chosen Low set", PrintVertices(chosenLow))
-	// 	log.Panicln("There is something wrong with the state of this program")
-	// }
+	}
+	// //Add isolated comp to low set
+	if upIndex != -1 && len(isolatedComp) > 0 {
+		coveredEdges := NewEdges(isolatedComp)
+		output[upIndex].low = append(output[upIndex].low, coveredEdges.Vertices()...)
+		output[upIndex].low = Inter(output[upIndex].edges.Vertices(), output[upIndex].low)
+		output[upIndex].low = RemoveDuplicates(output[upIndex].low)
+
+	}
 
 	return output, true
 }
@@ -169,23 +171,22 @@ func (d DivideKDecomp) CheckBalancedSep(comp divideComp, comps []divideComp, val
 				return false
 			}
 
-			if comps[i].edges.Len() > (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K {
-				log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
+			if comps[i].length > (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor) {
+				// log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor))
 				return false
 			}
 		}
 	} else {
 		for i := range comps {
 			if comps[i].edges.Len() == comp.edges.Len() { // not made any progres
-				log.Println("No progress made")
+				// log.Println("No progress made")
 				return false
 			}
 			if len(comps[i].low) == 0 {
 				continue
 			}
-			if comps[i].edges.Len() > (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K {
-				log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len())*(d.BalFactor-1))/d.BalFactor)+d.K)
-				log.Println("Not enough progress made")
+			if comps[i].length > (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor) {
+				// log.Printf("Using component %+v has weight %d instead of %d\n", comps[i], comps[i].edges.Len(), (((comp.edges.Len()) * (d.BalFactor - 1)) / d.BalFactor))
 				return false
 			}
 		}
@@ -260,82 +261,133 @@ func (d DivideKDecomp) decomposable(comp divideComp) Decomp {
 		}
 		return output
 	}
+
+	var conn []int
+	var genCov Cover
+
+	conn = Inter(comp.low, comp.up) // What happens if this is empty?
 	edges := FilterVertices(d.Graph.Edges, comp.edges.Vertices())
+	genCov = NewCover(d.K, conn, edges, comp.edges)
 
-	gen := GetCombinUnextend(edges.Len(), d.K)
+COVER:
+	for genCov.HasNext {
+		out := genCov.NextSubset()
 
-OUTER:
-	for gen.HasNext() {
-		gen.Confirm()
-		balsep := GetSubset(edges, gen.Combination)
-		comps, valid := comp.getComponents(balsep)
-
-		if !d.CheckBalancedSep(comp, comps, valid) {
-			continue
+		if out == -1 {
+			if genCov.HasNext {
+				log.Panicln(" -1 but hasNext not false!")
+			}
+			continue COVER
 		}
-		log.Println("Chosen Sep ", balsep)
 
-		log.Printf("Comps of Sep: %v\n", comps)
+		var sep Edges
+		sep = GetSubset(edges, genCov.Subset)
 
-		var parent Node
-		var subtrees []Node
-		var upconnecting bool
-		// bag := Inter(balsep.Vertices(), verticesExtended)
-		// log.Println("The bag is", PrintVertices(bag))
-		for i, _ := range comps {
-			child := d.decomposable(comps[i])
-			if reflect.DeepEqual(child, Decomp{}) {
-				log.Printf("REJECTING %v: couldn't decompose %v \n", Graph{Edges: balsep}, comps[i])
-				log.Printf("\n\nCurrent SubGraph: %v\n", comp)
-				continue OUTER
+		log.Println("Cover found", sep)
+
+		var firstPass bool // used to skip extension for first run of OUTER if sep nonempty
+		if sep.Len() > 0 {
+			firstPass = true
+		}
+
+		gen := GetCombin(edges.Len(), d.K-sep.Len())
+
+	OUTER:
+		for gen.HasNext() {
+			gen.Confirm()
+			balsep := GetSubset(edges, gen.Combination)
+			//extend balsep with sep above
+			if !firstPass {
+				balsep = NewEdges(append(balsep.Slice(), sep.Slice()...))
+
+			}
+			firstPass = false
+
+			comps, valid := comp.getComponents(balsep)
+
+			if !d.CheckBalancedSep(comp, comps, valid) {
+				continue
+			}
+			log.Println("Chosen Sep ", balsep)
+
+			log.Printf("Comps of Sep: %v\n", comps)
+
+			var parent Node
+			var subtrees []Node
+			var upconnecting bool
+			// bag := Inter(balsep.Vertices(), verticesExtended)
+			// log.Println("The bag is", PrintVertices(bag))
+			for i, _ := range comps {
+				child := d.decomposable(comps[i])
+				if reflect.DeepEqual(child, Decomp{}) {
+					log.Printf("REJECTING %v: couldn't decompose %v \n", Graph{Edges: balsep}, comps[i])
+					log.Printf("\n\nCurrent SubGraph: %v\n", comp)
+					continue OUTER
+				}
+
+				log.Printf("Produced Decomp: %v\n", child)
+
+				if comps[i].upConnecting {
+					upconnecting = true
+					parent = child.Root
+					parent.Bag = comps[i].edges.Vertices()
+					parent.Up = comps[i].up
+					parent.Low = comps[i].low
+
+				} else {
+					subtrees = append(subtrees, child.Root)
+				}
 			}
 
-			log.Printf("Produced Decomp: %v\n", child)
+			var output Node
+			upFlag := false
+			if len(comp.low) > 0 && Subset(comp.low, balsep.Vertices()) {
+				upFlag = true
+			}
 
-			if comps[i].upConnecting {
-				upconnecting = true
-				parent = child.Root
-				parent.Bag = comps[i].edges.Vertices()
-				parent.Up = comps[i].up
-				parent.Low = comps[i].low
+			var bag []int
+
+			if upconnecting {
+
+				for i := range subtrees {
+					childComp := append(subtrees[i].Bag, subtrees[i].Up...)
+					bag = append(bag, childComp...)
+				}
 
 			} else {
-				subtrees = append(subtrees, child.Root)
-			}
-		}
-
-		var output Node
-		upFlag := false
-		if len(comp.low) > 0 && Subset(comp.low, balsep.Vertices()) {
-			upFlag = true
-		}
-		SubtreeRootedAtS := Node{LowConnecting: upFlag, Up: comp.up, Low: comp.low, Cover: balsep, Bag: Diff(comp.edges.Vertices(), comp.up), Children: subtrees}
-
-		if reflect.DeepEqual(parent, Node{}) && (!Subset(comp.up, balsep.Vertices())) {
-
-			fmt.Println("Subtrees: ")
-			for _, s := range subtrees {
-				fmt.Println("\n\n", s)
+				bag = Diff(comp.edges.Vertices(), comp.up)
 			}
 
-			log.Panicln("Parent missing")
+			SubtreeRootedAtS := Node{LowConnecting: upFlag, Up: comp.up, Low: comp.low, Cover: balsep, Bag: bag, Children: subtrees}
+
+			if reflect.DeepEqual(parent, Node{}) && (!Subset(comp.up, balsep.Vertices())) {
+
+				fmt.Println("Subtrees: ")
+				for _, s := range subtrees {
+					fmt.Println("\n\n", s)
+				}
+
+				log.Panicln("Parent missing")
+			}
+
+			if upconnecting {
+				output = reorderComps(parent, SubtreeRootedAtS)
+
+				log.Printf("Reordered Decomp: %v\n", output)
+			} else {
+				output = SubtreeRootedAtS
+			}
+
+			output.Up = make([]int, len(comp.up))
+			copy(output.Up, output.Up)
+			output.Low = make([]int, len(comp.low))
+			copy(output.Low, comp.low)
+
+			return Decomp{Graph: d.Graph, Root: output}
 		}
-
-		if upconnecting { // TODO this made a distintion on upconnecting
-			output = reorderComps(parent, SubtreeRootedAtS)
-
-			log.Printf("Reordered Decomp: %v\n", output)
-		} else {
-			output = SubtreeRootedAtS
-		}
-
-		output.Up = make([]int, len(comp.up))
-		copy(output.Up, output.Up)
-		output.Low = make([]int, len(comp.low))
-		copy(output.Low, comp.low)
-
-		return Decomp{Graph: d.Graph, Root: output}
 	}
+
+	log.Println("REJECT: Couldn't find a sep for ", comp)
 
 	return Decomp{} // using empty decomp as reject case
 

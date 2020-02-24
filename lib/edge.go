@@ -365,6 +365,23 @@ func (e Edges) Both(other Edges) []Edge {
 	return output
 }
 
+//TODO: This assumes both edges are free of duplicates
+func (e Edges) Mem(other Edge) bool {
+
+	table := make(map[uint32]int)
+
+	for i := range e.Slice() {
+		table[e.Slice()[i].Hash()]++
+	}
+
+	table[other.Hash()]++
+	if table[other.Hash()] == 2 {
+		return true
+	}
+
+	return false
+}
+
 // produces the union of all vertices from a slice of Edge
 func (e *Edges) Vertices() []int {
 

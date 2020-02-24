@@ -136,7 +136,7 @@ func (c *CombinationIterator) HasNext() bool {
 
 	hasNext, stepsDone := c.advance(c.stepSize)
 	if !hasNext {
-		if c.k == 1 || !c.extended {
+		if c.k <= 1 || !c.extended {
 			return false
 		}
 

@@ -80,7 +80,7 @@ func connectingSep(sep []int, conn []int, comp []int) bool {
 }
 
 //Note: as implemented this breaks Special Condition (bag must be limited by oldSep)
-func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
+func baseCaseDetK(H Graph, Sp []Special) Decomp {
 	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var children Node
 
@@ -90,10 +90,6 @@ func baseCaseDetK(g Graph, H Graph, Sp []Special) Decomp {
 
 	case 1:
 		children = Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges}
-	case 2:
-		children = Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges,
-			Children: []Node{Node{Bag: Sp[1].Vertices, Cover: Sp[1].Edges}}}
-
 	}
 
 	if H.Edges.Len() == 0 {
@@ -118,7 +114,13 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(Sp) <= 1 {
-		return baseCaseDetK(d.Graph, H, Sp)
+		if d.Divide {
+			out := baseCaseDetK(H, []Special{})
+			out.Root.LowConnecting = true
+
+			return out
+		}
+		return baseCaseDetK(H, Sp)
 	}
 
 	gen := NewCover(K, conn, bound, H.Edges)

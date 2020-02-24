@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 
 	"github.com/google/go-cmp/cmp"
@@ -221,7 +220,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 }
 
 // Uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponentsIsolated(sep Edges, up []int, low []int) ([]Graph, int, int, []Edge) {
+func (g Graph) GetComponentsIsolated(sep Edges, sepBoth Edges, up []int, low []int) ([]Graph, int, int, []Edge) {
 	var outputG []Graph
 	var outputEdgesinS []Edge
 
@@ -234,7 +233,7 @@ func (g Graph) GetComponentsIsolated(sep Edges, up []int, low []int) ([]Graph, i
 
 	balsepVert := Diff(sep.Vertices(), append(up, low...))
 	balSepCache := make(map[int]bool, len(balsepVert))
-	fmt.Println("Current separator ", PrintVertices(balsepVert))
+	// fmt.Println("Current separator ", PrintVertices(balsepVert))
 	for _, v := range balsepVert {
 		balSepCache[v] = true
 	}
@@ -305,11 +304,9 @@ func (g Graph) GetComponentsIsolated(sep Edges, up []int, low []int) ([]Graph, i
 
 	if len(up) > 0 {
 		upComp = vertices[up[0]].Find()
-		fmt.Println("Found upcomp", upComp)
 	}
 	if len(low) > 0 {
 		lowComp = vertices[low[0]].Find()
-		fmt.Println("Found lowcomp", lowComp)
 	}
 
 	currentIndex := 0
