@@ -213,7 +213,7 @@ func main() {
 			for _, e := range reducedGraph.Edges.Slice() {
 				fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 			}
-			fmt.Println("Removed ", count, " vertex/vertices")
+			fmt.Println("Removed ", count, " vertex/vertices\n")
 		}
 	}
 
@@ -232,7 +232,7 @@ func main() {
 			fmt.Println("Graph after GYÖ:")
 			fmt.Println(reducedGraph)
 			fmt.Println("Reductions:")
-			fmt.Println(ops)
+			fmt.Println(ops, "\n")
 		}
 
 	}

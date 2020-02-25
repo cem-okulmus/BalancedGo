@@ -141,6 +141,40 @@ func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 	return n, false
 }
 
+func (n Node) edgeUsed(e Edge) bool {
+
+	if e.containedIn(n.Cover.Slice()) {
+		return true
+	}
+
+	for i := range n.Children {
+		if n.Children[i].edgeUsed(e) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (n Node) addLeaf(v vertOp) (Node, bool) {
+	edge := Edge{Name: v.edge.Name, Vertices: append(v.edge.Vertices, v.vertex)}
+
+	if Subset(v.edge.Vertices, n.Bag) {
+		n.Children = append(n.Children, Node{Bag: edge.Vertices, Cover: Edges{slice: []Edge{edge}}})
+		return n, true // Won't work without deep copy
+	}
+
+	for i := range n.Children {
+		res, b := n.Children[i].addLeaf(v)
+		if b {
+			n.Children[i] = res // updating this element!
+			return n, true
+		}
+	}
+
+	return n, false
+}
+
 func (n Node) restoreVertex(v vertOp) (Node, bool) {
 	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
 		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
@@ -182,7 +216,12 @@ func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 	for _, r := range reducts {
 		switch v := r.(type) {
 		case vertOp:
-			output, result = output.restoreVertex(v)
+			if len(output.Bag) > 0 && !output.edgeUsed(v.edge) {
+				output, result = output.addLeaf(v)
+			} else {
+				output, result = output.restoreVertex(v)
+			}
+
 		case edgeOp:
 			output, result = output.restoreEdgeOp(v)
 		}
