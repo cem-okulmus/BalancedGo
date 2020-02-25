@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"sync"
 
@@ -107,6 +108,11 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	pgraph.m = make(map[string]int)
 	//fix first numbers for edge names
 	for _, e := range pgraph.Edges {
+		_, ok := pgraph.m[e.Name]
+		if ok {
+			log.Panicln("Edge names not unique, not a vald hypergraph!")
+		}
+
 		pgraph.m[e.Name] = encode
 		encoding[encode] = e.Name
 		encode++
@@ -264,6 +270,10 @@ func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 	pgraph.m = make(map[string]int)
 
 	for _, e := range pgraph.Edges {
+		_, ok := pgraph.m[e.Name]
+		if ok {
+			log.Panicln("Edge names not unique, not a vald hypergraph!")
+		}
 		pgraph.m[e.Name] = encode
 		encoding[encode] = e.Name
 		encode++
