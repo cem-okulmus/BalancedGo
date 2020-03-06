@@ -71,28 +71,29 @@ func main() {
 	//Command-Line Argument Parsing
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	logging := flag.Bool("log", false, "turn on extensive logs")
-	computeSubedges := flag.Bool("sub", false, "Compute the subedges of the graph and print it out")
+	computeSubedges := flag.Bool("sub", false, "turn off subedge computation for global option")
 	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
 	graphPath := flag.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
 	// choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
-	localBal := flag.Bool("local", false, "Test out local BalSep")
-	globalBal := flag.Bool("global", false, "Test out global BalSep")
-	balanceFactorFlag := flag.Int("balfactor", 2, "Determines the factor that balanced separator check uses")
+	localBal := flag.Bool("local", false, "Use local BalSep algorithm")
+	globalBal := flag.Bool("global", false, "Use global BalSep algorithm")
+	balanceFactorFlag := flag.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
 	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
-	gyö := flag.Bool("g", false, "perform a GYÖ reduct and show the resulting graph")
-	typeC := flag.Bool("t", false, "perform a Type Collapse and show the resulting graph")
+	gyö := flag.Bool("g", false, "perform a GYÖ reduct")
+	typeC := flag.Bool("t", false, "perform a Type Collapse")
 	//hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
 	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flag.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
-	akatovTest := flag.Bool("akatov", false, "compute balanced decomposition")
-	detKTest := flag.Bool("det", false, "Test out DetKDecomp")
-	localBIP := flag.Bool("localbip", false, "To be used in combination with \"det\": turns on subedge handling")
-	divideTest := flag.Bool("divide", false, "Test for divideKDecomp")
-	balDetTest := flag.Int("balDet", 0, "Test hybrid balSep and DetK algorithm")
+	akatovTest := flag.Bool("akatov", false, "Use Balanced Decomposition algorithm")
+	detKTest := flag.Bool("det", false, "Use DetKDecomp algorithm")
+	localBIP := flag.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
+	divideTest := flag.Bool("divide", false, "Use divideKDecomp algoritm")
+	divideParTest := flag.Bool("dividePar", false, "Use parallel divideKDecomp algorithm")
+	balDetTest := flag.Int("balDet", 0, "Use the Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
 	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flag.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
 	update := flag.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
-	exact := flag.Bool("exact", false, "Compute exact width (width flag not needed)")
+	exact := flag.Bool("exact", false, "Compute exact width (width flag ignored)")
 
 	flag.Parse()
 
@@ -238,7 +239,7 @@ func main() {
 	}
 
 	// Add all subdedges to graph
-	if *computeSubedges {
+	if *globalBal && !*computeSubedges {
 		parsedGraph = parsedGraph.ComputeSubEdges(*width)
 
 		fmt.Println("Graph with subedges \n", parsedGraph)
@@ -286,38 +287,61 @@ func main() {
 			return
 		}
 
+		fmt.Println("No algorithm or procedure selected.")
+		return
+
 	}
 
 	var solver Algorithm
 
+	// Check for multiple flags
+	chosen := 0
+
 	if *akatovTest {
 		bal := BalKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
 		solver = bal
+		chosen++
 	}
 
 	if *balDetTest > 0 {
 		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
 		solver = balDet
+		chosen++
 	}
 
 	if *detKTest {
 		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 		solver = det
+		chosen++
 	}
 
 	if *divideTest {
 		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
 		solver = div
+		chosen++
+	}
+
+	if *divideParTest {
+		div := DivideKDecompPar{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		solver = div
+		chosen++
 	}
 
 	if *globalBal {
 		global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}
 		solver = global
+		chosen++
 	}
 
 	if *localBal {
 		local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
 		solver = local
+		chosen++
+	}
+
+	if chosen > 1 {
+		fmt.Println("Only one algorithm may be chosen at a time. Make up your mind.")
+		return
 	}
 
 	if solver != nil {

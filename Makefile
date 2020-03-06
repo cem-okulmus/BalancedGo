@@ -28,7 +28,7 @@ go-build:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build $(LDFLAGS) -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
 
 ## install: Install missing dependencies. Runs `go get` internally. e.g; make install get=github.com/foo/bar
-install: go-get
+install: go-install
 
 
 ## watch: Run given command when code changes. e.g; make watch run="echo 'hey'"
@@ -64,7 +64,7 @@ go-get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get $(get)
 
 go-install:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go install $(GOFILES)
+	go install $(LDFLAGS)
 
 go-clean:
 	@echo "  >  Cleaning build cache"
