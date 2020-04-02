@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	balgo "github.com/cem-okulmus/BalancedGo/lib"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	parsedGraph, _ := GetGraph(string(dat))
+	parsedGraph, _ := balgo.GetGraph(string(dat))
 
 	f, err := os.Create(*outPath)
 	if err != nil {

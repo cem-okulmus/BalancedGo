@@ -68,34 +68,40 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 
 func main() {
 
-	//Command-Line Argument Parsing
-	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
-	logging := flag.Bool("log", false, "turn on extensive logs")
-	computeSubedges := flag.Bool("sub", false, "turn off subedge computation for global option")
-	width := flag.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
-	graphPath := flag.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
-	// choose := flag.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
-	localBal := flag.Bool("local", false, "Use local BalSep algorithm")
-	globalBal := flag.Bool("global", false, "Use global BalSep algorithm")
-	balanceFactorFlag := flag.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
-	useHeuristic := flag.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
-	gyö := flag.Bool("g", false, "perform a GYÖ reduct")
-	typeC := flag.Bool("t", false, "perform a Type Collapse")
-	//hingeFlag := flag.Bool("hinge", false, "use isHinge Optimization")
-	numCPUs := flag.Int("cpu", -1, "Set number of CPUs to use")
-	bench := flag.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
-	akatovTest := flag.Bool("akatov", false, "Use Balanced Decomposition algorithm")
-	detKTest := flag.Bool("det", false, "Use DetKDecomp algorithm")
-	localBIP := flag.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
-	divideTest := flag.Bool("divide", false, "Use divideKDecomp algoritm")
-	divideParTest := flag.Bool("dividePar", false, "Use parallel divideKDecomp algorithm")
-	balDetTest := flag.Int("balDet", 0, "Use the Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
-	gml := flag.String("gml", "", "Output the produced decomposition into the specified gml file ")
-	pace := flag.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
-	update := flag.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
-	exact := flag.Bool("exact", false, "Compute exact width (width flag ignored)")
+	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
+	flagSet.SetOutput(ioutil.Discard)
 
-	flag.Parse()
+	//Command-Line Argument Parsing
+	cpuprofile := flagSet.String("cpuprofile", "", "write cpu profile to file")
+	logging := flagSet.Bool("log", false, "turn on extensive logs")
+	computeSubedges := flagSet.Bool("sub", false, "turn off subedge computation for global option")
+	width := flagSet.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
+	graphPath := flagSet.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
+	// choose := flagSet.Int("choice", 0, "only run one version\n\t1 ... Full Parallelism\n\t2 ... Search Parallelism\n\t3 ... Comp. Parallelism\n\t4 ... Sequential execution\n\t5 ... Local Full Parallelism\n\t6 ... Local Search Parallelism\n\t7 ... Local Comp. Parallelism\n\t8 ... Local Sequential execution.")
+	localBal := flagSet.Bool("local", false, "Use local BalSep algorithm")
+	globalBal := flagSet.Bool("global", false, "Use global BalSep algorithm")
+	balanceFactorFlag := flagSet.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
+	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
+	gyö := flagSet.Bool("g", false, "perform a GYÖ reduct")
+	typeC := flagSet.Bool("t", false, "perform a Type Collapse")
+	//hingeFlag := flagSet.Bool("hinge", false, "use isHinge Optimization")
+	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
+	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
+	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
+	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
+	localBIP := flagSet.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
+	divideTest := flagSet.Bool("divide", false, "Use divideKDecomp algoritm")
+	divideParTest := flagSet.Bool("dividePar", false, "Use parallel divideKDecomp algorithm")
+	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
+	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
+	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
+	update := flagSet.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
+	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
+
+	parseError := flagSet.Parse(os.Args[1:])
+	if parseError != nil {
+		fmt.Println("Parse Error:\n", parseError.Error(), "\n")
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -117,10 +123,10 @@ func main() {
 	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
-	if *graphPath == "" || (*width <= 0 && !*exact) {
-		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/", Build, " ,", Date, ")")
+	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact) {
+		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/", Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
-		flag.VisitAll(func(f *flag.Flag) {
+		flagSet.VisitAll(func(f *flag.Flag) {
 			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" {
 				return
 			}
@@ -134,7 +140,7 @@ func main() {
 		})
 
 		fmt.Println("\nOptional Arguments: ")
-		flag.VisitAll(func(f *flag.Flag) {
+		flagSet.VisitAll(func(f *flag.Flag) {
 			if f.Name == "width" || f.Name == "graph" || f.Name == "exact" {
 				return
 			}
