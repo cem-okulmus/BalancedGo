@@ -1,14 +1,11 @@
 github.com/alecthomas/participle v0.3.0 h1:e8vhrYR1nDjzDxyDwpLO27TWOYWilaT+glkwbPadj50=
 github.com/alecthomas/participle v0.3.0/go.mod h1:SW6HZGeZgSIpcUWX3fXpfZhuaWHnmoD5KCVaqSaNTkk=
-github.com/cem-okulmus/BalancedGo v0.0.0-20200213134813-f1454ec27ab5 h1:/8pzcAS7fhamtCFKFoJoxjmz1weZeiDpcJM94bLsKCw=
-github.com/cem-okulmus/BalancedGo v0.0.0-20200213134813-f1454ec27ab5/go.mod h1:Dv2R0HW3zOm6EImNTjCpnp/nRPmC6wfCVI8WqjJGV0A=
-github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/cem-okulmus/BalancedGo v0.0.0-20200402131142-f60ba444b27e h1:DJseTwqdiapCwiReKw1wEoaV5+xFDVook5A8aPzvm4M=
+github.com/cem-okulmus/BalancedGo v0.0.0-20200402131142-f60ba444b27e/go.mod h1:kC/Y4+r6HNaqEN8Ri72nzuRXksSOPbqW7d5HGLdhkC8=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.3.1 h1:Xye71clBPdm5HgqGwUkwhbynsUJZhDbS20FvLhQ2izg=
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/spakin/disjoint v0.0.0-20170506060253-925e67a26b59 h1:WXIGODNpYrroHXcn28J3u4XA0Fa3vwxw27uJZVwCrAI=
 github.com/spakin/disjoint v0.0.0-20170506060253-925e67a26b59/go.mod h1:847lZUtrAEz7RTzAsdAiOC8gq4kqb3lbmtQjWo6naTA=
-github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
