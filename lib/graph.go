@@ -58,7 +58,7 @@ func (g Graph) GetSubset(s []int) Edges {
 }
 
 // Uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map[int]*disjoint.Element) {
+func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map[int]int) {
 	var outputG []Graph
 	var outputS [][]Special
 
@@ -192,9 +192,15 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	}
 
+	edgeToComp := make(map[int]int)
+
 	// Store the components as graphs
 	for k, _ := range comps {
-		g := Graph{Edges: Edges{slice: comps[k]}}
+		slice := comps[k]
+		for i := range slice {
+			edgeToComp[slice[i].Name] = len(outputG)
+		}
+		g := Graph{Edges: Edges{slice: slice}}
 		outputG = append(outputG, g)
 		outputS = append(outputS, compsSp[k])
 
@@ -216,7 +222,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		outputS = append(outputS, []Special{s})
 	}
 
-	return outputG, outputS, vertices
+	return outputG, outputS, edgeToComp
 }
 
 // Uses Disjoint Set data structure to compute connected components
