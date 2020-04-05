@@ -544,6 +544,13 @@ func (d DivideKDecomp) FindDecomp(K int) Decomp {
 	return output
 }
 
+func (d DivideKDecomp) FindDecompGraph(G Graph, K int) Decomp {
+	output := d.decomp(DivideComp{Edges: G.Edges})
+	output.Root = postProcess(output.Root, []int{})
+
+	return output
+}
+
 func (d DivideKDecomp) Name() string {
 	return "DivideK"
 }
@@ -559,6 +566,15 @@ func (d DivideKDecompPar) FindDecomp(K int) Decomp {
 	div := DivideKDecomp{Graph: d.Graph, K: d.K, BalFactor: d.BalFactor}
 
 	output := div.decompParallel(DivideComp{Edges: d.Graph.Edges})
+	output.Root = postProcess(output.Root, []int{})
+
+	return output
+}
+
+func (d DivideKDecompPar) FindDecompGraph(G Graph, K int) Decomp {
+	div := DivideKDecomp{Graph: d.Graph, K: d.K, BalFactor: d.BalFactor}
+
+	output := div.decompParallel(DivideComp{Edges: G.Edges})
 	output.Root = postProcess(output.Root, []int{})
 
 	return output

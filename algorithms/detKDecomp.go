@@ -326,6 +326,10 @@ func (d DetKDecomp) Name() string {
 	}
 }
 
+func (d DetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
+	return d.FindHD(K, G, []Special{})
+}
+
 func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
 	fmt.Println("Ghost edges", d.Graph.Edges)
 	return d.FindHD(K, d.Graph, Sp)

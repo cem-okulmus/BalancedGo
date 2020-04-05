@@ -118,6 +118,10 @@ func (b BalKDecomp) FindDecomp(K int) Decomp {
 	return b.findDecompParallelFull(K, b.Graph)
 }
 
+func (b BalKDecomp) FindDecompGraph(G Graph, K int) Decomp {
+	return b.findDecompParallelFull(K, G)
+}
+
 func (b BalKDecomp) Name() string {
 	return "Akatov"
 }

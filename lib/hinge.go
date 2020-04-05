@@ -5,23 +5,35 @@ package lib
 import (
 	"bytes"
 	"log"
+	"reflect"
 )
 
 type hingeEdge struct {
-	h hingetree
+	h Hingetree
 	e Edge
 }
 
-type hingetree struct {
+type Algorithm_h interface {
+	Name() string
+	FindDecomp(K int) Decomp
+	FindDecompGraph(G Graph, K int) Decomp
+}
+
+type Hingetree struct {
 	hinge    Graph
+	decomp   Decomp
 	minimal  bool
 	children []hingeEdge
 }
 
-func (h hingetree) stringIdent(i int) string {
+func (h Hingetree) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
-	buffer.WriteString("\n" + indent(i) + h.hinge.String() + "\n")
+	if reflect.DeepEqual(h.decomp, Decomp{}) {
+		buffer.WriteString("\n" + indent(i) + h.hinge.String() + "\n")
+	} else {
+		buffer.WriteString("\n" + indent(i) + h.decomp.String() + "\n")
+	}
 
 	if len(h.children) > 0 {
 		buffer.WriteString(indent(i) + "Children:\n" + indent(i) + "[")
@@ -35,13 +47,13 @@ func (h hingetree) stringIdent(i int) string {
 	return buffer.String()
 }
 
-func (h hingetree) String() string {
+func (h Hingetree) String() string {
 	return h.stringIdent(0)
 }
 
-func getHingeTree(g Graph) hingetree {
+func GetHingeTree(g Graph) Hingetree {
 
-	initialTree := hingetree{hinge: g}
+	initialTree := Hingetree{hinge: g}
 
 	isUsed := make(map[int]bool)
 
@@ -49,19 +61,19 @@ func getHingeTree(g Graph) hingetree {
 		isUsed[e.Name] = false
 	}
 
-	// // fmt.Println("Initial Hingetree \n")
-	// // fmt.Println(initialTree.String())
+	//fmt.Println("Initial Hingetree \n")
+	//fmt.Println(initialTree.String())
 
 	output := initialTree.expandHingeTree(isUsed, -1)
 
-	// fmt.Println("Proudced Hingetree \n")
-	// fmt.Println(output.String())
+	//fmt.Println("Proudced Hingetree \n")
+	//fmt.Println(output.String())
 
 	return output
 }
 
 // Following Gyssens, 1994, implemented re
-func (h hingetree) expandHingeTree(isUsed map[int]bool, parentE int) hingetree {
+func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 
 	// keep expanding the current node until no more new children can be generated
 	for !h.minimal {
@@ -84,61 +96,61 @@ func (h hingetree) expandHingeTree(isUsed map[int]bool, parentE int) hingetree {
 		if e == nil {
 			h.minimal = true
 
-			// fmt.Println("Setting hinge ", h.hinge, " to minimal")
+			//fmt.Println("Setting hinge ", h.hinge, " to minimal")
 			continue
 		}
 
 		if parentE != -1 {
-			// fmt.Println("Next unused edge", *e, "with parent Edge: ", m[parentE])
+			//fmt.Println("Next unused edge", *e, "with parent Edge: ", m[parentE])
 
 		} else {
 
-			// fmt.Println("Next unused edge", *e, " at root")
+			//fmt.Println("Next unused edge", *e, " at root")
 		}
 
 		sepEdge := NewEdges([]Edge{*e})
 		hinges, _, gamma := h.hinge.GetComponents(sepEdge, []Special{})
 
-		// fmt.Printf("Hinges of Sep: %v\n", hinges)
+		//fmt.Printf("Hinges of Sep: %v\n", hinges)
 
 		// Skip reordering step if only single component
-		if len(hinges) == 1 {
-			// fmt.Println("skipping sepEdge since no progress")
+		if len(hinges) <= 1 {
+			//fmt.Println("skipping sepEdge since no progress")
 			continue
 		}
 
-		// hinges into hingetrees, preserving order
-		var htrees []hingetree
+		// hinges into Hingetrees, preserving order
+		var htrees []Hingetree
 
 		for i := range hinges {
 			edges := hinges[i].Edges.Slice()
 			extendedHinge := Graph{Edges: NewEdges(append(edges, *e))}
-			htrees = append(htrees, hingetree{hinge: extendedHinge})
+			htrees = append(htrees, Hingetree{hinge: extendedHinge})
 		}
 
-		// then assign the children to each hingetree
+		// then assign the children to each Hingetree
 		for _, hingedge := range h.children {
 			i := gamma[hingedge.e.Name]
 			htrees[i].children = append(htrees[i].children, hingedge)
 		}
 
-		// finally add hingetrees above to newchildren
+		// finally add Hingetrees above to newchildren
 		if parentE == -1 {
 			h = htrees[0]
 		} else {
 			h = htrees[gamma[parentE]]
 
-			found := false
+			// found := false
 
-			for _, e := range h.hinge.Edges.Slice() {
-				if e.Name == parentE {
-					found = true
-				}
-			}
+			// for _, e := range h.hinge.Edges.Slice() {
+			// 	if e.Name == parentE {
+			// 		found = true
+			// 	}
+			// }
 
-			if !found {
-				log.Panic(m[parentE], "does not occur in", htrees[gamma[parentE]].hinge)
-			}
+			// if !found {
+			// 	log.Panic(m[parentE], "does not occur in", htrees[gamma[parentE]].hinge)
+			// }
 
 		}
 
@@ -149,12 +161,12 @@ func (h hingetree) expandHingeTree(isUsed map[int]bool, parentE int) hingetree {
 			h.children = append(h.children, hingeEdge{e: *e, h: htrees[i]})
 		}
 
-		// fmt.Println("Current Hingetree \n")
-		// fmt.Println(h.String())
+		//fmt.Println("Current Hingetree \n")
+		//fmt.Println(h.String())
 
 	}
 
-	// fmt.Println("going over children")
+	//fmt.Println("going over children")
 
 	// recursively repeat procedure over all children of h
 
@@ -163,4 +175,87 @@ func (h hingetree) expandHingeTree(isUsed map[int]bool, parentE int) hingetree {
 	}
 
 	return h
+}
+
+func (n Node) containsSubset(subset []int) bool {
+	// every node contains itself
+	if Subset(subset, n.Bag) {
+		return true
+	}
+	// Check recursively if contained in children
+	for _, child := range n.Children {
+		if child.containsSubset(subset) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (n Node) parentSubset(subset []int) Node {
+	// Check recursively if subset covered in children
+	for i := range n.Children {
+		if Subset(subset, n.Children[i].Bag) {
+			return n
+		} else if n.Children[i].containsSubset(subset) {
+			return n.Children[i].parentSubset(subset)
+		}
+
+	}
+
+	return n
+}
+
+// reroot G at node covering edge, producing an isomorphic graph
+func (n Node) RerootEdge(edge []int) Node {
+
+	if !n.containsSubset(edge) {
+		log.Panicf("Can't reRoot: no node covering %+v in node %+v!\n", PrintVertices(edge), n)
+	}
+	if Subset(edge, n.Bag) {
+		return n
+	}
+	p := n.parentSubset(edge)
+	p = n.Reroot(p)
+	var child Node
+
+	// remove node containing edge from children of parent
+	var newparentchildren []Node
+	for _, c := range p.Children {
+		if Subset(edge, c.Bag) {
+			child = c
+			continue
+		}
+		newparentchildren = append(newparentchildren, c)
+	}
+	p.Children = newparentchildren
+	newchildren := append(child.Children, p)
+
+	return Node{Bag: child.Bag, Cover: child.Cover, Children: newchildren}
+}
+
+func (h Hingetree) DecompHinge(alg Algorithm_h, K int, g Graph) Decomp {
+
+	h.decomp = alg.FindDecompGraph(h.hinge, K)
+
+	if reflect.DeepEqual(h.decomp, Decomp{}) {
+		return Decomp{}
+	}
+
+	// go recursively over children
+
+	for i := range h.children {
+		out := h.children[i].h.DecompHinge(alg, K, g)
+		if reflect.DeepEqual(out, Decomp{}) { // reject if subtree cannot be merged to GHD
+			return Decomp{}
+		}
+		//reroot child and parent to a connecting node:
+		out.Root = out.Root.RerootEdge(h.children[i].e.Vertices)
+		h.decomp.Root = h.decomp.Root.RerootEdge(h.children[i].e.Vertices)
+
+		h.decomp.Root.Children = append(h.decomp.Root.Children, out.Root)
+	}
+
+	h.decomp.Graph = g
+	return h.decomp
 }

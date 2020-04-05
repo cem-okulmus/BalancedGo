@@ -5,6 +5,7 @@ import . "github.com/cem-okulmus/BalancedGo/lib"
 type Algorithm interface {
 	Name() string
 	FindDecomp(K int) Decomp
+	FindDecompGraph(G Graph, K int) Decomp
 }
 
 type UpdateAlgorithm interface {

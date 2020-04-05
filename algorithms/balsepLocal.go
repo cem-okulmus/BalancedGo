@@ -440,6 +440,10 @@ func (g BalSepLocal) FindDecomp(K int) Decomp {
 	return g.findDecompParallelFull(K, g.Graph, []Special{})
 }
 
+func (g BalSepLocal) FindDecompGraph(G Graph, K int) Decomp {
+	return g.findDecompParallelFull(K, G, []Special{})
+}
+
 func (g BalSepLocal) Name() string {
 	return "BalSep Local"
 }

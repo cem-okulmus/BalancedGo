@@ -35,7 +35,7 @@ var Version string
 var Date string
 var Build string
 
-func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64) {
+func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64, hinge float64) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -50,6 +50,9 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 		if msec > 60000.0 {
 			fmt.Print("(", msec/60000.0, "min )")
 		}
+	}
+	if hinge > 0.0 {
+		fmt.Println("\nHingeTree: ", hinge, " ms")
 	}
 
 	fmt.Println("\nWidth: ", decomp.CheckWidth())
@@ -84,7 +87,7 @@ func main() {
 	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
 	gyö := flagSet.Bool("g", false, "perform a GYÖ reduct")
 	typeC := flagSet.Bool("t", false, "perform a Type Collapse")
-	//hingeFlag := flagSet.Bool("hinge", false, "use isHinge Optimization")
+	hingeFlag := flagSet.Bool("h", false, "use hingeTree Optimization")
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
@@ -251,6 +254,23 @@ func main() {
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
+	var hinget Hingetree
+	var msecHinge float64
+
+	if *hingeFlag {
+		startHinge := time.Now()
+
+		hinget = GetHingeTree(parsedGraph)
+
+		dHinge := time.Now().Sub(startHinge)
+		msecHinge = dHinge.Seconds() * float64(time.Second/time.Millisecond)
+
+		if !*bench {
+			fmt.Println("Produced Hingetree: ")
+			fmt.Println(hinget)
+		}
+	}
+
 	if *update {
 		var solver UpdateAlgorithm
 
@@ -289,7 +309,7 @@ func main() {
 				}
 			}
 
-			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
+			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge)
 			return
 		}
 
@@ -358,13 +378,22 @@ func main() {
 			k := 1
 			solved := false
 			for !solved {
-				decomp = solver.FindDecomp(k)
+				if *hingeFlag {
+					decomp = hinget.DecompHinge(solver, k, parsedGraph)
+				} else {
+					decomp = solver.FindDecomp(k)
+				}
+
 				solved = decomp.Correct(parsedGraph)
 				k++
 			}
 			*width = k - 1 // for correct output
 		} else {
-			decomp = solver.FindDecomp(*width)
+			if *hingeFlag {
+				decomp = hinget.DecompHinge(solver, *width, parsedGraph)
+			} else {
+				decomp = solver.FindDecomp(*width)
+			}
 		}
 
 		if *akatovTest {
@@ -390,7 +419,7 @@ func main() {
 			}
 		}
 
-		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic)
+		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge)
 		return
 	}
 

@@ -475,6 +475,10 @@ func (g BalSepGlobal) FindDecomp(K int) Decomp {
 	return g.findDecompParallelFull(K, g.Graph, []Special{})
 }
 
+func (b BalSepGlobal) FindDecompGraph(G Graph, K int) Decomp {
+	return b.findDecompParallelFull(K, G, []Special{})
+}
+
 func (g BalSepGlobal) Name() string {
 	return "BalSep Global"
 }

@@ -25,7 +25,7 @@ func (_ edgeOp) isGYÖ() {}
 func (e edgeOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ⊆ %v)", m[e.subedge.Name], m[e.parent.Name])
+	return fmt.Sprintf("(%v ⊆ %v)", e.subedge, e.parent)
 }
 
 type vertOp struct {
@@ -38,7 +38,7 @@ func (_ vertOp) isGYÖ() {}
 func (v vertOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], m[v.edge.Name])
+	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge)
 }
 
 //TODO fix this to run in linear time
@@ -70,16 +70,22 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 
 	for _, e1 := range g.Edges.Slice() {
 		var vertices []int
-		//	fmt.Println("Working on edge ", e1)
+		var remVertices []int
+		// fmt.Println("Working on edge ", e1)
 	INNER:
 		for _, v := range e1.Vertices {
-			//		fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.Edges, v))
+			// fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.Edges, v))
 			if getDegree(g.Edges, v) == 1 {
-				ops = append(ops, vertOp{vertex: v, edge: Edge{Name: e1.Name, Vertices: vertices}})
+				remVertices = append(remVertices, v)
 				continue INNER
 			}
 			vertices = append(vertices, v)
 		}
+
+		for _, remV := range remVertices {
+			ops = append(ops, vertOp{vertex: remV, edge: Edge{Name: e1.Name, Vertices: vertices}})
+		}
+
 		if len(vertices) > 0 {
 			edges = append(edges, Edge{Name: e1.Name, Vertices: vertices})
 		}
@@ -226,6 +232,7 @@ func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 			output, result = output.restoreEdgeOp(v)
 		}
 		if !result {
+			fmt.Println("Failed at restoring ", r)
 			return output, false
 		}
 	}

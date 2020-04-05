@@ -212,6 +212,10 @@ func (b BalDetKDecomp) FindDecomp(K int) Decomp {
 	return b.FindGHD(K, b.Graph, []Special{})
 }
 
+func (b BalDetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
+	return b.FindGHD(K, G, []Special{})
+}
+
 func (b BalDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
 
 	fmt.Println("Ghost edges", b.Graph.Edges)
