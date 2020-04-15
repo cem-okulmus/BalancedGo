@@ -181,38 +181,38 @@ func (n Node) addLeaf(v vertOp) (Node, bool) {
 	return n, false
 }
 
-func (n Node) restoreVertex(v vertOp) (Node, bool) {
-	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
-		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
-		return Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
-	}
+// func (n Node) restoreVertex(v vertOp) (Node, bool) {
+// 	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
+// 		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
+// 		return Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
+// 	}
 
-	if v.edge.containedIn(n.Cover.Slice()) {
+// 	if v.edge.containedIn(n.Cover.Slice()) {
 
-		nuCover := []Edge{}
+// 		nuCover := []Edge{}
 
-		for _, e := range n.Cover.Slice() {
-			if e.Name == v.edge.Name {
-				edge := Edge{Name: e.Name, Vertices: append(e.Vertices, v.vertex)}
-				nuCover = append(nuCover, edge)
-			} else {
-				nuCover = append(nuCover, e)
-			}
-		}
+// 		for _, e := range n.Cover.Slice() {
+// 			if e.Name == v.edge.Name {
+// 				edge := Edge{Name: e.Name, Vertices: append(e.Vertices, v.vertex)}
+// 				nuCover = append(nuCover, edge)
+// 			} else {
+// 				nuCover = append(nuCover, e)
+// 			}
+// 		}
 
-		return Node{Bag: append(n.Bag, v.vertex), Cover: NewEdges(nuCover), Children: n.Children}, true
-	}
+// 		return Node{Bag: append(n.Bag, v.vertex), Cover: NewEdges(nuCover), Children: n.Children}, true
+// 	}
 
-	for i := range n.Children {
-		res, b := n.Children[i].restoreVertex(v)
-		if b {
-			n.Children[i] = res // updating this element!
-			return n, true
-		}
-	}
+// 	for i := range n.Children {
+// 		res, b := n.Children[i].restoreVertex(v)
+// 		if b {
+// 			n.Children[i] = res // updating this element!
+// 			return n, true
+// 		}
+// 	}
 
-	return n, false
-}
+// 	return n, false
+// }
 
 func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 
@@ -222,10 +222,11 @@ func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 	for _, r := range reducts {
 		switch v := r.(type) {
 		case vertOp:
-			if len(output.Bag) > 0 && !output.edgeUsed(v.edge) {
+			if len(output.Bag) > 0 {
 				output, result = output.addLeaf(v)
 			} else {
-				output, result = output.restoreVertex(v)
+				edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
+				output, result = Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
 			}
 
 		case edgeOp:
