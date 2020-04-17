@@ -28,7 +28,7 @@ func searchSubEdge(g *BalSepLocal, H *Graph, Sp []Special, balsepOrig Edges, sep
 	for !nextBalsepFound {
 		if sepSub.HasNext() {
 			balsep = sepSub.GetCurrent()
-			log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+			// log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 			if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
 				nextBalsepFound = true
 			}
@@ -42,8 +42,8 @@ func searchSubEdge(g *BalSepLocal, H *Graph, Sp []Special, balsepOrig Edges, sep
 
 func (g BalSepLocal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 
-	log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	log.Printf("Current Special Edges: %v\n\n", Sp)
+	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
+	// log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
 	if H.Edges.Len()+len(Sp) <= 2 {
@@ -68,13 +68,13 @@ OUTER:
 		}
 		var sepSub *SepSub
 
-		log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
-		balsepOrig := balsep
+		// log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
+		// balsepOrig := balsep
 	INNER:
 		for {
 			comps, compsSp, _ := H.GetComponents(balsep, Sp)
 
-			log.Printf("Comps of Sep: %v\n", comps)
+			// log.Printf("Comps of Sep: %v\n", comps)
 
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
@@ -92,7 +92,7 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.Edges {
 							// 	log.Println(s.Combination)
@@ -101,16 +101,16 @@ OUTER:
 								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+					// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 					continue INNER
 
 				}
 
-				log.Printf("Produced Decomp: %v\n", decomp)
+				// log.Printf("Produced Decomp: %v\n", decomp)
 
 				subtrees = append(subtrees, decomp)
 			}
@@ -121,15 +121,15 @@ OUTER:
 
 	}
 
-	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 	return Decomp{} // empty Decomp signifiyng reject
 
 }
 
 func (g BalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 
-	log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	log.Printf("Current Special Edges: %v\n\n", Sp)
+	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
+	// log.Printf("Current Special Edges: %v\n\n", Sp)
 
 	//stop if there are at most two special edges left
 	if H.Edges.Len()+len(Sp) <= 2 {
@@ -159,21 +159,21 @@ OUTER:
 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 
 		if len(found) == 0 { // meaning that the search above never found anything
-			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+			// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 			return Decomp{}
 		}
 
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
 		var sepSub *SepSub
-		balsepOrig := balsep
-		log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
+		// balsepOrig := balsep
+		// log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
 
 	INNER:
 		for !decomposed {
 			comps, compsSp, _ := H.GetComponents(balsep, Sp)
 
-			log.Printf("Comps of Sep: %v\n", comps)
+			// log.Printf("Comps of Sep: %v\n", comps)
 
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
@@ -198,7 +198,7 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
+							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
 							// log.Println("SubSep: ")
 							// for _, s := range sepSub.Edges {
 							// 	log.Println(s.Combination)
@@ -215,15 +215,15 @@ OUTER:
 								nextBalsepFound = true
 							}
 						} else {
-							log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
+					// log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
-				log.Printf("Produced Decomp: %+v\n", decomp)
+				// log.Printf("Produced Decomp: %+v\n", decomp)
 
 				subtrees = append(subtrees, decomp)
 			}

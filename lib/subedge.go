@@ -121,10 +121,10 @@ func (s *SubEdges) hasNextCombination() bool {
 }
 
 func (s SubEdges) existsSubset(b []int) bool {
-	// hashOfB := IntHash(b)
-	// if _, ok := s.cache[hashOfB]; ok {
-	// 	return true
-	// }
+	hashOfB := IntHash(b)
+	if _, ok := s.cache[hashOfB]; ok {
+		return true
+	}
 
 	return false
 }

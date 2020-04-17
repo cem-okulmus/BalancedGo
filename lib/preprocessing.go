@@ -25,7 +25,7 @@ func (_ edgeOp) isGYÖ() {}
 func (e edgeOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ⊆ %v)", e.subedge, e.parent)
+	return fmt.Sprintf("(%v ⊆ %v)", e.subedge.FullString(), e.parent.FullString())
 }
 
 type vertOp struct {
@@ -38,7 +38,7 @@ func (_ vertOp) isGYÖ() {}
 func (v vertOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge)
+	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge.FullString())
 }
 
 //TODO fix this to run in linear time
@@ -81,13 +81,14 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 			}
 			vertices = append(vertices, v)
 		}
+		nu_e1 := Edge{Name: e1.Name, Vertices: vertices}
 
 		for _, remV := range remVertices {
-			ops = append(ops, vertOp{vertex: remV, edge: Edge{Name: e1.Name, Vertices: vertices}})
+			ops = append(ops, vertOp{vertex: remV, edge: nu_e1})
 		}
 
 		if len(vertices) > 0 {
-			edges = append(edges, Edge{Name: e1.Name, Vertices: vertices})
+			edges = append(edges, nu_e1)
 		}
 
 	}
@@ -149,7 +150,7 @@ func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 
 func (n Node) edgeUsed(e Edge) bool {
 
-	if e.containedIn(n.Cover.Slice()) {
+	if e.containedIn(n.Cover.Slice()) && Subset(e.Vertices, n.Bag) {
 		return true
 	}
 
@@ -167,6 +168,7 @@ func (n Node) addLeaf(v vertOp) (Node, bool) {
 
 	if Subset(v.edge.Vertices, n.Bag) {
 		n.Children = append(n.Children, Node{Bag: edge.Vertices, Cover: Edges{slice: []Edge{edge}}})
+		// fmt.Println("Restoring node with  ", v.edge.FullString())
 		return n, true // Won't work without deep copy
 	}
 
@@ -181,38 +183,38 @@ func (n Node) addLeaf(v vertOp) (Node, bool) {
 	return n, false
 }
 
-// func (n Node) restoreVertex(v vertOp) (Node, bool) {
-// 	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
-// 		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
-// 		return Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
-// 	}
+func (n Node) restoreVertex(v vertOp) (Node, bool) {
+	if len(n.Bag) == 0 && n.Cover.Len() == 0 && len(n.Children) == 0 {
+		edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
+		return Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
+	}
 
-// 	if v.edge.containedIn(n.Cover.Slice()) {
+	if v.edge.containedIn(n.Cover.Slice()) && Subset(v.edge.Vertices, n.Bag) {
 
-// 		nuCover := []Edge{}
+		nuCover := []Edge{}
 
-// 		for _, e := range n.Cover.Slice() {
-// 			if e.Name == v.edge.Name {
-// 				edge := Edge{Name: e.Name, Vertices: append(e.Vertices, v.vertex)}
-// 				nuCover = append(nuCover, edge)
-// 			} else {
-// 				nuCover = append(nuCover, e)
-// 			}
-// 		}
+		for _, e := range n.Cover.Slice() {
+			if e.Name == v.edge.Name {
+				edge := Edge{Name: e.Name, Vertices: append(e.Vertices, v.vertex)}
+				nuCover = append(nuCover, edge)
+			} else {
+				nuCover = append(nuCover, e)
+			}
+		}
 
-// 		return Node{Bag: append(n.Bag, v.vertex), Cover: NewEdges(nuCover), Children: n.Children}, true
-// 	}
+		return Node{Bag: append(n.Bag, v.vertex), Cover: NewEdges(nuCover), Children: n.Children}, true
+	}
 
-// 	for i := range n.Children {
-// 		res, b := n.Children[i].restoreVertex(v)
-// 		if b {
-// 			n.Children[i] = res // updating this element!
-// 			return n, true
-// 		}
-// 	}
+	for i := range n.Children {
+		res, b := n.Children[i].restoreVertex(v)
+		if b {
+			n.Children[i] = res // updating this element!
+			return n, true
+		}
+	}
 
-// 	return n, false
-// }
+	return n, false
+}
 
 func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 
@@ -222,11 +224,10 @@ func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 	for _, r := range reducts {
 		switch v := r.(type) {
 		case vertOp:
-			if len(output.Bag) > 0 {
+			if len(output.Bag) > 0 && !output.edgeUsed(v.edge) {
 				output, result = output.addLeaf(v)
 			} else {
-				edge := Edge{Name: v.edge.Name, Vertices: []int{v.vertex}}
-				output, result = Node{Bag: []int{v.vertex}, Cover: NewEdges([]Edge{edge})}, true
+				output, result = output.restoreVertex(v)
 			}
 
 		case edgeOp:
