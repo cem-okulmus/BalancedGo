@@ -72,7 +72,7 @@ func GetHingeTree(g Graph) Hingetree {
 	return output
 }
 
-// Following Gyssens, 1994, implemented re
+// Following Gyssens et alii, 1994
 func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 
 	// keep expanding the current node until no more new children can be generated

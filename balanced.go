@@ -99,8 +99,9 @@ func main() {
 	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
-	update := flagSet.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
+	// update := flagSet.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
+	decomp := flagSet.String("decomp", "", "A decomposition to be used as a starting point, needs to have certain nodes marked (those which need to be updated).")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -164,14 +165,11 @@ func main() {
 	check(err)
 
 	var parsedGraph Graph
+	var parseGraph ParseGraph
 	var currentGraph Graph
-	var specialEdges []Special
 
-	if *update {
-		parsedGraph, currentGraph, specialEdges = GetGraphUpdate(string(dat))
-
-	} else if !*pace {
-		parsedGraph, _ = GetGraph(string(dat))
+	if !*pace {
+		parsedGraph, parseGraph = GetGraph(string(dat))
 	} else {
 		parsedGraph = GetGraphPACE(string(dat))
 	}
@@ -272,24 +270,24 @@ func main() {
 		}
 	}
 
-	if *update {
+	if *decomp != "" {
+		dis, err2 := ioutil.ReadFile(*decomp)
+		check(err2)
+
+		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
+
 		var solver UpdateAlgorithm
 
-		if *balDetTest > 0 {
-			balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
-			solver = balDet
-		} else if *detKTest {
+		if *detKTest {
 			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 			solver = det
-		} else {
-			log.Panicln("No update Algorithm chosen!")
 		}
 
 		if solver != nil {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solver.FindDecompUpdate(*width, currentGraph, specialEdges)
+			decomp = solver.FindDecompUpdate(*width, currentGraph, deco)
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
@@ -314,7 +312,7 @@ func main() {
 			return
 		}
 
-		fmt.Println("No algorithm or procedure selected.")
+		fmt.Println("No supported update Algorithm chosen.")
 		return
 
 	}

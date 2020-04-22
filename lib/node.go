@@ -17,6 +17,7 @@ type Node struct {
 	Cover         Edges
 	Children      []Node
 	LowConnecting bool //used by Divide to determine reorder points
+	Star          bool // used to indicate nodes which need to be updated
 }
 
 func (n Node) printUp() string {
@@ -73,11 +74,18 @@ func indent(i int) string {
 func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
-	buffer.WriteString("\n" + indent(i) + "LowConn: {" + strconv.FormatBool(n.LowConnecting) + "} Bag: {" + n.printBag())
-	if len(n.Up) > 0 || len(n.Low) > 0 {
-		buffer.WriteString("} Up:{ " + n.printUp() + "} Low:{" + n.printLow())
+	if n.LowConnecting {
+		buffer.WriteString("\n" + indent(i) + "LowConn: {" + strconv.FormatBool(n.LowConnecting) + "} Bag: {" + n.printBag())
+	} else {
+		buffer.WriteString("\n" + indent(i) + "Bag: {" + n.printBag() + "}")
 	}
-	buffer.WriteString("}\n" + indent(i) + "Cover: {")
+	if len(n.Up) > 0 || len(n.Low) > 0 {
+		buffer.WriteString("Up:{ " + n.printUp() + "} Low:{" + n.printLow() + "}")
+	}
+	if n.Star {
+		buffer.WriteString(" 🧙")
+	}
+	buffer.WriteString("\n" + indent(i) + "Cover: {")
 	for i, e := range n.Cover.Slice() {
 		buffer.WriteString(e.String())
 		if i != n.Cover.Len()-1 {

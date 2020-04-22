@@ -330,7 +330,7 @@ func (d DetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
 	return d.FindHD(K, G, []Special{})
 }
 
-func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
-	fmt.Println("Ghost edges", d.Graph.Edges)
-	return d.FindHD(K, d.Graph, Sp)
+func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, oldDecomp Decomp) Decomp {
+	fmt.Println("Old Decomp", oldDecomp)
+	return d.FindHD(K, d.Graph, []Special{})
 }

@@ -25,7 +25,7 @@ func (_ edgeOp) isGYÖ() {}
 func (e edgeOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ⊆ %v)", e.subedge.FullString(), e.parent.FullString())
+	return fmt.Sprintf("(%v ⊆ %v)", e.subedge, e.parent)
 }
 
 type vertOp struct {
@@ -38,7 +38,7 @@ func (_ vertOp) isGYÖ() {}
 func (v vertOp) String() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge.FullString())
+	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge)
 }
 
 //TODO fix this to run in linear time

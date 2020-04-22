@@ -2,7 +2,6 @@
 package algorithms
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -214,13 +213,6 @@ func (b BalDetKDecomp) FindDecomp(K int) Decomp {
 
 func (b BalDetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
 	return b.FindGHD(K, G, []Special{})
-}
-
-func (b BalDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp {
-
-	fmt.Println("Ghost edges", b.Graph.Edges)
-
-	return b.FindGHD(K, currentGraph, Sp)
 }
 
 func (b BalDetKDecomp) Name() string {

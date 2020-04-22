@@ -10,5 +10,5 @@ type Algorithm interface {
 
 type UpdateAlgorithm interface {
 	Name() string
-	FindDecompUpdate(K int, currentGraph Graph, Sp []Special) Decomp
+	FindDecompUpdate(K int, currentGraph Graph, oldDecomp Decomp) Decomp
 }
