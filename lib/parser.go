@@ -477,13 +477,12 @@ func GetDecomp(input string, graph Graph, encoding map[string]int) Decomp {
 	changed := true
 
 	for changed {
+		changed = false
 		for _, arc := range arcs {
-			changed = false
 			if arc.Target == root { //determine global ancestor
 				root = arc.Source
 				changed = true
 			}
-
 		}
 	}
 
