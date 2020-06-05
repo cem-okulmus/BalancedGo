@@ -123,6 +123,23 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
+func (n Node) containsMarked() bool {
+
+	// every marked node contains itself (reflexivity)
+	if n.Star {
+		return true
+	}
+
+	// Check recursively if children contain marked node
+	for _, child := range n.Children {
+		if child.containsMarked() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (n Node) bagSubsets() bool {
 	if !Subset(n.Bag, n.Cover.Vertices()) {
 		return false

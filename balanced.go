@@ -166,7 +166,6 @@ func main() {
 
 	var parsedGraph Graph
 	var parseGraph ParseGraph
-	var currentGraph Graph
 
 	if !*pace {
 		parsedGraph, parseGraph = GetGraph(string(dat))
@@ -275,6 +274,9 @@ func main() {
 		check(err2)
 
 		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
+		fmt.Println("parsed Decomp", deco)
+		scenes := deco.WoundingUp(parsedGraph)
+		// fmt.Println("Extracted scenes: ", scenes)
 
 		var solver UpdateAlgorithm
 
@@ -287,7 +289,7 @@ func main() {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solver.FindDecompUpdate(*width, currentGraph, deco)
+			decomp = solver.FindDecompUpdate(*width, parsedGraph, scenes)
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)

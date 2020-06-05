@@ -345,6 +345,19 @@ func (e Edges) Intersect(set []int) []Edge {
 	return output
 }
 
+func (e Edges) IntersectWith(set []int) Edges {
+	var output []Edge
+
+	for i := range e.Slice() {
+		subE := Inter(e.Slice()[i].Vertices, set)
+		if len(subE) > 0 {
+			output = append(output, Edge{Vertices: subE})
+		}
+	}
+
+	return NewEdges(output)
+}
+
 //TODO: This assumes both edges are free of duplicates
 func (e Edges) Both(other Edges) []Edge {
 	var output []Edge

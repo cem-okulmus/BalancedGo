@@ -229,6 +229,27 @@ func Subset(as []int, bs []int) bool {
 	return true
 }
 
+func Equiv(as []int, bs []int) bool {
+	if len(as) == 0 {
+		return true
+	}
+	encountered_b := make(map[int]struct{})
+	encountered_a := make(map[int]struct{})
+	var Empty struct{}
+	for _, b := range bs {
+		encountered_b[b] = Empty
+	}
+
+	for _, a := range as {
+		if _, ok := encountered_b[a]; !ok {
+			return false
+		}
+		encountered_a[a] = Empty
+	}
+
+	return true && len(encountered_a) == len(encountered_b)
+}
+
 // func Subset(a []int, b []int) bool {
 
 // OUTER:

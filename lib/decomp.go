@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"log"
 )
 
 // A Decomp (short for Decomposition) consists of a labelled tree which
@@ -144,6 +145,72 @@ func (d *Decomp) Blowup() Decomp {
 			current[i].Children = nchildren
 		}
 		current = children
+	}
+
+	return output
+}
+
+type SceneValue struct {
+	Sep  Edges
+	Perm bool // one-time cached if false
+}
+
+type Scene struct {
+	Sub Graph
+	Val SceneValue
+}
+
+func (s Scene) String() string {
+	return "Bag " + PrintVertices(s.Val.Sep.Vertices()) + ", Subgraph" + s.Sub.String()
+}
+
+func (n Node) woundingUp(input Graph) []Scene {
+
+	var output []Scene
+
+	if n.Star {
+		return output // stop wounding-up for marked nodes
+		// TODO: Extend this to cover subtrees _below_ (wrt. to root) the marked ones
+	}
+
+	sep := n.Cover.IntersectWith(n.Bag)
+
+	output = append(output, Scene{Sub: input, Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
+
+	comps, _, _ := input.GetComponents(sep, []Special{})
+
+OUTER:
+	for _, u := range n.Children {
+
+	INNER:
+		for _, c := range comps {
+			if len(Inter(c.Vertices(), u.Bag)) == 0 { // check if this node belongs to this subgraph
+				continue INNER
+			}
+
+			outputChild := u.woundingUp(c)
+			output = append(output, outputChild...)
+
+			continue OUTER
+		}
+
+		log.Panicln("Couldn't find matching subgraph!")
+
+	}
+
+	return output
+
+}
+
+func (d Decomp) WoundingUp(input Graph) map[uint32]SceneValue {
+
+	var output map[uint32]SceneValue
+	output = make(map[uint32]SceneValue)
+
+	scenes := d.Root.woundingUp(input)
+	fmt.Println("Found scenes, ", scenes)
+	for _, s := range scenes {
+		output[IntHash(s.Sub.Vertices())] = s.Val
 	}
 
 	return output
