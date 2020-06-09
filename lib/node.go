@@ -18,6 +18,8 @@ type Node struct {
 	Children      []Node
 	LowConnecting bool //used by Divide to determine reorder points
 	Star          bool // used to indicate nodes which need to be updated
+	parPointer    *Node
+	vertices      []int
 }
 
 func (n Node) printUp() string {
@@ -123,6 +125,27 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
+// Check if node is below a marked one
+func (n Node) belowMarked(root Node) bool {
+
+	// current node is at the border with the marked subtree
+	parent := root.parent(n)
+
+	if !n.Star && parent.Star {
+		return true
+	}
+
+	//Check recursively if parent is belowMarked
+
+	if reflect.DeepEqual(parent, n) { //reached root
+		return false
+	} else {
+		return parent.belowMarked(root)
+	}
+
+}
+
+// Check if node contains as c
 func (n Node) containsMarked() bool {
 
 	// every marked node contains itself (reflexivity)
@@ -219,16 +242,22 @@ func (n Node) coversEdge(e Edge) bool {
 	return false
 }
 
-func (n Node) parent(o Node) Node {
+func (n *Node) parent(o Node) Node {
+	if n.parPointer != nil {
+		return *n.parPointer
+	}
+
 	// Check recursively if contained in children
 	for i := range n.Children {
 		if reflect.DeepEqual(n.Children[i], o) {
-			return n
+			return *n
 		} else if n.Children[i].contains(o) {
 			return n.Children[i].parent(o)
 		}
 
 	}
+
+	n.parPointer = &o
 
 	return o
 }
@@ -260,7 +289,11 @@ func (n Node) Reroot(child Node) Node {
 }
 
 // recurisvely collect all vertices from the bag of this node, and the bags of all its children
-func (n Node) Vertices() []int {
+func (n *Node) Vertices() []int {
+	if len(n.vertices) > 0 {
+		return n.vertices
+	}
+
 	var output []int
 	output = append(output, n.Bag...)
 
@@ -268,7 +301,8 @@ func (n Node) Vertices() []int {
 		output = append(output, c.Vertices()...)
 	}
 
-	return output
+	n.vertices = RemoveDuplicates(output)
+	return n.vertices
 }
 
 //tests special condition violation on one node

@@ -156,15 +156,18 @@ type SceneValue struct {
 }
 
 type Scene struct {
-	Sub Graph
+	Sub []int
 	Val SceneValue
 }
 
 func (s Scene) String() string {
-	return "Bag " + PrintVertices(s.Val.Sep.Vertices()) + ", Subgraph" + s.Sub.String()
+	return "Bag " + PrintVertices(s.Val.Sep.Vertices()) + ", Subgraph" + PrintVertices(s.Sub)
 }
 
-func (n Node) woundingUp(input Graph) []Scene {
+func (n Node) woundingDown(input Graph) []Scene {
+
+	// fmt.Println("\n\n\nCurrent subhypergraph: ", PrintVertices(input.Vertices()))
+	// fmt.Println("Current node:\n Bag: ", PrintVertices(n.Bag), "\n Cover:", n.Cover)
 
 	var output []Scene
 
@@ -175,26 +178,36 @@ func (n Node) woundingUp(input Graph) []Scene {
 
 	sep := n.Cover.IntersectWith(n.Bag)
 
-	output = append(output, Scene{Sub: input, Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
+	// fmt.Println("\nSep from decomp: ", PrintVertices(sep.Vertices()))
+
+	output = append(output, Scene{Sub: input.Vertices(), Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
 
 	comps, _, _ := input.GetComponents(sep, []Special{})
+
+	// fmt.Println("\nCurrent components: ")
+	// for i, c := range comps {
+
+	// 	fmt.Println(i, ".) ", PrintVertices(c.Vertices()), "\n ")
+	// }
 
 OUTER:
 	for _, u := range n.Children {
 
+		// fmt.Println("\nVertices of Child : ", PrintVertices(u.Bag))
+
 	INNER:
 		for _, c := range comps {
-			if len(Inter(c.Vertices(), u.Bag)) == 0 { // check if this node belongs to this subgraph
+			if len(Inter(Diff(c.Vertices(), sep.Vertices()), u.Bag)) == 0 { // check if this node belongs to this subgraph
 				continue INNER
 			}
 
-			outputChild := u.woundingUp(c)
+			outputChild := u.woundingDown(c)
 			output = append(output, outputChild...)
 
 			continue OUTER
 		}
 
-		log.Panicln("Couldn't find matching subgraph!")
+		log.Panicln("\nCouldn't find matching subgraph!")
 
 	}
 
@@ -202,15 +215,35 @@ OUTER:
 
 }
 
-func (d Decomp) WoundingUp(input Graph) map[uint32]SceneValue {
+func (n Node) woundingUp(root Node) []Scene {
+
+	var output []Scene
+
+	sep := n.Cover.IntersectWith(n.Bag)
+
+	if n.belowMarked(root) {
+		output = append(output, Scene{Sub: n.Vertices(), Val: SceneValue{Sep: sep, Perm: true}})
+	}
+
+	for _, c := range n.Children {
+		output = append(output, c.woundingUp(root)...)
+	}
+
+	return output
+
+}
+
+func (d Decomp) SceneCreation(input Graph) map[uint32]SceneValue {
 
 	var output map[uint32]SceneValue
 	output = make(map[uint32]SceneValue)
 
-	scenes := d.Root.woundingUp(input)
+	scenes := d.Root.woundingDown(input)
+	scenes = append(scenes, d.Root.woundingUp(d.Root)...)
+
 	fmt.Println("Found scenes, ", scenes)
 	for _, s := range scenes {
-		output[IntHash(s.Sub.Vertices())] = s.Val
+		output[IntHash(s.Sub)] = s.Val
 	}
 
 	return output

@@ -275,7 +275,7 @@ func main() {
 
 		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
 		fmt.Println("parsed Decomp", deco)
-		scenes := deco.WoundingUp(parsedGraph)
+		scenes := deco.SceneCreation(parsedGraph)
 		// fmt.Println("Extracted scenes: ", scenes)
 
 		var solver UpdateAlgorithm
