@@ -240,7 +240,7 @@ type Arc struct {
 }
 
 type ParseGMLValue struct {
-	FlatVal string       ` @(Ident | Number) | "\"" @(Ident | Punct)* "\""    `
+	FlatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
 	List    ParseGMLList `| "[" @@ "]"`
 }
 
