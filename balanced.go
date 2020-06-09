@@ -275,7 +275,14 @@ func main() {
 
 		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
 		fmt.Println("parsed Decomp", deco)
+
+		start_sc := time.Now()
+
 		scenes := deco.SceneCreation(parsedGraph)
+
+		d_sc := time.Now().Sub(start_sc)
+		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
+
 		// fmt.Println("Extracted scenes: ", scenes)
 
 		var solver UpdateAlgorithm
@@ -311,6 +318,7 @@ func main() {
 			}
 
 			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge)
+			fmt.Println("Scene Creation Time: ", msec_sc, " ms")
 			return
 		}
 
