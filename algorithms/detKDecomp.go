@@ -354,12 +354,12 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes 
 	compVertices := Diff(verticesCurrent, oldSep)
 	bound := FilterVertices(d.Graph.Edges, conn)
 
-	log.Printf("\n\nDU Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
-	log.Printf("DU Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
-	log.Printf("DU Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
+	// log.Printf("\n\nDU Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
+	// log.Printf("DU Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
+	// log.Printf("DU Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
 
-	log.Println("DU Hedges ", H)
-	log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
+	// log.Println("DU Hedges ", H)
+	// log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 {
@@ -449,7 +449,7 @@ OUTER:
 			subEdges:
 				for true {
 
-					log.Println("Sep chosen ", sepActual)
+					// log.Println("Sep chosen ", sepActual)
 
 					// if usingScene {
 					// 	sep := NewEdges([]Edge{Edge{Vertices: usingBag}})
@@ -498,9 +498,9 @@ OUTER:
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
 							d.addNegative(sepActual, comps[i])
-							log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n", Graph{Edges: sepActual}, comps[i])
-							log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
-							log.Printf("DU Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
+							// log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n", Graph{Edges: sepActual}, comps[i])
+							// log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
+							// log.Printf("DU Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
 
 							if d.SubEdge {
 								if sepSub == nil {

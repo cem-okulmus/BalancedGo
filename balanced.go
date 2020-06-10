@@ -274,7 +274,7 @@ func main() {
 		check(err2)
 
 		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
-		fmt.Println("parsed Decomp", deco)
+		// fmt.Println("parsed Decomp", deco)
 
 		start_sc := time.Now()
 
