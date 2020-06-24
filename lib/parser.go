@@ -378,7 +378,13 @@ func GetDecomp(input string, graph Graph, encoding map[string]int) Decomp {
 		}
 	}
 
-	root := arcs[0].Source
+	var root int
+	if len(arcs) != 0 {
+		root = arcs[0].Source
+	} else {
+		root = nodes[0].num
+	}
+
 	changed := true
 
 	for changed {
