@@ -92,7 +92,7 @@ func (d Decomp) Correct(g Graph) bool {
 	//special condition (optionally)
 
 	if !d.Root.noSCViolation() {
-		fmt.Println("SCV found!. Not a valid hypertree!")
+		fmt.Println("SCV found!. Not a valid hypertree decomposition!")
 	}
 
 	return output
@@ -171,18 +171,20 @@ func (n Node) woundingDown(input Graph) []Scene {
 
 	var output []Scene
 
-	if n.Star {
-		return output // stop wounding-up for marked nodes
-		// TODO: Extend this to cover subtrees _below_ (wrt. to root) the marked ones
+	if !Subset(n.Bag, n.Cover.Vertices()) {
+		return output // stop wounding-up if cover wrong
 	}
 
 	sep := n.Cover.IntersectWith(n.Bag)
+	comps, _, _ := input.GetComponents(sep, []Special{})
+
+	if len(n.Children) != len(comps) {
+		return output // stop wounding-up if split of components is different
+	}
 
 	// fmt.Println("\nSep from decomp: ", PrintVertices(sep.Vertices()))
 
 	output = append(output, Scene{Sub: input.Vertices(), Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
-
-	comps, _, _ := input.GetComponents(sep, []Special{})
 
 	// fmt.Println("\nCurrent components: ")
 	// for i, c := range comps {
@@ -241,7 +243,7 @@ func (d Decomp) SceneCreation(input Graph) map[uint32]SceneValue {
 	scenes := d.Root.woundingDown(input)
 	scenes = append(scenes, d.Root.woundingUp(d.Root)...)
 
-	fmt.Println("Found scenes, ", scenes)
+	// fmt.Println("Found scenes, ", len(scenes))
 	for _, s := range scenes {
 		output[IntHash(s.Sub)] = s.Val
 	}

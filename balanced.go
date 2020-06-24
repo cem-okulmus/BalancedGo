@@ -36,7 +36,7 @@ var Version string
 var Date string
 var Build string
 
-func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64, hinge float64) {
+func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64, hinge float64, skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -57,7 +57,13 @@ func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Gra
 	}
 
 	fmt.Println("\nWidth: ", decomp.CheckWidth())
-	correct := decomp.Correct(parsedGraph)
+	var correct bool
+	if !skipCheck {
+		correct = decomp.Correct(parsedGraph)
+	} else {
+		correct = true
+	}
+
 	fmt.Println("Correct: ", correct)
 	if correct && len(gml) > 0 {
 		f, err := os.Create(gml)
@@ -270,20 +276,8 @@ func main() {
 	}
 
 	if *decomp != "" {
-		dis, err2 := ioutil.ReadFile(*decomp)
-		check(err2)
 
-		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
-		// fmt.Println("parsed Decomp", deco)
-
-		start_sc := time.Now()
-
-		scenes := deco.SceneCreation(parsedGraph)
-
-		d_sc := time.Now().Sub(start_sc)
-		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
-
-		// fmt.Println("Extracted scenes: ", scenes)
+		// Determine solver
 
 		var solver UpdateAlgorithm
 
@@ -291,6 +285,37 @@ func main() {
 			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 			solver = det
 		}
+
+		// read and parse decomposition
+
+		dis, err2 := ioutil.ReadFile(*decomp)
+		check(err2)
+
+		start_sc := time.Now()
+
+		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
+		// fmt.Println("parsed Decomp", deco)
+
+		d_pars := time.Now().Sub(start_sc)
+		msec_pars := d_pars.Seconds() * float64(time.Second/time.Millisecond)
+
+		// Check if this decomp is already correct
+		check := deco.Correct(parsedGraph)
+		if check {
+			fmt.Println(" Parsed Decomposition already correct, skipping update computation.")
+
+			outputStanza(solver.Name(), deco, msec_pars, parsedGraph, *gml, *width, heuristic, msecHinge, true)
+
+			fmt.Println("Scene Creation Time: 0 ms")
+			return
+		}
+
+		scenes := deco.SceneCreation(parsedGraph)
+
+		d_sc := time.Now().Sub(start_sc)
+		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
+
+		// fmt.Println("Extracted scenes: ", scenes)
 
 		if solver != nil {
 			var decomp Decomp
@@ -317,7 +342,7 @@ func main() {
 				}
 			}
 
-			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge)
+			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge, false)
 			fmt.Println("Scene Creation Time: ", msec_sc, " ms")
 			return
 		}
@@ -428,7 +453,7 @@ func main() {
 			}
 		}
 
-		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge)
+		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge, false)
 		return
 	}
 
