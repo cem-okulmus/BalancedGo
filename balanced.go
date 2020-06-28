@@ -36,25 +36,49 @@ var Version string
 var Date string
 var Build string
 
-func outputStanza(algorithm string, decomp Decomp, msec float64, parsedGraph Graph, gml string, K int, heuristic float64, hinge float64, skipCheck bool) {
+type labelTime struct {
+	time  float64
+	label string
+}
+
+func (l labelTime) String() string {
+	return fmt.Sprint(l.label, ": ", l.time, " ms")
+}
+
+func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGraph Graph, gml string, K int, skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
 	fmt.Println("Result ( ran with K =", K, ")\n", decomp)
-	if heuristic > 0.0 {
-		fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
-		if msec+heuristic > 60000.0 {
-			fmt.Print("(", (msec+heuristic)/60000.0, "min )")
-		}
-	} else {
-		fmt.Print("Time: ", msec, " ms")
-		if msec > 60000.0 {
-			fmt.Print("(", msec/60000.0, "min )")
-		}
+
+	// Print the times
+	var sumTotal float64
+
+	for _, time := range times {
+		sumTotal = sumTotal + time.time
 	}
-	if hinge > 0.0 {
-		fmt.Println("\nHingeTree: ", hinge, " ms")
+	fmt.Println("Time: ", sumTotal, " ms")
+
+	fmt.Println("Time Composition: ")
+
+	for _, time := range times {
+		fmt.Println(time)
 	}
+
+	// if heuristic > 0.0 {
+	// 	fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
+	// 	if msec+heuristic > 60000.0 {
+	// 		fmt.Print("(", (msec+heuristic)/60000.0, "min )")
+	// 	}
+	// } else {
+	// 	fmt.Print("Time: ", msec, " ms")
+	// 	if msec > 60000.0 {
+	// 		fmt.Print("(", msec/60000.0, "min )")
+	// 	}
+	// }
+	// if hinge > 0.0 {
+	// 	fmt.Println("\nHingeTree: ", hinge, " ms")
+	// }
 
 	fmt.Println("\nWidth: ", decomp.CheckWidth())
 	var correct bool
@@ -180,7 +204,52 @@ func main() {
 	}
 	log.Println("BIP: ", parsedGraph.GetBIP())
 	var reducedGraph Graph
-	var heuristic float64
+
+	var times []labelTime
+
+	var solverUpdate UpdateAlgorithm
+	var parsedDecomp Decomp
+
+	// Check if shortcut present, before applying heuristics
+	if *decomp != "" {
+
+		// Determine solver
+
+		if *detKTest {
+			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
+			solverUpdate = det
+		}
+
+		// read and parse decomposition
+
+		dis, err2 := ioutil.ReadFile(*decomp)
+		check(err2)
+
+		start_pars := time.Now()
+
+		parsedDecomp = GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
+		// fmt.Println("parsed Decomp", deco)
+
+		msec_pars := time.Now().Sub(start_pars).Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msec_pars, label: "Parsing"})
+
+		start_check := time.Now()
+
+		// Check if this decomp is already correct
+		check := parsedDecomp.Correct(parsedGraph)
+
+		msec_check := time.Now().Sub(start_check).Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msec_check, label: "Correctness Check"})
+
+		if check {
+			fmt.Println(" Parsed Decomposition already correct, skipping update computation.")
+
+			outputStanza(solverUpdate.Name(), parsedDecomp, times, parsedGraph, *gml, *width, true)
+
+			return
+		}
+
+	}
 
 	// Sorting Edges to find separators faster
 	if *useHeuristic > 0 {
@@ -206,11 +275,11 @@ func main() {
 			break
 		}
 		d := time.Now().Sub(start)
+		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msec, label: "Heuristic"})
 
 		if !*bench {
 			fmt.Println(heuristicMessage)
-			msec := d.Seconds() * float64(time.Second/time.Millisecond)
-			heuristic = msec
 			fmt.Printf("Time for heuristic: %.5f ms\n", msec)
 			fmt.Printf("Ordering: %v\n", parsedGraph.String())
 		}
@@ -268,6 +337,7 @@ func main() {
 
 		dHinge := time.Now().Sub(startHinge)
 		msecHinge = dHinge.Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msecHinge, label: "Hingetree"})
 
 		if !*bench {
 			fmt.Println("Produced Hingetree: ")
@@ -277,56 +347,27 @@ func main() {
 
 	if *decomp != "" {
 
-		// Determine solver
-
-		var solver UpdateAlgorithm
-
-		if *detKTest {
-			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
-			solver = det
-		}
-
-		// read and parse decomposition
-
-		dis, err2 := ioutil.ReadFile(*decomp)
-		check(err2)
-
 		start_sc := time.Now()
 
-		deco := GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
-		// fmt.Println("parsed Decomp", deco)
-
-		d_pars := time.Now().Sub(start_sc)
-		msec_pars := d_pars.Seconds() * float64(time.Second/time.Millisecond)
-
-		// Check if this decomp is already correct
-		check := deco.Correct(parsedGraph)
-		if check {
-			fmt.Println(" Parsed Decomposition already correct, skipping update computation.")
-
-			outputStanza(solver.Name(), deco, msec_pars, parsedGraph, *gml, *width, heuristic, msecHinge, true)
-
-			fmt.Println("Scene Creation Time: 0 ms")
-			return
-		}
-
-		scenes := deco.SceneCreation(parsedGraph)
+		scenes := parsedDecomp.SceneCreation(parsedGraph)
 
 		d_sc := time.Now().Sub(start_sc)
 		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msec_sc, label: "Scene Creation"})
 
 		// fmt.Println("Extracted scenes: ", scenes)
 
-		if solver != nil {
+		if solverUpdate != nil {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solver.FindDecompUpdate(*width, parsedGraph, scenes)
+			decomp = solverUpdate.FindDecompUpdate(*width, parsedGraph, scenes)
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
+			times = append(times, labelTime{time: msec, label: "Decomposition"})
 
-			if decomp.Correct(parsedGraph) {
+			if !reflect.DeepEqual(decomp, Decomp{}) {
 				var result bool
 				decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
 				if !result {
@@ -342,8 +383,7 @@ func main() {
 				}
 			}
 
-			outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge, false)
-			fmt.Println("Scene Creation Time: ", msec_sc, " ms")
+			outputStanza(solverUpdate.Name(), decomp, times, parsedGraph, *gml, *width, false)
 			return
 		}
 
@@ -436,6 +476,7 @@ func main() {
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
+		times = append(times, labelTime{time: msec, label: "Decomposition"})
 
 		if !reflect.DeepEqual(decomp, Decomp{}) {
 			var result bool
@@ -453,7 +494,7 @@ func main() {
 			}
 		}
 
-		outputStanza(solver.Name(), decomp, msec, parsedGraph, *gml, *width, heuristic, msecHinge, false)
+		outputStanza(solver.Name(), decomp, times, parsedGraph, *gml, *width, false)
 		return
 	}
 
