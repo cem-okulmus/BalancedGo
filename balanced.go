@@ -122,6 +122,7 @@ func main() {
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
+	logKAlgo := flagSet.Bool("logk", false, "Use LogKDecomp algorithm")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
 	divideTest := flagSet.Bool("divide", false, "Use divideKDecomp algoritm")
@@ -227,11 +228,14 @@ func main() {
 
 		start_pars := time.Now()
 
-		parsedDecomp = GetDecomp(string(dis), parsedGraph, parseGraph.Encoding)
+		parsedDecomp = GetDecomp(dis, parsedGraph, parseGraph.Encoding)
 		// fmt.Println("parsed Decomp", deco)
 
 		msec_pars := time.Now().Sub(start_pars).Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_pars, label: "Parsing"})
+
+		// decompJason, _ := json.Marshal(parsedDecomp.IntoJson())
+		// fmt.Println(string(decompJason))
 
 		start_check := time.Now()
 
@@ -412,6 +416,12 @@ func main() {
 	if *detKTest {
 		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 		solver = det
+		chosen++
+	}
+
+	if *logKAlgo {
+		logk := LogKDecomp{Graph: parsedGraph, SubEdge: *localBIP}
+		solver = logk
 		chosen++
 	}
 
