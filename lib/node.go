@@ -212,19 +212,19 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 	return NewEdges(output)
 }
 
-func (n *Node) allChildrenContaining(vert int) []int {
-	var output []int
+// func (n *Node) allChildrenContaining(vert int) []int {
+// 	var output []int
 
-	if Mem(n.Bag, vert) {
-		output = append(output, n.num)
-	}
+// 	if Mem(n.Bag, vert) {
+// 		output = append(output, n.num)
+// 	}
 
-	for _, c := range n.Children {
-		output = append(output, c.allChildrenContaining(vert)...)
-	}
+// 	for _, c := range n.Children {
+// 		output = append(output, c.allChildrenContaining(vert)...)
+// 	}
 
-	return output
-}
+// 	return output
+// }
 
 func (n Node) coversEdge(e Edge) bool {
 	// edge contained in current node
@@ -380,4 +380,35 @@ func (n *Node) CombineNodes(subtree Node) *Node {
 	}
 
 	return &Node{}
+}
+
+func (n Node) connected(v int, parentContainsV bool) (bool, bool) {
+
+	containsV := Mem(n.Bag, v)
+	subtreeContainsV := containsV
+
+	numNeighboursContainingV := 0
+
+	if parentContainsV {
+		numNeighboursContainingV = 1
+	}
+
+	for i := range n.Children {
+		connected, subtreeFlag := n.Children[i].connected(v, containsV)
+
+		if !connected { // stop if subtree rooted at child i already has a disconnected subtree
+			return false, false
+		}
+
+		if subtreeFlag {
+			numNeighboursContainingV++
+			subtreeContainsV = true
+		}
+	}
+
+	if !containsV && numNeighboursContainingV > 1 {
+		return false, false
+	}
+
+	return true, subtreeContainsV
 }

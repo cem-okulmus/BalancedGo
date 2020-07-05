@@ -24,32 +24,32 @@ func (d *Decomp) RestoreSubedges() {
 	d.Root = newRoot
 }
 
-func (d Decomp) connected(vert int) bool {
-	conGraph := d.Root.getConGraph(true)
-	var containingNodes = d.Root.allChildrenContaining(vert)
-	var edgesContaining = FilterVerticesStrict(conGraph, containingNodes)
+// func (d Decomp) connected(vert int) bool {
+// 	conGraph := d.Root.getConGraph(true)
+// 	var containingNodes = d.Root.allChildrenContaining(vert)
+// 	var edgesContaining = FilterVerticesStrict(conGraph, containingNodes)
 
-	// log.Printf("All nodes containing %s\n", m[vert])
-	// for _, n := range containingNodes {
-	// 	log.Printf("%v ,", m[n])
-	// }
+// 	// log.Printf("All nodes containing %s\n", m[vert])
+// 	// for _, n := range containingNodes {
+// 	// 	log.Printf("%v ,", m[n])
+// 	// }
 
-	// log.Printf("All edges")
-	// for _, e := range edgesContaining.Slice() {
-	// 	log.Printf("%v ,", e)
-	// }
+// 	// log.Printf("All edges")
+// 	// for _, e := range edgesContaining.Slice() {
+// 	// 	log.Printf("%v ,", e)
+// 	// }
 
-	g, _, _ := Graph{Edges: edgesContaining}.GetComponents(Edges{}, []Special{})
+// 	g, _, _ := Graph{Edges: edgesContaining}.GetComponents(Edges{}, []Special{})
 
-	// if len(g) > 1 {
-	// 	fmt.Printf("Components of Node %s\n", m[vert])
-	// 	for _, c := range g {
-	// 		fmt.Printf("%v \n\n", c)
-	// 	}
-	// }
+// 	// if len(g) > 1 {
+// 	// 	fmt.Printf("Components of Node %s\n", m[vert])
+// 	// 	for _, c := range g {
+// 	// 		fmt.Printf("%v \n\n", c)
+// 	// 	}
+// 	// }
 
-	return len(g) == 1
-}
+// 	return len(g) == 1
+// }
 
 func (d Decomp) Correct(g Graph) bool {
 	output := true
@@ -80,12 +80,17 @@ func (d Decomp) Correct(g Graph) bool {
 
 	//connectedness
 	for _, i := range d.Graph.Edges.Vertices() {
-		if !d.connected(i) {
+
+		nodeCheck, _ := d.Root.connected(i, false)
+		if !nodeCheck {
 			mutex.RLock()
 			fmt.Printf("Vertex %v doesn't span connected subtree\n", m[i])
 			mutex.RUnlock()
 			output = false
 		}
+		// if d.connected(i) != nodeCheck {
+		// 	log.Panicln("Node based connectedness check not working!")
+		// }
 
 	}
 
