@@ -1,6 +1,7 @@
 package algorithms
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"sync"
@@ -329,8 +330,18 @@ func (d DetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
 	return d.FindHD(K, G, []Special{})
 }
 
+var counterMap map[string]int
+
 func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
 	d.cache = make(map[uint32]*CompCache)
+
+	if log.Flags() == 0 {
+		counterMap = make(map[string]int)
+		defer func(map[string]int) {
+			fmt.Println("Counter Map: ", counterMap)
+		}(counterMap)
+	}
+
 	return d.findDecompUpdate(K, currentGraph, []int{}, savedScenes)
 }
 
@@ -412,9 +423,15 @@ OUTER:
 		} else {
 			sep = val.Sep
 
-		}
+			if log.Flags() == 0 {
+				if counter, ok := counterMap[val.String()]; ok {
+					counterMap[val.String()] = counter + 1
+				} else {
+					counterMap[val.String()] = 1
+				}
+			}
 
-		log.Println("Next Cover ", sep)
+		}
 
 		if !addEdges || K-sep.Len() > 0 {
 			i_add := 0

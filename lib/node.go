@@ -125,26 +125,6 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
-// Check if node is below a marked one
-func (n Node) belowMarked(root Node) bool {
-
-	// current node is at the border with the marked subtree
-	parent := root.parent(n)
-
-	if !n.Star && parent.Star {
-		return true
-	}
-
-	//Check recursively if parent is belowMarked
-
-	if reflect.DeepEqual(parent, n) { //reached root
-		return false
-	} else {
-		return parent.belowMarked(root)
-	}
-
-}
-
 // Check if node contains as c
 func (n Node) containsMarked() bool {
 

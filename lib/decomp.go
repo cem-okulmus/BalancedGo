@@ -165,8 +165,8 @@ type Scene struct {
 	Val SceneValue
 }
 
-func (s Scene) String() string {
-	return "Bag " + PrintVertices(s.Val.Sep.Vertices()) + ", Subgraph" + PrintVertices(s.Sub)
+func (s SceneValue) String() string {
+	return fmt.Sprint("Sep ", s.Sep, "Perm: ", s.Perm)
 }
 
 func (n Node) woundingDown(input Graph) []Scene {
@@ -177,14 +177,22 @@ func (n Node) woundingDown(input Graph) []Scene {
 	var output []Scene
 
 	if !Subset(n.Bag, n.Cover.Vertices()) {
-		return output // stop wounding-up if cover wrong
+		// start wounding up procedure
+		outputChild, _ := n.woundingUp(input.Edges.Slice())
+
+		output = append(output, outputChild...)
+		return output
 	}
 
 	sep := n.Cover.IntersectWith(n.Bag)
 	comps, _, _ := input.GetComponents(sep, []Special{})
 
 	if len(n.Children) != len(comps) {
-		return output // stop wounding-up if split of components is different
+		// start wounding up procedure
+		outputChild, _ := n.woundingUp(input.Edges.Slice())
+
+		output = append(output, outputChild...)
+		return output
 	}
 
 	// fmt.Println("\nSep from decomp: ", PrintVertices(sep.Vertices()))
@@ -222,21 +230,37 @@ OUTER:
 
 }
 
-func (n Node) woundingUp(root Node) []Scene {
+func (n Node) woundingUp(edges []Edge) ([]Scene, []int) {
 
 	var output []Scene
+	var coveredVertices []int
+	var coveredBelow []int
+
+	for _, c := range n.Children {
+		outputChild, coveredChild := c.woundingUp(edges)
+
+		output = append(output, outputChild...)
+		coveredBelow = append(coveredBelow, coveredChild...)
+	}
+
+	// if n.belowMarked(root) {
+	//
+	// }
+	coveredSlice := []Edge{}
+	for i := range edges {
+		if Subset(edges[i].Vertices, n.Bag) {
+			coveredSlice = append(coveredSlice, edges[i])
+		}
+	}
+
+	coveredEdges := NewEdges(coveredSlice)
+	coveredVertices = RemoveDuplicates(append(coveredEdges.Vertices(), coveredBelow...))
 
 	sep := n.Cover.IntersectWith(n.Bag)
 
-	if n.belowMarked(root) {
-		output = append(output, Scene{Sub: n.Vertices(), Val: SceneValue{Sep: sep, Perm: true}})
-	}
+	output = append(output, Scene{Sub: coveredVertices, Val: SceneValue{Sep: sep, Perm: true}})
 
-	for _, c := range n.Children {
-		output = append(output, c.woundingUp(root)...)
-	}
-
-	return output
+	return output, coveredVertices
 
 }
 
@@ -245,8 +269,19 @@ func (d Decomp) SceneCreation(input Graph) map[uint32]SceneValue {
 	var output map[uint32]SceneValue
 	output = make(map[uint32]SceneValue)
 
+	// start_wd := time.Now()
+
 	scenes := d.Root.woundingDown(input)
-	scenes = append(scenes, d.Root.woundingUp(d.Root)...)
+
+	// msec_wd := time.Now().Sub(start_wd).Seconds() * float64(time.Second/time.Millisecond)
+	// fmt.Println("Wounding Down", msec_wd, " ms")
+
+	// start_wu := time.Now()
+
+	// scenes = append(scenes, d.Root.woundingUp(d.Root)...)
+
+	// msec_wu := time.Now().Sub(start_wu).Seconds() * float64(time.Second/time.Millisecond)
+	// fmt.Println("Wounding Up", msec_wu, " ms")
 
 	// fmt.Println("Found scenes, ", len(scenes))
 	for _, s := range scenes {
