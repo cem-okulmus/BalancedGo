@@ -42,7 +42,7 @@ type labelTime struct {
 }
 
 func (l labelTime) String() string {
-	return fmt.Sprint(l.label, ": ", l.time, " ms")
+	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
 func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGraph Graph, gml string, K int, skipCheck bool) {
@@ -57,28 +57,12 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGrap
 	for _, time := range times {
 		sumTotal = sumTotal + time.time
 	}
-	fmt.Println("Time: ", sumTotal, " ms")
+	fmt.Printf("Time: %.5f ms\n", sumTotal)
 
 	fmt.Println("Time Composition: ")
-
 	for _, time := range times {
 		fmt.Println(time)
 	}
-
-	// if heuristic > 0.0 {
-	// 	fmt.Print("Time: ", msec+heuristic, " ms ( decomp:", msec, ", heuristic:", heuristic, ")")
-	// 	if msec+heuristic > 60000.0 {
-	// 		fmt.Print("(", (msec+heuristic)/60000.0, "min )")
-	// 	}
-	// } else {
-	// 	fmt.Print("Time: ", msec, " ms")
-	// 	if msec > 60000.0 {
-	// 		fmt.Print("(", msec/60000.0, "min )")
-	// 	}
-	// }
-	// if hinge > 0.0 {
-	// 	fmt.Println("\nHingeTree: ", hinge, " ms")
-	// }
 
 	fmt.Println("\nWidth: ", decomp.CheckWidth())
 	var correct bool
@@ -233,9 +217,6 @@ func main() {
 
 		msec_pars := time.Now().Sub(start_pars).Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_pars, label: "Parsing"})
-
-		// decompJason, _ := json.Marshal(parsedDecomp.IntoJson())
-		// fmt.Println(string(decompJason))
 
 		start_check := time.Now()
 
