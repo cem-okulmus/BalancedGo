@@ -338,7 +338,13 @@ func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[
 	if log.Flags() == 0 {
 		counterMap = make(map[string]int)
 		defer func(map[string]int) {
-			fmt.Println("Counter Map: ", counterMap)
+
+			fmt.Println("Counter Map:")
+
+			for k, v := range counterMap {
+				fmt.Println("Scene: ", k, "\nTimes Used: ", v)
+			}
+
 		}(counterMap)
 	}
 

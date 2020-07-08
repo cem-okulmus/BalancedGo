@@ -156,8 +156,9 @@ func (d *Decomp) Blowup() Decomp {
 }
 
 type SceneValue struct {
-	Sep  Edges
-	Perm bool // one-time cached if false
+	Sep        Edges
+	Perm       bool // one-time cached if false
+	WoundingUp bool // created during wounding up
 }
 
 type Scene struct {
@@ -166,7 +167,12 @@ type Scene struct {
 }
 
 func (s SceneValue) String() string {
-	return fmt.Sprint("Sep ", s.Sep, "Perm: ", s.Perm)
+	var added string
+	if s.WoundingUp {
+		added = fmt.Sprint("WoundingUp")
+
+	}
+	return fmt.Sprint("Sep ", s.Sep, "Perm: ", s.Perm) + added
 }
 
 func (n Node) woundingDown(input Graph) []Scene {
@@ -258,7 +264,7 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, []int) {
 
 	sep := n.Cover.IntersectWith(n.Bag)
 
-	output = append(output, Scene{Sub: coveredVertices, Val: SceneValue{Sep: sep, Perm: true}})
+	output = append(output, Scene{Sub: coveredVertices, Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
 
 	return output, coveredVertices
 

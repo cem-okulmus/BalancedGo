@@ -17,10 +17,12 @@ import (
 )
 
 func logActive(b bool) {
-	log.SetFlags(0)
 	if b {
 		log.SetOutput(os.Stderr)
+
+		log.SetFlags(0)
 	} else {
+
 		log.SetOutput(ioutil.Discard)
 	}
 }
