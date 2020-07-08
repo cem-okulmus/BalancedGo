@@ -52,7 +52,6 @@ func (d *Decomp) RestoreSubedges() {
 // }
 
 func (d Decomp) Correct(g Graph) bool {
-	output := true
 
 	//must be a decomp of same graph
 	if !d.Graph.equal(g) {
@@ -61,20 +60,20 @@ func (d Decomp) Correct(g Graph) bool {
 		} else {
 			fmt.Println("Empty Decomp")
 		}
-		output = false
+		return false
 	}
 
 	//Every bag must be subset of the lambda label
 	if !d.Root.bagSubsets() {
 		fmt.Printf("Bags not subsets of edge labels")
-		output = false
+		return false
 	}
 
 	// Every edge has to be covered
 	for _, e := range d.Graph.Edges.Slice() {
 		if !d.Root.coversEdge(e) {
 			fmt.Println("Edge ", e, " isn't covered")
-			output = false
+			return false
 		}
 	}
 
@@ -86,7 +85,7 @@ func (d Decomp) Correct(g Graph) bool {
 			mutex.RLock()
 			fmt.Printf("Vertex %v doesn't span connected subtree\n", m[i])
 			mutex.RUnlock()
-			output = false
+			return false
 		}
 		// if d.connected(i) != nodeCheck {
 		// 	log.Panicln("Node based connectedness check not working!")
@@ -100,7 +99,7 @@ func (d Decomp) Correct(g Graph) bool {
 		fmt.Println("SCV found!. Not a valid hypertree decomposition!")
 	}
 
-	return output
+	return true
 }
 
 func (d Decomp) CheckWidth() int {
