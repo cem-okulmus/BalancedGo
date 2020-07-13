@@ -252,18 +252,27 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, []int) {
 	//
 	// }
 	coveredSlice := []Edge{}
-	for i := range edges {
-		if Subset(edges[i].Vertices, n.Bag) {
-			coveredSlice = append(coveredSlice, edges[i])
-		}
-	}
+	var coveredEdges Edges
 
-	coveredEdges := NewEdges(coveredSlice)
+	if !n.Star { // skip if
+
+		for i := range edges {
+			if Subset(edges[i].Vertices, n.Bag) {
+				coveredSlice = append(coveredSlice, edges[i])
+			}
+		}
+
+		coveredEdges = NewEdges(coveredSlice)
+
+	}
 	coveredVertices = RemoveDuplicates(append(coveredEdges.Vertices(), coveredBelow...))
 
-	sep := n.Cover.IntersectWith(n.Bag)
+	if !n.Star {
 
-	output = append(output, Scene{Sub: coveredVertices, Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
+		sep := n.Cover.IntersectWith(n.Bag)
+
+		output = append(output, Scene{Sub: coveredVertices, Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
+	}
 
 	return output, coveredVertices
 

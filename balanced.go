@@ -207,6 +207,11 @@ func main() {
 			solverUpdate = det
 		}
 
+		if *balDetTest > 0 {
+			balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
+			solverUpdate = balDet
+		}
+
 		// read and parse decomposition
 
 		dis, err2 := ioutil.ReadFile(*decomp)
@@ -215,7 +220,7 @@ func main() {
 		start_pars := time.Now()
 
 		parsedDecomp = GetDecomp(dis, parsedGraph, parseGraph.Encoding)
-		// fmt.Println("parsed Decomp", deco)
+		// fmt.Println("parsed Decomp", parsedDecomp)
 
 		msec_pars := time.Now().Sub(start_pars).Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_pars, label: "Parsing"})
@@ -342,7 +347,7 @@ func main() {
 		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_sc, label: "Scene Creation"})
 
-		// fmt.Println("Extracted scenes: ", scenes)
+		fmt.Println("Extracted scenes: ", len(scenes))
 
 		if solverUpdate != nil {
 			var decomp Decomp

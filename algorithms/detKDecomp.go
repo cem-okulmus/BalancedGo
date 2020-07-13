@@ -348,10 +348,10 @@ func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[
 		}(counterMap)
 	}
 
-	return d.findDecompUpdate(K, currentGraph, []int{}, savedScenes)
+	return d.findDecompUpdate(K, currentGraph, []int{}, []Special{}, savedScenes)
 }
 
-func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes map[uint32]SceneValue) Decomp {
+func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special, savedScenes map[uint32]SceneValue) Decomp {
 
 	//Check current scenario for saved scene
 	// usingScene := false
@@ -365,7 +365,7 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes 
 	// 	}
 	// }
 
-	verticesCurrent := H.Vertices()
+	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
 	verticesExtended := append(verticesCurrent, oldSep...)
 	conn := Inter(oldSep, verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep)
@@ -374,19 +374,19 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes 
 	// log.Printf("\n\nDU Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	// log.Printf("DU Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
 	// log.Printf("DU Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-
+	// log.Printf("D Current Special Edges: %v\n\n", Sp)
 	// log.Println("DU Hedges ", H)
 	// log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
-	if H.Edges.Len() == 0 {
+	if H.Edges.Len() == 0 && len(Sp) <= 1 {
 		if d.Divide {
 			out := baseCaseDetK(H, []Special{})
 			out.Root.LowConnecting = true
 
 			return out
 		}
-		return baseCaseDetK(H, []Special{})
+		return baseCaseDetK(H, Sp)
 	}
 
 	gen := NewCover(K, conn, bound, H.Edges)
@@ -394,10 +394,11 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes 
 OUTER:
 	for gen.HasNext {
 
-		val, ok := savedScenes[IntHash(verticesCurrent)]
+		hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
+		val, ok := savedScenes[hash]
 
 		if !val.Perm { // delete one-time cached scene from map
-			delete(savedScenes, IntHash(verticesCurrent))
+			delete(savedScenes, hash)
 		}
 		if !Subset(conn, val.Sep.Vertices()) {
 			ok = false // ignore this choice of separator if it breaks connectedness
@@ -428,6 +429,7 @@ OUTER:
 
 		} else {
 			sep = val.Sep
+			// log.Println("Using scene: ", val)
 
 			if log.Flags() == 0 {
 				if counter, ok := counterMap[val.String()]; ok {
@@ -480,7 +482,7 @@ OUTER:
 					// } else {
 					//
 					// }
-					comps, _, _ := H.GetComponents(sepActual, []Special{})
+					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
 					d.cacheMux.RLock()
@@ -517,13 +519,14 @@ OUTER:
 							lowFlag = true //since special Edge would connect to current sep, if accepting
 							continue
 						}
-						decomp := d.findDecompUpdate(K, comps[i], bag, savedScenes)
+						decomp := d.findDecompUpdate(K, comps[i], bag, compsSp[i], savedScenes)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
 							d.addNegative(sepActual, comps[i])
 							// log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n", Graph{Edges: sepActual}, comps[i])
 							// log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
 							// log.Printf("DU Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
+							// log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
 								if sepSub == nil {
