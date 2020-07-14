@@ -35,7 +35,7 @@ func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-    Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
+    Ident = ("_" | alpha | digit | stuff) { "_" | alpha | digit | stuff } .
     Number = ("." | digit | "_"){"." | digit | stuff } .
     Whitespace = " " | "\t" | "\n" | "\r" .
     stuff = ":" | "@" | ";" | "-" | "_" .
