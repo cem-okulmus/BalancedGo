@@ -22,8 +22,8 @@ var mutex = sync.RWMutex{}
 var encode int // stores the encoding of the highest int used
 
 type ParseEdge struct {
-	Name     string   ` @(Ident|Number)`
-	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
+	Name     string   ` @(Number|Ident|String)`
+	Vertices []string `"(" ( @(Number|Ident|String)  ","? )* ")"`
 }
 
 type ParseGraph struct {
@@ -35,13 +35,16 @@ func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-    Ident = ("_" | alpha | digit | stuff) { "_" | alpha | digit | stuff } .
-    Number = ("." | digit | "_"){"." | digit | stuff } .
+	Ident = (digit| alpha | "_") { Punct |  "_" | alpha | digit } .
+	String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
+	Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
+	Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
+	Paranthesis = "(" | ")"  | "," .
     Whitespace = " " | "\t" | "\n" | "\r" .
-    stuff = ":" | "@" | ";" | "-" | "_" .
-    Punct = "!"…"/"  .
-    alpha = "a"…"z" | "A"…"Z" .
-    digit = "0"…"9" .`))
+	alpha = "a"…"z" | "A"…"Z" .
+	digit = "0"…"9" .
+	any = "\u0000"…"\uffff" .
+    `))
 
 	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
 		participle.Elide("Comment", "Whitespace"))
