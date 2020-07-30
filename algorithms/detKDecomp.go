@@ -139,9 +139,9 @@ OUTER:
 		var sep Edges
 		sep = GetSubset(bound, gen.Subset)
 
-		if !Subset(conn, sep.Vertices()) {
-			log.Panicln("Cover messed up! 137")
-		}
+		// if !Subset(conn, sep.Vertices()) {
+		// 	log.Panicln("Cover messed up! 137")
+		// }
 
 		// log.Println("Next Cover ", sep)
 

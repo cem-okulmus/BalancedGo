@@ -12,7 +12,7 @@ import (
 
 // A log-depth version of DetK, without the restriction to strong NF HDs
 
-type LogKDecomp struct {
+type LogDetKDecomp struct {
 	Graph    Graph
 	SubEdge  bool
 	Depth    int
@@ -20,19 +20,19 @@ type LogKDecomp struct {
 	cacheMux sync.RWMutex
 }
 
-func (d *LogKDecomp) addPositive(sep Edges, comp Graph) {
+func (d *LogDetKDecomp) addPositive(sep Edges, comp Graph) {
 	d.cacheMux.Lock()
 	d.cache[sep.Hash()].Succ = append(d.cache[sep.Hash()].Succ, comp.Edges.Hash())
 	d.cacheMux.Unlock()
 }
 
-func (d *LogKDecomp) addNegative(sep Edges, comp Graph) {
+func (d *LogDetKDecomp) addNegative(sep Edges, comp Graph) {
 	d.cacheMux.Lock()
 	d.cache[sep.Hash()].Fail = append(d.cache[sep.Hash()].Fail, comp.Edges.Hash())
 	d.cacheMux.Unlock()
 }
 
-func (d *LogKDecomp) checkNegative(sep Edges, comp Graph) bool {
+func (d *LogDetKDecomp) checkNegative(sep Edges, comp Graph) bool {
 	d.cacheMux.RLock()
 	defer d.cacheMux.RUnlock()
 
@@ -48,7 +48,7 @@ func (d *LogKDecomp) checkNegative(sep Edges, comp Graph) bool {
 	return false
 }
 
-func (d *LogKDecomp) checkPositive(sep Edges, comp Graph) bool {
+func (d *LogDetKDecomp) checkPositive(sep Edges, comp Graph) bool {
 	d.cacheMux.RLock()
 	defer d.cacheMux.RUnlock()
 
@@ -64,7 +64,7 @@ func (d *LogKDecomp) checkPositive(sep Edges, comp Graph) bool {
 	return false
 }
 
-func (d *LogKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special, depth int) Decomp {
+func (d *LogDetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special, depth int) Decomp {
 	if depth > d.Depth {
 		return Decomp{} // stop computation once recursion depth reached
 	}
@@ -275,7 +275,7 @@ OUTER:
 	return Decomp{} // Reject if no separator could be found
 }
 
-func (d *LogKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
+func (d *LogDetKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
 	d.cache = make(map[uint32]*CompCache)
 
 	// using log(N) + K as the depth here
@@ -286,11 +286,11 @@ func (d *LogKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
 	return d.findDecomp(K, currentGraph, []int{}, Sp, 0)
 }
 
-func (d LogKDecomp) FindDecomp(K int) Decomp {
+func (d LogDetKDecomp) FindDecomp(K int) Decomp {
 	return d.FindHD(K, d.Graph, []Special{})
 }
 
-func (d LogKDecomp) Name() string {
+func (d LogDetKDecomp) Name() string {
 	if d.SubEdge {
 		return "LogK with local BIP"
 	} else {
@@ -298,16 +298,16 @@ func (d LogKDecomp) Name() string {
 	}
 }
 
-func (d LogKDecomp) FindDecompGraph(G Graph, K int) Decomp {
+func (d LogDetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
 	return d.FindHD(K, G, []Special{})
 }
 
-// func (d LogKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
+// func (d LogDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
 // 	d.cache = make(map[uint32]*CompCache)
 // 	return d.findDecompUpdate(K, currentGraph, []int{}, savedScenes)
 // }
 
-// func (d *LogKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes map[uint32]SceneValue) Decomp {
+// func (d *LogDetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, savedScenes map[uint32]SceneValue) Decomp {
 
 // 	//Check current scenario for saved scene
 // 	// usingScene := false

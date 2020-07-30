@@ -108,11 +108,11 @@ func main() {
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
-	logKAlgo := flagSet.Bool("logk", false, "Use LogKDecomp algorithm")
+	logDetKAlgo := flagSet.Bool("logdetk", false, "Use log-depth version of DetKDecomp algorithm")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
-	divideTest := flagSet.Bool("divide", false, "Use divideKDecomp algoritm")
-	divideParTest := flagSet.Bool("dividePar", false, "Use parallel divideKDecomp algorithm")
+	// divideTest := flagSet.Bool("divide", false, "Use divideKDecomp algoritm")
+	// divideParTest := flagSet.Bool("dividePar", false, "Use parallel divideKDecomp algorithm")
 	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
@@ -407,23 +407,23 @@ func main() {
 		chosen++
 	}
 
-	if *logKAlgo {
-		logk := LogKDecomp{Graph: parsedGraph, SubEdge: *localBIP}
-		solver = logk
+	if *logDetKAlgo {
+		logDetk := LogDetKDecomp{Graph: parsedGraph, SubEdge: *localBIP}
+		solver = logDetk
 		chosen++
 	}
 
-	if *divideTest {
-		div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
-		solver = div
-		chosen++
-	}
+	// if *divideTest {
+	// 	div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+	// 	solver = div
+	// 	chosen++
+	// }
 
-	if *divideParTest {
-		div := DivideKDecompPar{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
-		solver = div
-		chosen++
-	}
+	// if *divideParTest {
+	// 	div := DivideKDecompPar{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+	// 	solver = div
+	// 	chosen++
+	// }
 
 	if *globalBal {
 		global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}

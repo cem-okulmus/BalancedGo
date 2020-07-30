@@ -225,113 +225,131 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	return outputG, outputS, edgeToComp
 }
 
-// Uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponentsIsolated(sep Edges, sepBoth Edges, up []int, low []int) ([]Graph, int, int, []Edge) {
-	var outputG []Graph
-	var outputEdgesinS []Edge
+// // Uses Disjoint Set data structure to compute connected components
+// func (g Graph) GetComponentsIsolated(sep Edges, up []int, low []int) ([]Graph, int, int, []Edge) {
+// 	var outputG []Graph
+// 	var isolatedEdges []Edge
 
-	var vertices = make(map[int]*disjoint.Element)
-	var comps = make(map[*disjoint.Element][]Edge)
-	upCompIndex := -1
-	lowCompIndex := -1
-	var upComp *disjoint.Element
-	var lowComp *disjoint.Element
+// 	var vertices = make(map[int]*disjoint.Element)
+// 	var comps = make(map[*disjoint.Element][]Edge)
 
-	balsepVert := Diff(sep.Vertices(), append(up, low...))
-	balSepCache := make(map[int]bool, len(balsepVert))
-	// fmt.Println("Current separator ", PrintVertices(balsepVert))
-	for _, v := range balsepVert {
-		balSepCache[v] = true
-	}
+// 	upCompIndex := -1
+// 	lowCompIndex := -1
 
-	//  Set up the disjoint sets for each node
-	for _, i := range g.Edges.Vertices() {
-		vertices[i] = disjoint.NewElement()
-	}
+// 	var upComp *disjoint.Element
+// 	var lowComp *disjoint.Element
 
-	//up
-	for i := 0; i < len(up)-1; i++ {
-		for j := i + 1; j < len(up); j++ {
-			disjoint.Union(vertices[up[i]], vertices[up[j]])
-			break
-		}
-	}
-	//low
-	for i := 0; i < len(low)-1; i++ {
-		for j := i + 1; j < len(low); j++ {
-			disjoint.Union(vertices[low[i]], vertices[low[j]])
-			break
-		}
-	}
+// 	balsepVert := Diff(sep.Vertices(), append(up, low...))
+// 	balSepCache := make(map[int]bool, len(balsepVert))
+// 	// fmt.Println("Current separator ", PrintVertices(balsepVert))
+// 	for _, v := range balsepVert {
+// 		balSepCache[v] = true
+// 	}
 
-	// Merge together the connected components
-	for e := range g.Edges.Slice() {
-		for i := 0; i < len(g.Edges.Slice()[e].Vertices); i++ {
-			if balSepCache[g.Edges.Slice()[e].Vertices[i]] {
-				continue
-			}
-			for j := i + 1; j < len(g.Edges.Slice()[e].Vertices); j++ {
-				if balSepCache[g.Edges.Slice()[e].Vertices[j]] {
-					continue
-				}
-				disjoint.Union(vertices[g.Edges.Slice()[e].Vertices[i]], vertices[g.Edges.Slice()[e].Vertices[j]])
-				break
-			}
-		}
-	}
+// 	//  Set up the disjoint sets for each node
+// 	for _, i := range g.Edges.Vertices() {
+// 		vertices[i] = disjoint.NewElement()
+// 	}
 
-	//sort each edge to a corresponding component
-	for i := range g.Edges.Slice() {
-		var vertexRep int
-		found := false
-		for _, v := range g.Edges.Slice()[i].Vertices {
-			if balSepCache[v] {
-				continue
-			}
-			vertexRep = v
-			found = true
-			break
-		}
-		if !found {
-			outputEdgesinS = append(outputEdgesinS, g.Edges.Slice()[i])
-			continue
-		}
+// 	// //low
+// 	// for i := 0; i < len(low)-1; i++ {
+// 	// 	for j := i + 1; j < len(low); j++ {
+// 	// 		disjoint.Union(vertices[low[i]], vertices[low[j]])
+// 	// 		break
+// 	// 	}
+// 	// }
 
-		slice, ok := comps[vertices[vertexRep].Find()]
-		if !ok {
-			newslice := make([]Edge, 0, g.Edges.Len())
-			comps[vertices[vertexRep].Find()] = newslice
-			slice = newslice
-		}
+// 	// Merge together the connected components
+// 	for e := range g.Edges.Slice() {
+// 		for i := 0; i < len(g.Edges.Slice()[e].Vertices); i++ {
+// 			if balSepCache[g.Edges.Slice()[e].Vertices[i]] {
+// 				continue
+// 			}
+// 			for j := i + 1; j < len(g.Edges.Slice()[e].Vertices); j++ {
+// 				if balSepCache[g.Edges.Slice()[e].Vertices[j]] {
+// 					continue
+// 				}
+// 				disjoint.Union(vertices[g.Edges.Slice()[e].Vertices[i]], vertices[g.Edges.Slice()[e].Vertices[j]])
+// 				break
+// 			}
+// 		}
+// 	}
 
-		comps[vertices[vertexRep].Find()] = append(slice, g.Edges.Slice()[i])
+// 	//merge any components that share components of up
+// 	for i := 0; i < len(up)-1; i++ {
+// 		if balSepCache[up[i]] {
+// 			continue
+// 		}
+// 		for j := i + 1; j < len(up); j++ {
+// 			if balSepCache[up[j]] {
+// 				continue
+// 			}
+// 			disjoint.Union(vertices[up[i]], vertices[up[j]])
+// 			break
+// 		}
+// 	}
 
-	}
+// 	//sort each edge to a corresponding component
+// 	for i := range g.Edges.Slice() {
+// 		var vertexRep int
+// 		found := false
+// 		for _, v := range g.Edges.Slice()[i].Vertices {
+// 			if balSepCache[v] {
+// 				continue
+// 			}
+// 			vertexRep = v
+// 			found = true
+// 			break
+// 		}
+// 		if !found {
+// 			isolatedEdges = append(isolatedEdges, g.Edges.Slice()[i])
+// 			continue
+// 		}
 
-	if len(up) > 0 {
-		upComp = vertices[up[0]].Find()
-	}
-	if len(low) > 0 {
-		lowComp = vertices[low[0]].Find()
-	}
+// 		slice, ok := comps[vertices[vertexRep].Find()]
+// 		if !ok {
+// 			newslice := make([]Edge, 0, g.Edges.Len())
+// 			comps[vertices[vertexRep].Find()] = newslice
+// 			slice = newslice
+// 		}
 
-	currentIndex := 0
-	// Store the components as graphs
-	for k, _ := range comps {
-		if k == upComp {
-			upCompIndex = currentIndex
-		}
-		if k == lowComp {
-			lowCompIndex = currentIndex
-		}
+// 		comps[vertices[vertexRep].Find()] = append(slice, g.Edges.Slice()[i])
 
-		g := Graph{Edges: Edges{slice: comps[k]}}
-		outputG = append(outputG, g)
-		currentIndex++
-	}
+// 	}
 
-	return outputG, upCompIndex, lowCompIndex, outputEdgesinS
-}
+// 	if len(up) > 0 {
+// 		upComp = vertices[up[0]].Find()
+// 	}
+// 	if len(low) > 0 {
+// 		elementStart := vertices[low[0]].Find()
+
+// 		for _, i := range low[1:] {
+// 			if elementStart != vertices[i].Find() {
+// 				lowCompIndex = -1
+// 			}
+// 		}
+// 		if lowCompIndex != -1 {
+// 			lowComp = elementStart
+// 		}
+// 	}
+
+// 	currentIndex := 0
+// 	// Store the components as graphs
+// 	for k, _ := range comps {
+// 		if k == upComp {
+// 			upCompIndex = currentIndex
+// 		}
+// 		if k == lowComp {
+// 			lowCompIndex = currentIndex
+// 		}
+
+// 		g := Graph{Edges: Edges{slice: comps[k]}}
+// 		outputG = append(outputG, g)
+// 		currentIndex++
+// 	}
+
+// 	return outputG, upCompIndex, lowCompIndex, isolatedEdges
+// }
 
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output []Edge
