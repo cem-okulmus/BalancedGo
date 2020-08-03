@@ -122,7 +122,7 @@ func main() {
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
-		fmt.Println("Parse Error:\n", parseError.Error(), "\n")
+		fmt.Print("Parse Error:\n", parseError.Error(), "\n\n")
 	}
 
 	if *cpuprofile != "" {
@@ -288,7 +288,7 @@ func main() {
 			for _, e := range reducedGraph.Edges.Slice() {
 				fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 			}
-			fmt.Println("Removed ", count, " vertex/vertices\n")
+			fmt.Print("Removed ", count, " vertex/vertices\n\n")
 		}
 	}
 
@@ -307,7 +307,7 @@ func main() {
 			fmt.Println("Graph after GYÖ:")
 			fmt.Println(reducedGraph)
 			fmt.Println("Reductions:")
-			fmt.Println(ops, "\n")
+			fmt.Print(ops, "\n\n")
 		}
 
 	}
