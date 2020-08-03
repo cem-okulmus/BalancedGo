@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"reflect"
 	"runtime"
@@ -118,6 +119,7 @@ func main() {
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
 	// update := flagSet.Bool("update", false, "Use adapted PACE format, and call algorithm with initial special Edges")
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
+	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
 	decomp := flagSet.String("decomp", "", "A decomposition to be used as a starting point, needs to have certain nodes marked (those which need to be updated).")
 
 	parseError := flagSet.Parse(os.Args[1:])
@@ -145,7 +147,7 @@ func main() {
 	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
-	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact) {
+	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
 		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/", Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
 		flagSet.VisitAll(func(f *flag.Flag) {
@@ -460,6 +462,39 @@ func main() {
 				k++
 			}
 			*width = k - 1 // for correct output
+		} else if *approx > 0 {
+			ch := make(chan int, 1)
+			go func() {
+				m := parsedGraph.Edges.Len()
+				k := int(math.Ceil(float64(m) / 2))
+				decomp = solver.FindDecomp(k)
+				k = decomp.CheckWidth()
+				solved := false
+
+				var newDecomp Decomp
+				for !solved {
+					newK := k - 1
+					if *hingeFlag {
+						newDecomp = hinget.DecompHinge(solver, newK, parsedGraph)
+					} else {
+						newDecomp = solver.FindDecomp(newK)
+					}
+					if newDecomp.Correct(parsedGraph) {
+						k = newDecomp.CheckWidth()
+						decomp = newDecomp
+					} else {
+						solved = true
+					}
+				}
+				ch <- k
+			}()
+
+			select {
+			case res := <-ch:
+				*width = res
+			case <-time.After(time.Duration(*approx) * time.Second):
+				*width = decomp.CheckWidth()
+			}
 		} else {
 			if *hingeFlag {
 				decomp = hinget.DecompHinge(solver, *width, parsedGraph)
