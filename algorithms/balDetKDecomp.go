@@ -117,7 +117,7 @@ OUTER:
 
 						det.cache = make(map[uint32]*CompCache)
 						result := det.findDecomp(K, comps[i], balsep.Vertices(), compsSp[i])
-						if !reflect.DeepEqual(result, Decomp{}) {
+						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
 						} else {
 							// res2 := b.findDecompBalSep(K, 1000, comps[i], append(compsSp[i], SepSpecial))
@@ -175,18 +175,6 @@ OUTER:
 					continue INNER
 				}
 
-				//TODO: Reroot only after all subtrees received
-				if currentDepth == 0 && decomp.SkipRerooting {
-					// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
-					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
-					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
-					// fmt.Println("Output from Balsep: ", decomp_deux)
-				} else {
-					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
-					decomp.Root = decomp.Root.Children[0]
-					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
-				}
-
 				subtrees = append(subtrees, decomp)
 			}
 
@@ -197,6 +185,18 @@ OUTER:
 	output := Node{Bag: balsep.Vertices(), Cover: balsep}
 
 	for _, s := range subtrees {
+		//TODO: Reroot only after all subtrees received
+		if currentDepth == 0 && s.SkipRerooting {
+			// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
+			// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
+			// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+			// fmt.Println("Output from Balsep: ", decomp_deux)
+		} else {
+			s.Root = s.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
+			s.Root = s.Root.Children[0]
+			// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
+		}
+
 		output.Children = append(output.Children, s.Root)
 	}
 

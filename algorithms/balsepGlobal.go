@@ -200,14 +200,15 @@ func worker(workernum int, H Graph, Sp []Special, edges Edges, found chan []int,
 
 	for gen.HasNext() {
 		if *finished {
-			log.Printf("Worker %d told to quit", workernum)
+			// log.Printf("Worker %d told to quit", workernum)
 			return
 		}
 		j := gen.Combination
 
-		if H.CheckBalancedSep(GetSubset(edges, j), Sp, BalFactor) {
+		if gen.BalSep || H.CheckBalancedSep(GetSubset(edges, j), Sp, BalFactor) {
+			gen.BalSep = true // cache result
 			found <- j
-			log.Printf("Worker %d \" won \"", workernum)
+			// log.Printf("Worker %d \" won \"", workernum)
 			gen.Confirm()
 			*finished = true
 			return

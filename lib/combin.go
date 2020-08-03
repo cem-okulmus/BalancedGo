@@ -56,6 +56,7 @@ type CombinationIterator struct {
 	stepSize    int
 	extended    bool
 	confirmed   bool
+	BalSep      bool // cache the result of balSep check
 }
 
 func GetCombin(n int, k int) CombinationIterator {
@@ -151,6 +152,7 @@ func (c *CombinationIterator) HasNext() bool {
 }
 
 func (c *CombinationIterator) Confirm() {
+	c.BalSep = false
 	c.confirmed = true
 }
 
