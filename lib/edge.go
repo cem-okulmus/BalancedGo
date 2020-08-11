@@ -423,7 +423,7 @@ func (e *Edges) Diff(other Edges) Edges {
 	}
 
 	for j := range e.slice {
-		if _, ok := encountered_other[e.slice[j].Name]; ok {
+		if _, ok := encountered_other[e.slice[j].Name]; !ok {
 			output = append(output, e.slice[j])
 		}
 	}
