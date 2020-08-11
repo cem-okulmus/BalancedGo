@@ -109,7 +109,7 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 		}
 
 		sepEdge := NewEdges([]Edge{*e})
-		hinges, _, gamma := h.hinge.GetComponents(sepEdge, []Special{})
+		hinges, _, gamma, _ := h.hinge.GetComponents(sepEdge, []Special{})
 
 		//fmt.Printf("Hinges of Sep: %v\n", hinges)
 

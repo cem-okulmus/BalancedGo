@@ -31,7 +31,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
 
-		comps, _, _ := H.GetComponents(balsep, []Special{})
+		comps, _, _, _ := H.GetComponents(balsep, []Special{})
 
 		var subtrees []Node
 		for _, c := range comps {
@@ -78,7 +78,7 @@ OUTER:
 
 		log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
 
-		comps, _, _ := H.GetComponents(balsep, []Special{})
+		comps, _, _, _ := H.GetComponents(balsep, []Special{})
 
 		ch := make(chan Decomp)
 		for _, c := range comps {

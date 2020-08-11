@@ -190,7 +190,7 @@ func (n Node) woundingDown(input Graph) []Scene {
 	}
 
 	sep := n.Cover.IntersectWith(n.Bag)
-	comps, _, _ := input.GetComponents(sep, []Special{})
+	comps, _, _, _ := input.GetComponents(sep, []Special{})
 
 	if len(n.Children) != len(comps) {
 		// start wounding up procedure

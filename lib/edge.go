@@ -410,3 +410,24 @@ func (e *Edges) Vertices() []int {
 
 	return e.vertices
 }
+
+//difference of edges based on names
+
+func (e *Edges) Diff(other Edges) Edges {
+	var output []Edge
+
+	encountered_other := make(map[int]struct{})
+
+	for i := range other.slice {
+		encountered_other[other.slice[i].Name] = Empty
+	}
+
+	for j := range e.slice {
+		if _, ok := encountered_other[e.slice[j].Name]; ok {
+			output = append(output, e.slice[j])
+		}
+	}
+
+	return NewEdges(output)
+
+}

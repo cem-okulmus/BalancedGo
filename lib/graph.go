@@ -58,7 +58,7 @@ func (g Graph) GetSubset(s []int) Edges {
 }
 
 // Uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map[int]int) {
+func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map[int]int, []Edge) {
 	var outputG []Graph
 	var outputS [][]Special
 
@@ -79,44 +79,44 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	}
 
 	// Merge together the connected components
-	for _, e := range g.Edges.Slice() {
+	for k := range g.Edges.Slice() {
 		//	fmt.Println("Have edge ", Edge{Vertices: e.Vertices})
 		// actualVertices := Diff(e.Vertices, balsepVert)
 		// for i := 0; i < len(actualVertices)-1 && i+1 < len(vertices); i++ {
 		// 	disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		// }
-		for i := 0; i < len(e.Vertices); i++ {
-			if balSepCache[e.Vertices[i]] {
+		for i := 0; i < len(g.Edges.Slice()[k].Vertices); i++ {
+			if balSepCache[g.Edges.Slice()[k].Vertices[i]] {
 
 				continue
 			}
-			for j := i + 1; j < len(e.Vertices); j++ {
-				if balSepCache[e.Vertices[j]] {
+			for j := i + 1; j < len(g.Edges.Slice()[k].Vertices); j++ {
+				if balSepCache[g.Edges.Slice()[k].Vertices[j]] {
 					continue
 				}
-				//			fmt.Println("Union of ", m[e.Vertices[i]], "and ", m[e.Vertices[j]])
-				disjoint.Union(vertices[e.Vertices[i]], vertices[e.Vertices[j]])
+				//			fmt.Println("Union of ", m[g.Edges.Slice()[k].Vertices[i]], "and ", m[g.Edges.Slice()[k].Vertices[j]])
+				disjoint.Union(vertices[g.Edges.Slice()[k].Vertices[i]], vertices[g.Edges.Slice()[k].Vertices[j]])
 				// j = i-1
 				break
 			}
 		}
 	}
 
-	for _, s := range Sp {
+	for k := range Sp {
 		//actualVertices := Diff(s.Vertices, balsepVert)
 		// for i := 0; i < len(actualVertices)-1 && i+1 < len(actualVertices); i++ {
 		// 	disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		// }
 
-		for i := 0; i < len(s.Vertices)-1; i++ {
-			if balSepCache[s.Vertices[i]] {
+		for i := 0; i < len(Sp[k].Vertices)-1; i++ {
+			if balSepCache[Sp[k].Vertices[i]] {
 				continue
 			}
-			for j := i + 1; j < len(s.Vertices); j++ {
-				if balSepCache[s.Vertices[j]] {
+			for j := i + 1; j < len(Sp[k].Vertices); j++ {
+				if balSepCache[Sp[k].Vertices[j]] {
 					continue
 				}
-				disjoint.Union(vertices[s.Vertices[i]], vertices[s.Vertices[j]])
+				disjoint.Union(vertices[Sp[k].Vertices[i]], vertices[Sp[k].Vertices[j]])
 				// j = i-1
 				break
 			}
@@ -124,8 +124,10 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	}
 
+	var isolatedEdges []Edge
+
 	//sort each edge and special edge to a corresponding component
-	for _, e := range g.Edges.Slice() {
+	for i := range g.Edges.Slice() {
 		//actualVertices := Diff(e.Vertices, balsepVert)
 		// if len(actualVertices) > 0 {
 		// 	edges := comps[vertices[actualVertices[0]].Find()]
@@ -133,7 +135,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		// }
 		var vertexRep int
 		found := false
-		for _, v := range e.Vertices {
+		for _, v := range g.Edges.Slice()[i].Vertices {
 			if balSepCache[v] {
 				continue
 			}
@@ -142,6 +144,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			break
 		}
 		if !found {
+			isolatedEdges = append(isolatedEdges, g.Edges.Slice()[i])
 			continue
 		}
 
@@ -152,12 +155,12 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			slice = newslice
 		}
 
-		comps[vertices[vertexRep].Find()] = append(slice, e)
+		comps[vertices[vertexRep].Find()] = append(slice, g.Edges.Slice()[i])
 
 	}
 
 	var isolatedSp []Special
-	for _, s := range Sp {
+	for i := range Sp {
 		// actualVertices := Diff(s.Vertices, balsepVert)
 		// if len(actualVertices) > 0 {
 		// 	compsSp[vertices[actualVertices[0]].Find()] = append(compsSp[vertices[actualVertices[0]].Find()], s)
@@ -166,7 +169,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		// }
 		var vertexRep int
 		found := false
-		for _, v := range s.Vertices {
+		for _, v := range Sp[i].Vertices {
 			if balSepCache[v] {
 				continue
 			}
@@ -175,7 +178,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			break
 		}
 		if !found {
-			isolatedSp = append(isolatedSp, s)
+			isolatedSp = append(isolatedSp, Sp[i])
 			continue
 		}
 
@@ -188,7 +191,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			slice = newslice
 		}
 
-		compsSp[vertices[vertexRep].Find()] = append(slice, s)
+		compsSp[vertices[vertexRep].Find()] = append(slice, Sp[i])
 
 	}
 
@@ -222,7 +225,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		outputS = append(outputS, []Special{s})
 	}
 
-	return outputG, outputS, edgeToComp
+	return outputG, outputS, edgeToComp, isolatedEdges
 }
 
 // // Uses Disjoint Set data structure to compute connected components
@@ -407,7 +410,7 @@ func (g Graph) CheckBalancedSep(sep Edges, sp []Special, balancedFactor int) boo
 	// log.Printf("Current present SP %+v\n", sp)
 
 	//balancedness condition
-	comps, compSps, _ := g.GetComponents(sep, sp)
+	comps, compSps, _, _ := g.GetComponents(sep, sp)
 	// log.Printf("Components of sep %+v\n", comps)
 	for i := range comps {
 		if comps[i].Edges.Len()+len(compSps[i]) > (((g.Edges.Len() + len(sp)) * (balancedFactor - 1)) / balancedFactor) {

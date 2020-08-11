@@ -18,7 +18,6 @@ type DetKDecomp struct {
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
-	Divide    bool
 	cache     map[uint32]*CompCache
 	cacheMux  sync.RWMutex
 }
@@ -114,12 +113,6 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(Sp) <= 1 {
-		if d.Divide {
-			out := baseCaseDetK(H, []Special{})
-			out.Root.LowConnecting = true
-
-			return out
-		}
 		return baseCaseDetK(H, Sp)
 	}
 
@@ -187,7 +180,7 @@ OUTER:
 				for true {
 
 					// log.Println("Sep chosen ", sepActual, " out ", out)
-					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
+					comps, compsSp, _, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
 					d.cacheMux.RLock()
@@ -235,12 +228,7 @@ OUTER:
 					// 	}
 					// }
 
-					lowFlag := false
 					for i := range comps {
-						if comps[i].Edges.Len() == 0 && d.Divide {
-							lowFlag = true //since special Edge would connect to current sep, if accepting
-							continue
-						}
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
@@ -298,7 +286,7 @@ OUTER:
 						subtrees = append(subtrees, decomp.Root)
 					}
 
-					return Decomp{Graph: H, Root: Node{LowConnecting: lowFlag, Bag: bag, Cover: sepActual, Children: subtrees}}
+					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
 
@@ -380,12 +368,7 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(Sp) <= 1 {
-		if d.Divide {
-			out := baseCaseDetK(H, []Special{})
-			out.Root.LowConnecting = true
 
-			return out
-		}
 		return baseCaseDetK(H, Sp)
 	}
 
@@ -482,7 +465,7 @@ OUTER:
 					// } else {
 					//
 					// }
-					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
+					comps, compsSp, _, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
 					d.cacheMux.RLock()
@@ -513,12 +496,8 @@ OUTER:
 					var subtrees []Node
 					bag := Inter(sepActual.Vertices(), verticesExtended)
 
-					lowFlag := false
 					for i := range comps {
-						if comps[i].Edges.Len() == 0 && d.Divide {
-							lowFlag = true //since special Edge would connect to current sep, if accepting
-							continue
-						}
+
 						decomp := d.findDecompUpdate(K, comps[i], bag, compsSp[i], savedScenes)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
@@ -576,7 +555,7 @@ OUTER:
 						subtrees = append(subtrees, decomp.Root)
 					}
 
-					return Decomp{Graph: H, Root: Node{LowConnecting: lowFlag, Bag: bag, Cover: sepActual, Children: subtrees}}
+					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
 
