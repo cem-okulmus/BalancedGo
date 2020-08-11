@@ -156,7 +156,7 @@ OUTER:
 				for true {
 
 					// log.Println("Sep chosen ", sepActual, " out ", out)
-					comps, compsSp, _ := H.GetComponents(sepActual, Sp)
+					comps, compsSp, _, _ := H.GetComponents(sepActual, Sp)
 
 					//check chache for previous encounters
 					d.cacheMux.RLock()
@@ -204,7 +204,6 @@ OUTER:
 					//  }
 					// }
 
-					lowFlag := false
 					for i := range comps {
 
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i], depth+1)
@@ -264,7 +263,7 @@ OUTER:
 						subtrees = append(subtrees, decomp.Root)
 					}
 
-					return Decomp{Graph: H, Root: Node{LowConnecting: lowFlag, Bag: bag, Cover: sepActual, Children: subtrees}}
+					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
 

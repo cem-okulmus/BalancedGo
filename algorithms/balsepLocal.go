@@ -72,7 +72,7 @@ OUTER:
 		// balsepOrig := balsep
 	INNER:
 		for {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %v\n", comps)
 
@@ -171,7 +171,7 @@ OUTER:
 
 	INNER:
 		for !decomposed {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %v\n", comps)
 
@@ -288,7 +288,7 @@ OUTER:
 		// log.Printf("Balanced Sep chosen: %+v\n", balsep)
 	INNER:
 		for !decomposed {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -371,7 +371,7 @@ OUTER:
 		//balsepOrig := balsep
 	INNER:
 		for {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %v\n", comps)
 

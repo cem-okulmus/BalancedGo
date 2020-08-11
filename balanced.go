@@ -110,6 +110,7 @@ func main() {
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
 	logDetKAlgo := flagSet.Bool("logdetk", false, "Use log-depth version of DetKDecomp algorithm")
+	logK := flagSet.Bool("logk", false, "Use LogKDecomp algoritm")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
 	// divideTest := flagSet.Bool("divide", false, "Use divideKDecomp algoritm")
@@ -406,6 +407,12 @@ func main() {
 	if *detKTest {
 		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 		solver = det
+		chosen++
+	}
+
+	if *logK {
+		logK := LogKDecomp{Graph: parsedGraph, K: *width}
+		solver = logK
 		chosen++
 	}
 

@@ -75,7 +75,7 @@ OUTER:
 
 	INNER:
 		for !decomposed {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -312,7 +312,7 @@ OUTER:
 
 	INNER:
 		for !decomposed {
-			comps, compsSp, _ := H.GetComponents(balsep, Sp)
+			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 

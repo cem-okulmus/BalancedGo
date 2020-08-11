@@ -10,16 +10,15 @@ import (
 // A Node is the root of a labelled tree, where the labels are the bag
 // and the (edge) cover
 type Node struct {
-	num           int
-	Up            []int
-	Low           []int
-	Bag           []int
-	Cover         Edges
-	Children      []Node
-	LowConnecting bool //used by Divide to determine reorder points
-	Star          bool // used to indicate nodes which need to be updated
-	parPointer    *Node
-	vertices      []int
+	num        int
+	Up         []int
+	Low        []int
+	Bag        []int
+	Cover      Edges
+	Children   []Node
+	Star       bool // used to indicate nodes which need to be updated
+	parPointer *Node
+	vertices   []int
 }
 
 func (n Node) printUp() string {
@@ -76,11 +75,8 @@ func indent(i int) string {
 func (n Node) stringIdent(i int) string {
 	var buffer bytes.Buffer
 
-	if n.LowConnecting {
-		buffer.WriteString("\n" + indent(i) + "LowConn: {" + strconv.FormatBool(n.LowConnecting) + "} Bag: {" + n.printBag())
-	} else {
-		buffer.WriteString("\n" + indent(i) + "Bag: {" + n.printBag() + "}")
-	}
+	buffer.WriteString("\n" + indent(i) + "Bag: {" + n.printBag() + "}")
+
 	if len(n.Up) > 0 || len(n.Low) > 0 {
 		buffer.WriteString("Up:{ " + n.printUp() + "} Low:{" + n.printLow() + "}")
 	}
@@ -343,22 +339,17 @@ OUTER:
 	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
 }
 
-func (n *Node) CombineNodes(subtree Node) *Node {
-
-	if n.LowConnecting {
-		n.LowConnecting = false
-		n.Children = append(n.Children, subtree)
-		return n
-	}
+// attach subtree to n, via the connecting special edge
+func (n *Node) CombineNodes(subtree Node, connecting Special) *Node {
 
 	for i := range n.Children {
-		result := n.Children[i].CombineNodes(subtree)
-		if !reflect.DeepEqual(*result, Node{}) {
-			n.Children[i] = *result
+		if Subset(n.Children[i].Vertices(), connecting.Vertices) {
+			n.Children[i] = subtree // replace special edge with subtree
 			return n
 		}
 	}
 
+	// failure case, no connecting node was found inside n
 	return &Node{}
 }
 
