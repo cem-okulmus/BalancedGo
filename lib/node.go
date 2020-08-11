@@ -342,6 +342,10 @@ OUTER:
 // attach subtree to n, via the connecting special edge
 func (n *Node) CombineNodes(subtree Node, connecting Special) *Node {
 
+	if Subset(n.Vertices(), connecting.Vertices) {
+		return &subtree // replace special edge with subtree
+	}
+
 	for i := range n.Children {
 		if Subset(n.Children[i].Vertices(), connecting.Vertices) {
 			n.Children[i] = subtree // replace special edge with subtree

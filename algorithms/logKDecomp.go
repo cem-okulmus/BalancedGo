@@ -107,6 +107,7 @@ func (l LogKDecomp) findHD(H Graph, Sp []Special, Conn []int, allowed Edges) Dec
 	// Set up iterator for parent
 	genParent := GetCombin(allowed.Len(), l.K)
 
+	// checks all possibles nodes in H, together with Child loops, it covers all parent-child pairings
 PARENT:
 	for genParent.HasNext() {
 
@@ -169,6 +170,7 @@ PARENT:
 
 		genChild := GetCombin(allowed.Len(), l.K)
 
+		//Child loop checks all possible child nodes for parent
 	CHILD:
 		for genChild.HasNext() {
 
@@ -206,6 +208,8 @@ PARENT:
 				}
 			}
 
+			//Computing subcomponents of Child
+
 			var subtrees []Node
 			for x := range comps_c {
 				Conn_x := Inter(append(comps_c[x].Vertices(), VerticesSpecial(compsSp_c[x])...), parentλ.Vertices())
@@ -221,6 +225,8 @@ PARENT:
 
 			}
 
+			//Computing upper component
+
 			var comp_up Graph
 			var compSp_up []Special
 			tempEdgeSlice := []Edge{}
@@ -235,8 +241,10 @@ PARENT:
 
 			comp_up.Edges = NewEdges(tempEdgeSlice)
 
-			allowedReduced := allowed.Diff(comp_up.Edges)
+			//Reducing the allowed edges
+			allowedReduced := allowed.Diff(comp_low.Edges)
 
+			// adding new Special Edge to connect Child to comp_up
 			specialChild := Special{Vertices: childχ, Edges: childλ}
 
 			decompUp := l.findHD(comp_up, append(compSp_up, specialChild), Conn, allowedReduced)
@@ -247,12 +255,11 @@ PARENT:
 			}
 			subtrees = append(subtrees, decompUp.Root)
 
+			// rearrange subtrees to form one that covers total of H
 			rootChild := Node{Bag: childχ, Cover: childλ, Children: subtrees}
-
 			finalRoot := l.attachingSubtrees(decompUp.Root, rootChild, specialChild)
 
 			log.Printf("Produced Decomp: %v\n", finalRoot)
-
 			return Decomp{Graph: H, Root: finalRoot}
 
 		}
