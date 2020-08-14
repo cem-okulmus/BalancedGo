@@ -342,19 +342,26 @@ OUTER:
 // attach subtree to n, via the connecting special edge
 func (n *Node) CombineNodes(subtree Node, connecting Special) *Node {
 
-	if Subset(n.Vertices(), connecting.Vertices) {
-		return &subtree // replace special edge with subtree
+	// leaf that covers the connecting vertices
+	if Subset(n.Bag, connecting.Vertices) && len(n.Children) == 0 {
+		n.Children = subtree.Children
+		log.Println("Base case activated at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
+		return n
 	}
 
 	for i := range n.Children {
-		if Subset(n.Children[i].Vertices(), connecting.Vertices) {
-			n.Children[i] = subtree // replace special edge with subtree
+		result := n.Children[i].CombineNodes(subtree, connecting)
+
+		if result != nil {
+			log.Println("Child of node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover, " activated")
+			n.Children[i] = *result
 			return n
 		}
 	}
 
+	log.Println("encountered error case at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
 	// failure case, no connecting node was found inside n
-	return &Node{}
+	return nil
 }
 
 func (n Node) connected(v int, parentContainsV bool) (bool, bool) {

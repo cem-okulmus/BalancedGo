@@ -75,11 +75,13 @@ func (l LogKDecomp) baseCase(H Graph, Sp []Special, lenAE int) Decomp {
 
 //attach the two subtrees to form one
 func (l LogKDecomp) attachingSubtrees(subtreeAbove Node, subtreeBelow Node, connecting Special) Node {
-	// log.Println("Two Nodes enter: ", subtreeAbove, subtreeBelow)
+	log.Println("Two Nodes enter: ", subtreeAbove, subtreeBelow)
+	log.Println("Connecting: ", PrintVertices(connecting.Vertices))
 	// up = Inter(up, parent.Vertices())
 	//finding connecting leaf in parent
 	leaf := subtreeAbove.CombineNodes(subtreeBelow, connecting)
-	if reflect.DeepEqual(*leaf, Node{}) {
+
+	if leaf == nil {
 		fmt.Println("\n \n Connection ", PrintVertices(connecting.Vertices))
 		fmt.Println("subtreeAbove ", subtreeAbove)
 
@@ -89,7 +91,7 @@ func (l LogKDecomp) attachingSubtrees(subtreeAbove Node, subtreeBelow Node, conn
 	// //attaching subtree to parent
 	// leaf.Children = []Node{subtree}
 	// log.Println("Leaf ", leaf)
-	// log.Println("One Node leaves: ", parent)
+	log.Println("One Node leaves: ", leaf)
 	return *leaf
 }
 
@@ -122,13 +124,9 @@ PARENT:
 
 		lowFound := false
 
-		log.Printf("Parent cover chosen: %v\n", Graph{Edges: parentλ})
-
-		log.Printf("Comps of Parent: %v\n", comps_p)
-
 		// Check if lower component present
 		for i := range comps_p {
-			if comps_p[i].Edges.Len()+len(compsSp_p[i]) >= (H.Edges.Len() + len(Sp)/2) {
+			if comps_p[i].Edges.Len()+len(compsSp_p[i]) > (H.Edges.Len()+len(Sp))/2 {
 				lowFound = true
 				comp_low_index = i //keep track of the index for composing comp_up later
 				comp_low = comps_p[i]
@@ -138,14 +136,19 @@ PARENT:
 
 		// Check if Parent is possible root
 		if !lowFound {
-			log.Println("parentλ is bal. sep. !")
+
 			// Connectivity Check
 			if !Subset(Conn, parentλ.Vertices()) {
-				log.Println("parent breaks connectivity: ")
-				log.Println("Conn: ", PrintVertices(Conn))
-				log.Println("V(parentλ) = ", PrintVertices(parentλ.Vertices()))
+				// log.Println("parent breaks connectivity: ")
+				// log.Println("Conn: ", PrintVertices(Conn))
+				// log.Println("V(parentλ) = ", PrintVertices(parentλ.Vertices()))
 				continue PARENT
 			}
+
+			log.Printf("Parent cover chosen: %v\n", Graph{Edges: parentλ})
+
+			log.Printf("Comps of Parent: %v\n", comps_p)
+			log.Println("parentλ is bal. sep. !")
 
 			var subtrees []Node
 			for y := range comps_p {
@@ -162,9 +165,21 @@ PARENT:
 
 			}
 
-			root := Node{Bag: Inter(parentλ.Vertices(), H.Vertices()), Cover: parentλ, Children: subtrees}
+			root := Node{Bag: Inter(parentλ.Vertices(), append(H.Vertices(), Conn...)), Cover: parentλ, Children: subtrees}
 			return Decomp{Graph: H, Root: root}
 		}
+
+		//Connectivity Check Parent
+		vertCompLow := append(comp_low.Vertices(), VerticesSpecial(compSp_low)...)
+
+		if !Subset(Inter(vertCompLow, Conn), parentλ.Vertices()) {
+			// log.Println("Parent breaks connectivity wrt. comp_low")
+			continue PARENT
+		}
+
+		log.Printf("Parent cover chosen: %v\n", Graph{Edges: parentλ})
+
+		log.Printf("Comps of Parent: %v\n", comps_p)
 
 		log.Println("Lower comp: \n", comp_low)
 
@@ -177,42 +192,40 @@ PARENT:
 			childλ := GetSubset(allowed, genChild.Combination)
 			genChild.Confirm()
 
-			log.Printf("Child chosen: %v\n", Graph{Edges: childλ})
-
-			vertCompLow := append(comp_low.Vertices(), VerticesSpecial(compSp_low)...)
-
-			childχ := Inter(childλ.Vertices(), vertCompLow)
+			childχ := Inter(childλ.Vertices(), append(vertCompLow, Conn...))
 
 			// Connectivity check
 			if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
-				log.Println("Child ", childλ, " breaks connectivity!")
+				// log.Println("Child ", childλ, " breaks connectivity!")
 				continue CHILD
 			}
 
 			// Check if progress made (TODO: implement this properly with minimal covers + extensions !)
 			if Subset(childχ, parentλ.Vertices()) {
-				log.Println("No progress made!")
+				// log.Println("No progress made!")
 				continue CHILD
 			}
 
-			comps_c, compsSp_c, _, _ := comp_low.GetComponents(childλ, Sp)
+			comps_c, compsSp_c, _, _ := comp_low.GetComponents(childλ, compSp_low)
 
-			log.Printf("Comps of Child: %v\n", comps_c)
-			log.Println("Size of H' : ", H.Edges.Len()+len(Sp))
+			// log.Println("Size of H' : ", H.Edges.Len()+len(Sp))
 
 			// Check childχ is balanced separator
 			for i := range comps_c {
 				if comps_c[i].Edges.Len()+len(compsSp_c[i]) > (H.Edges.Len()+len(Sp))/2 {
-					log.Println("Child is not a bal. sep. !")
+					// log.Println("Child is not a bal. sep. !")
 					continue CHILD
 				}
 			}
+
+			log.Printf("Child chosen: %v\n", Graph{Edges: childλ})
+			log.Printf("Comps of Child: %v\n", comps_c)
 
 			//Computing subcomponents of Child
 
 			var subtrees []Node
 			for x := range comps_c {
-				Conn_x := Inter(append(comps_c[x].Vertices(), VerticesSpecial(compsSp_c[x])...), parentλ.Vertices())
+				Conn_x := Inter(append(comps_c[x].Vertices(), VerticesSpecial(compsSp_c[x])...), childχ)
 
 				decomp := l.findHD(comps_c[x], compsSp_c[x], Conn_x, allowed)
 				if reflect.DeepEqual(decomp, Decomp{}) {
@@ -228,6 +241,8 @@ PARENT:
 			//Computing upper component
 
 			var comp_up Graph
+			var decompUp Decomp
+			var specialChild Special
 			var compSp_up []Special
 			tempEdgeSlice := []Edge{}
 
@@ -239,25 +254,38 @@ PARENT:
 				}
 			}
 
-			comp_up.Edges = NewEdges(tempEdgeSlice)
+			//TODO: if no comps_p, other than comp_low, just use parent as is
 
-			//Reducing the allowed edges
-			allowedReduced := allowed.Diff(comp_low.Edges)
+			if len(tempEdgeSlice) > 0 {
 
-			// adding new Special Edge to connect Child to comp_up
-			specialChild := Special{Vertices: childχ, Edges: childλ}
+				comp_up.Edges = NewEdges(tempEdgeSlice)
 
-			decompUp := l.findHD(comp_up, append(compSp_up, specialChild), Conn, allowedReduced)
+				log.Println("Upper component:", comp_up)
 
-			if reflect.DeepEqual(decompUp, Decomp{}) {
-				log.Println("Rejecting parent as root")
-				continue PARENT
+				//Reducing the allowed edges
+				allowedReduced := allowed.Diff(comp_low.Edges)
+
+				// adding new Special Edge to connect Child to comp_up
+				specialChild = Special{Vertices: childχ, Edges: childλ}
+
+				decompUp = l.findHD(comp_up, append(compSp_up, specialChild), Conn, allowedReduced)
+
+				if reflect.DeepEqual(decompUp, Decomp{}) {
+					log.Println("Rejecting parent as root")
+					continue PARENT
+				}
+
 			}
-			subtrees = append(subtrees, decompUp.Root)
 
 			// rearrange subtrees to form one that covers total of H
 			rootChild := Node{Bag: childχ, Cover: childλ, Children: subtrees}
-			finalRoot := l.attachingSubtrees(decompUp.Root, rootChild, specialChild)
+
+			var finalRoot Node
+			if len(tempEdgeSlice) > 0 {
+				finalRoot = l.attachingSubtrees(decompUp.Root, rootChild, specialChild)
+			} else {
+				finalRoot = rootChild
+			}
 
 			log.Printf("Produced Decomp: %v\n", finalRoot)
 			return Decomp{Graph: H, Root: finalRoot}
