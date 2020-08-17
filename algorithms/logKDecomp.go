@@ -98,7 +98,7 @@ func (l LogKDecomp) attachingSubtrees(subtreeAbove Node, subtreeBelow Node, conn
 func (l LogKDecomp) findHD(H Graph, Sp []Special, Conn []int, allowed Edges) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	log.Printf("Current Special Edges: %v\n\n", Sp)
+	log.Printf("Current Special Edges: %v\n", Sp)
 	log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 
 	// Base Case
@@ -164,8 +164,10 @@ PARENT:
 				subtrees = append(subtrees, decomp.Root)
 
 			}
+			//all vertices within (H ∪ Sp)
+			Vertices_H := append(H.Vertices(), VerticesSpecial(Sp)...)
 
-			root := Node{Bag: Inter(parentλ.Vertices(), append(H.Vertices(), Conn...)), Cover: parentλ, Children: subtrees}
+			root := Node{Bag: Inter(parentλ.Vertices(), Vertices_H), Cover: parentλ, Children: subtrees}
 			return Decomp{Graph: H, Root: root}
 		}
 
@@ -192,7 +194,7 @@ PARENT:
 			childλ := GetSubset(allowed, genChild.Combination)
 			genChild.Confirm()
 
-			childχ := Inter(childλ.Vertices(), append(vertCompLow, Conn...))
+			childχ := Inter(childλ.Vertices(), vertCompLow)
 
 			// Connectivity check
 			if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
