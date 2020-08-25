@@ -176,39 +176,39 @@ OUTER:
 
 }
 
-func Inter(as, bs []int) []int {
-	encountered_b := make(map[int]struct{})
-	for _, b := range bs {
-		encountered_b[b] = Empty
-	}
-
-	var output []int
-
-	for _, a := range as {
-		if _, ok := encountered_b[a]; ok {
-			output = append(output, a)
-		}
-	}
-
-	return output
-
-}
-
 // func Inter(as, bs []int) []int {
-// 	var output []int
-// OUTER:
-// 	for _, a := range as {
-// 		for _, b := range bs {
-// 			if a == b {
-// 				output = append(output, a)
-// 				continue OUTER
-// 			}
-// 		}
+// 	encountered_b := make(map[int]struct{})
+// 	for _, b := range bs {
+// 		encountered_b[b] = Empty
+// 	}
 
+// 	var output []int
+
+// 	for _, a := range as {
+// 		if _, ok := encountered_b[a]; ok {
+// 			output = append(output, a)
+// 		}
 // 	}
 
 // 	return output
+
 // }
+
+func Inter(as, bs []int) []int {
+	var output []int
+OUTER:
+	for _, a := range as {
+		for _, b := range bs {
+			if a == b {
+				output = append(output, a)
+				continue OUTER
+			}
+		}
+
+	}
+
+	return output
+}
 
 func Subset(as []int, bs []int) bool {
 	if len(as) == 0 {

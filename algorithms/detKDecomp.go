@@ -116,7 +116,7 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 		return baseCaseDetK(H, Sp)
 	}
 
-	gen := NewCover(K, conn, bound, H.Edges)
+	gen := NewCover(K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
@@ -372,7 +372,7 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special
 		return baseCaseDetK(H, Sp)
 	}
 
-	gen := NewCover(K, conn, bound, H.Edges)
+	gen := NewCover(K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
