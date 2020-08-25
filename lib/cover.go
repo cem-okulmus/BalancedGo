@@ -23,7 +23,7 @@ type Cover struct {
 	first      bool
 }
 
-func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
+func NewCover(K int, vertices []int, bound Edges, compVertices []int) Cover {
 
 	covered := make(map[int]int8)
 
@@ -42,7 +42,7 @@ func NewCover(K int, vertices []int, bound Edges, comp Edges) Cover {
 			if ok {
 				sum++
 			} else {
-				if Mem(comp.Vertices(), v) {
+				if Mem(compVertices, v) {
 					if !inComp[i] {
 						inComp[i] = true
 					}
@@ -213,7 +213,7 @@ func testCover() {
 	//comp := Edges{Slice: []Edge{e3, e4}}
 	//	sep := Edges{Slice: []Edge{e1, e2}}
 
-	c := NewCover(3, []int{3, 4, 5, 6}, edges, edges)
+	c := NewCover(3, []int{3, 4, 5, 6}, edges, edges.Vertices())
 
 	for c.HasNext {
 		out := c.NextSubset()
@@ -264,7 +264,7 @@ func test2Cover() {
 	fmt.Println("bound, ", bound)
 	fmt.Println("Conn, ", Edge{Vertices: conn})
 
-	gen := NewCover(2, conn, bound, parsedGraph.Edges)
+	gen := NewCover(2, conn, bound, parsedGraph.Edges.Vertices())
 
 	for gen.HasNext {
 		gen.NextSubset()

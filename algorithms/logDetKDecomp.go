@@ -87,7 +87,7 @@ func (d *LogDetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special, d
 		return baseCaseDetK(H, Sp)
 	}
 
-	gen := NewCover(K, conn, bound, H.Edges)
+	gen := NewCover(K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
