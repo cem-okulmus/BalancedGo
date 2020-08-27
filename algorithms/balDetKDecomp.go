@@ -115,7 +115,7 @@ OUTER:
 						// edgesFromSpecial := EdgesSpecial(Sp)
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
-						det.cache = make(map[uint32]*CompCache)
+						det.cache = make(map[uint64]*CompCache)
 						result := det.findDecomp(K, comps[i], balsep.Vertices(), compsSp[i])
 						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
@@ -352,7 +352,7 @@ OUTER:
 						// edgesFromSpecial := EdgesSpecial(Sp)
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
-						det.cache = make(map[uint32]*CompCache)
+						det.cache = make(map[uint64]*CompCache)
 						result := det.findDecompUpdate(K, comps[i], balsep.Vertices(), compsSp[i], savedScenes)
 						if !reflect.DeepEqual(result, Decomp{}) {
 							result.SkipRerooting = true

@@ -16,7 +16,7 @@ type LogDetKDecomp struct {
 	Graph    Graph
 	SubEdge  bool
 	Depth    int
-	cache    map[uint32]*CompCache
+	cache    map[uint64]*CompCache
 	cacheMux sync.RWMutex
 }
 
@@ -275,7 +275,7 @@ OUTER:
 }
 
 func (d *LogDetKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
-	d.cache = make(map[uint32]*CompCache)
+	d.cache = make(map[uint64]*CompCache)
 
 	// using log(N) + K as the depth here
 	d.Depth = int(math.Ceil(math.Log2(float64(d.Graph.Edges.Len())) + float64(K)))

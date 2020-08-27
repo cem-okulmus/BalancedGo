@@ -254,7 +254,7 @@ func test() {
 	parsedGraph, parse := GetGraph(string(dat))
 
 	e1 := parse.GetEdge("54020(1,2,5,6,7,8,9,10,12,14,17,18,19,22,23,25)")
-	fmt.Println(e1.FullString(), "\n\n")
+	fmt.Print(e1.FullString(), "\n\n\n")
 
 	for _, e := range parsedGraph.Edges.Slice() {
 		fmt.Println(e.FullString())

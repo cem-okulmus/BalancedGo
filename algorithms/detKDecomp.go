@@ -10,15 +10,15 @@ import (
 )
 
 type CompCache struct {
-	Succ []uint32
-	Fail []uint32
+	Succ []uint64
+	Fail []uint64
 }
 
 type DetKDecomp struct {
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
-	cache     map[uint32]*CompCache
+	cache     map[uint64]*CompCache
 	cacheMux  sync.RWMutex
 }
 
@@ -298,7 +298,7 @@ OUTER:
 }
 
 func (d DetKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
-	d.cache = make(map[uint32]*CompCache)
+	d.cache = make(map[uint64]*CompCache)
 	return d.findDecomp(K, currentGraph, []int{}, Sp)
 }
 
@@ -321,7 +321,7 @@ func (d DetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
 var counterMap map[string]int
 
 func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
-	d.cache = make(map[uint32]*CompCache)
+	d.cache = make(map[uint64]*CompCache)
 
 	if log.Flags() == 0 {
 		counterMap = make(map[string]int)

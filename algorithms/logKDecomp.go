@@ -5,13 +5,60 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
 type LogKDecomp struct {
-	Graph Graph
-	K     int
+	Graph    Graph
+	K        int
+	cache    map[uint32]*CompCache
+	cacheMux sync.RWMutex
+}
+
+func (l *LogKDecomp) addPositive(sep []int, comp Graph) {
+	l.cacheMux.Lock()
+	l.cache[IntHash(sep)].Succ = append(l.cache[IntHash(sep)].Succ, comp.Edges.Hash())
+	l.cacheMux.Unlock()
+}
+
+func (l *LogKDecomp) addNegative(sep []int, comp Graph) {
+	l.cacheMux.Lock()
+	l.cache[IntHash(sep)].Fail = append(l.cache[IntHash(sep)].Fail, comp.Edges.Hash())
+	l.cacheMux.Unlock()
+}
+
+func (l *LogKDecomp) checkNegative(sep []int, comp Graph) bool {
+	l.cacheMux.RLock()
+	defer l.cacheMux.RUnlock()
+
+	compCachePrev, _ := l.cache[IntHash(sep)]
+	for i := range compCachePrev.Fail {
+		if comp.Edges.Hash() == compCachePrev.Fail[i] {
+			//	log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
+			return true
+		}
+
+	}
+
+	return false
+}
+
+func (l *LogKDecomp) checkPositive(sep []int, comp Graph) bool {
+	l.cacheMux.RLock()
+	defer l.cacheMux.RUnlock()
+
+	compCachePrev, _ := l.cache[IntHash(sep)]
+	for i := range compCachePrev.Fail {
+		if comp.Edges.Hash() == compCachePrev.Succ[i] {
+			//	log.Println("Comp ", comp, " known as negative for sep ", sep)
+			return true
+		}
+
+	}
+
+	return false
 }
 
 func (l LogKDecomp) Name() string {
@@ -265,6 +312,25 @@ PARENT:
 
 				comps_c, compsSp_c, _, _ := comp_low.GetComponents(childλ, compSp_low)
 
+				//check chache for previous encounters
+				l.cacheMux.RLock()
+				_, ok := l.cache[IntHash(childχ)]
+				l.cacheMux.RUnlock()
+				if !ok {
+					var newCache CompCache
+					l.cacheMux.Lock()
+					l.cache[IntHash(childχ)] = &newCache
+					l.cacheMux.Unlock()
+
+				} else {
+					for j := range comps_c {
+						if l.checkNegative(childχ, comps_c[j]) { //TODO: Add positive check and cutNodes
+							//fmt.Println("Skipping a sep", sepActual)
+							continue CHILD_INNER
+						}
+					}
+				}
+
 				// log.Println("Size of H' : ", H.Edges.Len()+len(Sp))
 
 				// Check childχ is balanced separator
@@ -286,6 +352,7 @@ PARENT:
 
 					decomp := l.findHD(comps_c[x], compsSp_c[x], Conn_x, allowed)
 					if reflect.DeepEqual(decomp, Decomp{}) {
+						l.addNegative(childχ, comps_c[x])
 						log.Println("Rejecting parent as root")
 						continue CHILD_INNER
 					}
@@ -311,9 +378,24 @@ PARENT:
 					}
 				}
 
-				//TODO: if no comps_p, other than comp_low, just use parent as is
+				// if no comps_p, other than comp_low, just use parent as is
+				if len(comps_p) == 1 {
+					comp_up.Edges = parentλ
 
-				if len(tempEdgeSlice) > 0 {
+					// adding new Special Edge to connect Child to comp_up
+					specialChild = Special{Vertices: childχ, Edges: childλ}
+
+					decompUp = Decomp{Graph: comp_up, Root: Node{Bag: parentλ.Vertices(), Cover: parentλ,
+						Children: []Node{Node{Bag: childχ}}}}
+
+					if !Subset(Conn, parentλ.Vertices()) {
+
+						log.Println("Comps of p", comps_p)
+
+						log.Panicln("Conn not covered in parent, Wait, what?")
+					}
+
+				} else if len(tempEdgeSlice) > 0 { // otherwise compute decomp for comp_up
 
 					comp_up.Edges = NewEdges(tempEdgeSlice)
 
@@ -328,6 +410,8 @@ PARENT:
 					decompUp = l.findHD(comp_up, append(compSp_up, specialChild), Conn, allowedReduced)
 
 					if reflect.DeepEqual(decompUp, Decomp{}) {
+
+						l.addNegative(childχ, comp_up)
 						log.Println("Rejecting parent as root")
 						continue CHILD_INNER
 					}
