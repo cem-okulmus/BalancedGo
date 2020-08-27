@@ -13,7 +13,7 @@ import (
 type Edge struct {
 	Name     int
 	Vertices []int // use integers for vertices
-	hashMux  sync.Mutex
+	hashMux  *sync.Mutex
 }
 
 func (e Edge) FullString() string {
@@ -68,7 +68,7 @@ func (e Edge) String() string {
 type Edges struct {
 	slice    []Edge
 	vertices []int
-	hash     *uint32
+	hash     *uint64
 	hashMux  sync.Mutex
 }
 
