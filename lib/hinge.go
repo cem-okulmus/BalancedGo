@@ -217,21 +217,21 @@ func (n Node) RerootEdge(edge []int) Node {
 	}
 	p := n.parentSubset(edge)
 	p = n.Reroot(p)
-	var child Node
+	var childIndex int
 
 	// remove node containing edge from children of parent
-	var newparentchildren []Node
-	for _, c := range p.Children {
-		if Subset(edge, c.Bag) {
-			child = c
-			continue
+	for i := range p.Children {
+		if Subset(edge, p.Children[i].Bag) {
+			childIndex = i
+			break
 		}
-		newparentchildren = append(newparentchildren, c)
 	}
-	p.Children = newparentchildren
-	newchildren := append(child.Children, p)
 
-	return Node{Bag: child.Bag, Cover: child.Cover, Children: newchildren}
+	child := p.Children[childIndex]
+	p.Children = append(p.Children[:childIndex], p.Children[childIndex+1:]...) // slice out child
+	child.Children = append(child.Children, p)                                 // add p to children of c
+
+	return child
 }
 
 func (h Hingetree) DecompHinge(alg Algorithm_h, K int, g Graph) Decomp {
@@ -253,7 +253,14 @@ func (h Hingetree) DecompHinge(alg Algorithm_h, K int, g Graph) Decomp {
 		out.Root = out.Root.RerootEdge(h.children[i].e.Vertices)
 		h.decomp.Root = h.decomp.Root.RerootEdge(h.children[i].e.Vertices)
 
-		h.decomp.Root.Children = append(h.decomp.Root.Children, out.Root)
+		if Subset(out.Root.Bag, h.decomp.Root.Bag) {
+
+			h.decomp.Root.Children = append(h.decomp.Root.Children, out.Root.Children...)
+		} else {
+
+			h.decomp.Root.Children = append(h.decomp.Root.Children, out.Root)
+		}
+
 	}
 
 	h.decomp.Graph = g
