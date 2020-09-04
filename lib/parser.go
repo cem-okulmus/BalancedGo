@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 
 	jsoniter "github.com/json-iterator/go"
@@ -325,180 +327,183 @@ func GetDecomp(input []byte, graph Graph, encoding map[string]int) Decomp {
 
 }
 
-// type Arc struct {
-// 	Source int
-// 	Target int
-// }
+type Arc struct {
+	Source int
+	Target int
+}
 
-// type ParseGMLValue struct {
-// 	FlatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
-// 	List    ParseGMLList `| "[" @@ "]"`
-// }
+type ParseGMLValue struct {
+	FlatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
+	List    ParseGMLList `| "[" @@ "]"`
+}
 
-// type ParseGMLListEntry struct {
-// 	Key   string        ` @(Ident|Number) `
-// 	Value ParseGMLValue ` @@ `
-// }
+type ParseGMLListEntry struct {
+	Key   string        ` @(Ident|Number) `
+	Value ParseGMLValue ` @@ `
+}
 
-// type ParseGMLList struct {
-// 	Entries []ParseGMLListEntry `( @@ )*`
-// }
+type ParseGMLList struct {
+	Entries []ParseGMLListEntry `( @@ )*`
+}
 
-// type ParseGML struct {
-// 	GML ParseGMLList `@@`
-// }
+type ParseGML struct {
+	GML ParseGMLList `@@`
+}
 
-// func GetDecomp(input string, graph Graph, encoding map[string]int) Decomp {
+func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
-// 	graphLexer := lexer.Must(ebnf.New(`
-//     Quote = "\"" .
-//     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-//     Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
-//     Number = ("." | digit | "_"){"." | digit | stuff } .
-//     Whitespace = " " | "\t" | "\n" | "\r" .
-//     stuff = ":" | "@" | ";" | "-" | "_" .
-//     Punct = "!"…"}"-"\""  .
-//     alpha = "a"…"z" | "A"…"Z" .
-//     digit = "0"…"9" .`))
+	graphLexer := lexer.Must(ebnf.New(`
+    Quote = "\"" .
+    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
+    Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
+    Number = ("." | digit | "_"){"." | digit | stuff } .
+    Whitespace = " " | "\t" | "\n" | "\r" .
+    stuff = ":" | "@" | ";" | "-" | "_" .
+    Punct = "!"…"}"-"\""  .
+    alpha = "a"…"z" | "A"…"Z" .
+    digit = "0"…"9" .`))
 
-// 	var parser = participle.MustBuild(&ParseGML{}, participle.UseLookahead(1), participle.Lexer(graphLexer), participle.Elide("Comment", "Whitespace"))
-// 	pDecomp := ParseGML{}
-// 	err := parser.ParseString(input, &pDecomp)
-// 	if err != nil {
-// 		fmt.Println("Couldn't parse input: ")
-// 		panic(err)
-// 	}
+	var parser = participle.MustBuild(&ParseGML{}, participle.UseLookahead(1), participle.Lexer(graphLexer), participle.Elide("Comment", "Whitespace"))
+	pDecomp := ParseGML{}
+	err := parser.ParseString(input, &pDecomp)
+	if err != nil {
+		fmt.Println("Couldn't parse input: ")
+		panic(err)
+	}
 
-// 	// Check if GML file consists of single graph node
-// 	if len(pDecomp.GML.Entries) != 1 && pDecomp.GML.Entries[0].Key != "graph" {
-// 		log.Panicln("Valid GML file, but does not contain a unique graph element")
-// 	}
+	// Check if GML file consists of single graph node
+	if len(pDecomp.GML.Entries) != 1 && pDecomp.GML.Entries[0].Key != "graph" {
+		log.Panicln("Valid GML file, but does not contain a unique graph element")
+	}
 
-// 	var graphEntry ParseGMLListEntry
+	var graphEntry ParseGMLListEntry
 
-// 	graphEntry = pDecomp.GML.Entries[0]
+	graphEntry = pDecomp.GML.Entries[0]
 
-// 	var arcs []Arc
-// 	var nodes []Node
+	var arcs []Arc
+	var nodes []Node
 
-// 	IDtoIndex := make(map[int]int)
+	IDtoIndex := make(map[int]int)
 
-// 	edges := graph.Edges.Slice()
+	edges := graph.Edges.Slice()
 
-// 	for _, n := range graphEntry.Value.List.Entries {
-// 		switch n.Key {
-// 		case "node":
-// 			var node Node
+	for _, n := range graphEntry.Value.List.Entries {
+		switch n.Key {
+		case "node":
+			var node Node
 
-// 			var nodeLabels map[string]string
-// 			nodeLabels = make(map[string]string)
+			var nodeLabels map[string]string
+			nodeLabels = make(map[string]string)
 
-// 			for _, e := range n.Value.List.Entries {
-// 				if e.Value.FlatVal != "" {
-// 					nodeLabels[e.Key] = e.Value.FlatVal
-// 				}
-// 			}
+			for _, e := range n.Value.List.Entries {
+				if e.Value.FlatVal != "" {
+					nodeLabels[e.Key] = e.Value.FlatVal
+				}
+			}
 
-// 			// check for necessary fields, id and label
-// 			if _, ok := nodeLabels["id"]; !ok {
-// 				log.Println("Node without id present in GML file.")
-// 			}
-// 			if _, ok := nodeLabels["label"]; !ok {
-// 				log.Println("Node without label present in GML file.")
-// 			}
+			// check for necessary fields, id and label
+			if _, ok := nodeLabels["id"]; !ok {
+				log.Println("Node without id present in GML file.")
+			}
+			if _, ok := nodeLabels["label"]; !ok {
+				log.Println("Node without label present in GML file.")
+			}
 
-// 			// extract edge cover and bag from label
+			// extract edge cover and bag from label
 
-// 			re_cover := regexp.MustCompile(`{(.*)}{.*}`)
-// 			re_bag := regexp.MustCompile(`{.*}{(.*)}`)
+			re_cover := regexp.MustCompile(`{(.*)}{.*}`)
+			re_bag := regexp.MustCompile(`{.*}{(.*)}`)
 
-// 			match_cover := re_cover.FindStringSubmatch(nodeLabels["label"])
-// 			match_bag := re_bag.FindStringSubmatch(nodeLabels["label"])
-// 			if match_cover == nil || match_bag == nil {
-// 				log.Panicln("Label of node ", nodeLabels["id"], " not properly formatted: ", nodeLabels["label"], ".")
-// 			}
+			match_cover := re_cover.FindStringSubmatch(nodeLabels["label"])
+			match_bag := re_bag.FindStringSubmatch(nodeLabels["label"])
+			if match_cover == nil || match_bag == nil {
+				log.Panicln("Label of node ", nodeLabels["id"], " not properly formatted: ", nodeLabels["label"], ".")
+			}
 
-// 			var bag []int
-// 			for _, v := range strings.Split(match_bag[1], ",") {
-// 				bag = append(bag, encoding[v])
-// 			}
+			var bag []int
+			for _, v := range strings.Split(match_bag[1], ",") {
+				bag = append(bag, encoding[v])
+			}
 
-// 			var cover []Edge
-// 			for _, e := range strings.Split(match_cover[1], ",") {
-// 				out := extractEdge(edges, encoding[e])
-// 				if reflect.DeepEqual(out, Edge{}) {
-// 					log.Panicln("Can't find edge ", e)
-// 				}
-// 				cover = append(cover, out)
-// 			}
+			var cover []Edge
+			for _, e := range strings.Split(match_cover[1], ",") {
+				out := extractEdge(edges, encoding[e])
+				if reflect.DeepEqual(out, Edge{}) {
+					log.Panicln("Can't find edge ", e)
+				}
+				cover = append(cover, out)
+			}
 
-// 			node.num, _ = strconv.Atoi(nodeLabels["id"])
-// 			node.Bag = bag
-// 			node.Cover = NewEdges(cover)
-// 			if v, ok := nodeLabels["magic"]; ok {
-// 				node.Star, _ = strconv.ParseBool(v)
-// 			}
+			node.num, _ = strconv.Atoi(nodeLabels["id"])
 
-// 			nodes = append(nodes, node)
+			encode = Max(node.num, encode) + 1 // ensure encode will never collide with num values in parsed GMl
 
-// 			IDtoIndex[node.num] = len(nodes) - 1
-// 		case "edge":
-// 			var arc Arc
+			node.Bag = bag
+			node.Cover = NewEdges(cover)
+			if v, ok := nodeLabels["magic"]; ok {
+				node.Star, _ = strconv.ParseBool(v)
+			}
 
-// 			var arcLabels map[string]string
-// 			arcLabels = make(map[string]string)
+			nodes = append(nodes, node)
 
-// 			for _, e := range n.Value.List.Entries {
-// 				if e.Value.FlatVal != "" {
-// 					arcLabels[e.Key] = e.Value.FlatVal
-// 				}
-// 			}
+			IDtoIndex[node.num] = len(nodes) - 1
+		case "edge":
+			var arc Arc
 
-// 			// check for necessary fields, id and label
-// 			if _, ok := arcLabels["source"]; !ok {
-// 				log.Println("Edge without source present in GML file.")
-// 			}
-// 			if _, ok := arcLabels["target"]; !ok {
-// 				log.Println("Edge without target present in GML file.")
-// 			}
+			var arcLabels map[string]string
+			arcLabels = make(map[string]string)
 
-// 			arc.Source, _ = strconv.Atoi(arcLabels["source"])
-// 			arc.Target, _ = strconv.Atoi(arcLabels["target"])
+			for _, e := range n.Value.List.Entries {
+				if e.Value.FlatVal != "" {
+					arcLabels[e.Key] = e.Value.FlatVal
+				}
+			}
 
-// 			arcs = append(arcs, arc)
-// 		}
-// 	}
+			// check for necessary fields, id and label
+			if _, ok := arcLabels["source"]; !ok {
+				log.Println("Edge without source present in GML file.")
+			}
+			if _, ok := arcLabels["target"]; !ok {
+				log.Println("Edge without target present in GML file.")
+			}
 
-// 	var root int
-// 	if len(arcs) != 0 {
-// 		root = arcs[0].Source
-// 	} else {
-// 		root = nodes[0].num
-// 	}
+			arc.Source, _ = strconv.Atoi(arcLabels["source"])
+			arc.Target, _ = strconv.Atoi(arcLabels["target"])
 
-// 	changed := true
+			arcs = append(arcs, arc)
+		}
+	}
 
-// 	for changed {
-// 		changed = false
-// 		for _, arc := range arcs {
-// 			if arc.Target == root { //determine global ancestor
-// 				root = arc.Source
-// 				changed = true
-// 			}
-// 		}
-// 	}
+	var root int
+	if len(arcs) != 0 {
+		root = arcs[0].Source
+	} else {
+		root = nodes[0].num
+	}
 
-// 	for _, arc := range arcs {
-// 		source := nodes[IDtoIndex[arc.Source]]
-// 		target := nodes[IDtoIndex[arc.Target]]
+	changed := true
 
-// 		nodes[IDtoIndex[arc.Source]] = source.attachChild(arc.Source, target)
+	for changed {
+		changed = false
+		for _, arc := range arcs {
+			if arc.Target == root { //determine global ancestor
+				root = arc.Source
+				changed = true
+			}
+		}
+	}
 
-// 		IDtoIndex[arc.Target] = IDtoIndex[arc.Source] // update reference to target
-// 	}
+	for _, arc := range arcs {
+		source := nodes[IDtoIndex[arc.Source]]
+		target := nodes[IDtoIndex[arc.Target]]
 
-// 	return Decomp{Graph: graph, Root: nodes[IDtoIndex[root]]}
-// }
+		nodes[IDtoIndex[arc.Source]] = source.attachChild(arc.Source, target)
+
+		IDtoIndex[arc.Target] = IDtoIndex[arc.Source] // update reference to target
+	}
+
+	return Decomp{Graph: graph, Root: nodes[IDtoIndex[root]]}
+}
 
 // Updated PACE 2019 format, with initial Special Edges
 

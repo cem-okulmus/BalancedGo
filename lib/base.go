@@ -336,3 +336,10 @@ func PrintVertices(vertices []int) string {
 
 	return buffer.String()
 }
+
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}

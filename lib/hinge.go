@@ -228,8 +228,13 @@ func (n Node) RerootEdge(edge []int) Node {
 	}
 
 	child := p.Children[childIndex]
-	p.Children = append(p.Children[:childIndex], p.Children[childIndex+1:]...) // slice out child
-	child.Children = append(child.Children, p)                                 // add p to children of c
+	if childIndex == len(p.Children) {
+		p.Children = p.Children[:childIndex] // slice out child
+	} else {
+		p.Children = append(p.Children[:childIndex], p.Children[childIndex+1:]...) // slice out child
+	}
+
+	child.Children = append(child.Children, p) // add p to children of c
 
 	return child
 }
