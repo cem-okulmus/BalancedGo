@@ -20,7 +20,7 @@ func IntHash(vertices []int) uint32 {
 		binary.PutVarint(bs, int64(item))
 		// arrBytes = append(arrBytes, bs...)
 		h.Write(bs)
-		output = output + h.Sum32()
+		output = output ^ h.Sum32()
 
 	}
 	return output
@@ -37,7 +37,7 @@ func (e Edge) Hash() uint32 {
 		binary.PutVarint(bs, int64(item))
 		// arrBytes = append(arrBytes, bs...)
 		h.Write(bs)
-		output = output + h.Sum32()
+		output = output ^ h.Sum32()
 	}
 
 	// h.Write(arrBytes)
@@ -68,7 +68,7 @@ func (e *Edges) Hash() uint64 {
 			binary.LittleEndian.PutUint64(bs, uint64(e.Slice()[i].Hash()))
 			// arrBytes = append(arrBytes, bs...)
 			h.Write(bs)
-			output = output + h.Sum64()
+			output = output ^ h.Sum64()
 		}
 		// h := fnv.New32a()
 		// h.Write(arrBytes)
@@ -78,6 +78,29 @@ func (e *Edges) Hash() uint64 {
 	e.hashMux.Unlock()
 
 	return *e.hash
+}
+
+func (e *Edges) HashExtended(Sp []Special) uint64 {
+
+	var specialEdges []Edge
+
+	for i := range Sp {
+		specialEdges = append(specialEdges, Edge{Name: 0, Vertices: Sp[i].Vertices})
+	}
+
+	output := e.Hash() // start with hash on Edges itself
+
+	for i := range specialEdges {
+		h := fnv.New64a()
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(specialEdges[i].Hash()))
+		// arrBytes = append(arrBytes, bs...)
+		h.Write(bs)
+		output = output ^ h.Sum64()
+	}
+
+	return output
+
 }
 
 // func testHash() {
