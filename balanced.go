@@ -518,7 +518,7 @@ func main() {
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec, label: "Decomposition"})
 
-		if !reflect.DeepEqual(decomp, Decomp{}) {
+		if !reflect.DeepEqual(decomp, Decomp{}) || (len(ops) > 0 && parsedGraph.Edges.Len() == 0) {
 			var result bool
 			decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
 			if !result {
