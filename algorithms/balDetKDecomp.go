@@ -1,4 +1,6 @@
-// Combination of BalSep and DetKDecomp, executing Balsep first (for constant number of rounds) then switching to DetKDecomp
+// Combination of BalSep and DetKDecomp, executing Balsep first (for constant number of rounds) then switching to
+// DetKDecomp
+
 package algorithms
 
 import (
@@ -68,7 +70,7 @@ OUTER:
 
 		//wait until first worker finds a balanced sep
 		balsep = GetSubset(edges, found)
-		//	balsepOrig := balsep
+		//  balsepOrig := balsep
 		var sepSub *SepSub
 
 		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
@@ -88,7 +90,6 @@ OUTER:
 				if currentDepth > 0 {
 					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
 						ch <- b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial))
-						//outDecomp = append(outDecomp, b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial)))
 					}(K, i, comps, compsSp, SepSpecial)
 				} else {
 					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
@@ -122,9 +123,9 @@ OUTER:
 						} else {
 							// res2 := b.findDecompBalSep(K, 1000, comps[i], append(compsSp[i], SepSpecial))
 							// if !reflect.DeepEqual(res2, Decomp{}) {
-							// 	fmt.Println("Result, ", res2)
-							// 	fmt.Println("H: ", comps[i], "Sp ", compsSp, "balsep ", balsep)
-							// 	log.Panicln("Something is rotten in the state of this program")
+							//  fmt.Println("Result, ", res2)
+							//  fmt.Println("H: ", comps[i], "Sp ", compsSp, "balsep ", balsep)
+							//  log.Panicln("Something is rotten in the state of this program")
 
 							// }
 						}
@@ -136,10 +137,11 @@ OUTER:
 			}
 
 			for i := 0; i < len(comps); i++ {
-				//	decomp := outDecomp[i]
+				//  decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
+					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n",
+					//        Graph{Edges: balsep}, H)
 					// log.Println("\n\nCurrent Depth: ", (b.Depth - currentDepth))
 					// log.Printf("Current SubGraph: %+v\n", H)
 					// log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -153,11 +155,12 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
-							//						// log.Println("SubSep: ")
-							//						// for _, s := range sepSub.Edges {
-							//						// 	log.Println(s.Combination)
-							//						// }
+							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
+							// 	Graph{Edges: balsepOrig}, Sp)
+							// log.Println("SubSep: ")
+							// for _, s := range sepSub.Edges {
+							// 	log.Println(s.Combination)
+							// }
 							_, ok := cache[IntHash(balsep.Vertices())]
 							if ok { //skip since already seen
 								continue thisLoop
@@ -167,11 +170,12 @@ OUTER:
 								nextBalsepFound = true
 							}
 						} else {
-							//		log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							//log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					// 		log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
+					//      log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()),
+					//         " of ", balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
@@ -235,7 +239,8 @@ func (b BalDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes m
 	return b.findDecompBalSepUpdate(K, b.Depth, currentGraph, []Special{}, savedScenes)
 }
 
-func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, Sp []Special, savedScenes map[uint32]SceneValue) Decomp {
+func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, Sp []Special,
+	savedScenes map[uint32]SceneValue) Decomp {
 	// log.Println("Current Depth: ", (b.Depth - currentDepth))
 	// log.Printf("Current SubGraph: %+v\n", H)
 	// log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -274,7 +279,7 @@ OUTER:
 			delete(savedScenes, hash)
 		}
 		// if !Subset(conn, val.Sep.Vertices()) {
-		// 	ok = false // ignore this choice of separator if it breaks connectedness
+		//  ok = false // ignore this choice of separator if it breaks connectedness
 		// }
 
 		if !ok {
@@ -290,7 +295,7 @@ OUTER:
 
 			//wait until first worker finds a balanced sep
 			balsep = GetSubset(edges, found)
-			//	balsepOrig := balsep
+			//  balsepOrig := balsep
 
 		} else {
 			balsep = val.Sep
@@ -323,12 +328,14 @@ OUTER:
 			for i := range comps {
 
 				if currentDepth > 0 {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special, savedScenes map[uint32]SceneValue) {
-						ch <- b.findDecompBalSepUpdate(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial), savedScenes)
-						//outDecomp = append(outDecomp, b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial)))
+					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special,
+						savedScenes map[uint32]SceneValue) {
+						ch <- b.findDecompBalSepUpdate(K, decrease(currentDepth), comps[i], append(compsSp[i],
+							SepSpecial), savedScenes)
 					}(K, i, comps, compsSp, SepSpecial, savedScenes)
 				} else {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special, savedScenes map[uint32]SceneValue) {
+					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special,
+						savedScenes map[uint32]SceneValue) {
 
 						// Base case handling
 
@@ -359,9 +366,9 @@ OUTER:
 						} else {
 							// res2 := b.findDecompBalSep(K, 1000, comps[i], append(compsSp[i], SepSpecial))
 							// if !reflect.DeepEqual(res2, Decomp{}) {
-							// 	fmt.Println("Result, ", res2)
-							// 	fmt.Println("H: ", comps[i], "Sp ", compsSp, "balsep ", balsep)
-							// 	log.Panicln("Something is rotten in the state of this program")
+							//  fmt.Println("Result, ", res2)
+							//  fmt.Println("H: ", comps[i], "Sp ", compsSp, "balsep ", balsep)
+							//  log.Panicln("Something is rotten in the state of this program")
 
 							// }
 						}
@@ -373,10 +380,11 @@ OUTER:
 			}
 
 			for i := 0; i < len(comps); i++ {
-				//	decomp := outDecomp[i]
+				//  decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n", Graph{Edges: balsep}, H)
+					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n",
+					//        Graph{Edges: balsep}, H)
 					// log.Println("\n\nCurrent Depth: ", (b.Depth - currentDepth))
 					// log.Printf("Current SubGraph: %+v\n", H)
 					// log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -390,11 +398,12 @@ OUTER:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep}, Graph{Edges: balsepOrig}, Sp)
-							//						// log.Println("SubSep: ")
-							//						// for _, s := range sepSub.Edges {
-							//						// 	log.Println(s.Combination)
-							//						// }
+							// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
+							//        Graph{Edges: balsepOrig}, Sp)
+							// log.Println("SubSep: ")
+							// for _, s := range sepSub.Edges {
+							//  log.Println(s.Combination)
+							// }
 							_, ok := cache[IntHash(balsep.Vertices())]
 							if ok { //skip since already seen
 								continue thisLoop
@@ -404,11 +413,12 @@ OUTER:
 								nextBalsepFound = true
 							}
 						} else {
-							//		log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+							//      log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
 							continue OUTER
 						}
 					}
-					// 		log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ", balsepOrig, " , ", Sp)
+					// log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ",
+					//     balsepOrig, " , ", Sp)
 					continue INNER
 				}
 

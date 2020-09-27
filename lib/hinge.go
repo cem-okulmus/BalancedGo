@@ -1,4 +1,5 @@
-// functions to compute a hinge-tree decomposition of a hypergraph, and methods to use it to speed up the computation of a GHD
+// functions to compute a hinge-tree decomposition of a hypergraph, and methods to use it to speed up the computation
+// of a GHD
 
 package lib
 
@@ -143,13 +144,13 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 			// found := false
 
 			// for _, e := range h.hinge.Edges.Slice() {
-			// 	if e.Name == parentE {
-			// 		found = true
-			// 	}
+			//  if e.Name == parentE {
+			//      found = true
+			//  }
 			// }
 
 			// if !found {
-			// 	log.Panic(m[parentE], "does not occur in", htrees[gamma[parentE]].hinge)
+			//  log.Panic(m[parentE], "does not occur in", htrees[gamma[parentE]].hinge)
 			// }
 
 		}

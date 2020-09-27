@@ -187,18 +187,23 @@ OUTER:
 					var subtrees []Node
 					bag := Inter(sepActual.Vertices(), verticesExtended)
 
-					// log.Println("sep", sep, "\nsepActual", sepActual, "\n B of SepActual", PrintVertices(sepActual.Vertices()), "\noldSep ", PrintVertices(oldSep),
-					//  "\nvertices of C", PrintVertices(verticesCurrent), "\n\nunion o both", PrintVertices(verticesExtended), "\n bag: ", PrintVertices(bag))
+					// log.Println("sep", sep, "\nsepActual", sepActual, "\n B of SepActual",
+					//        PrintVertices(sepActual.Vertices()), "\noldSep ", PrintVertices(oldSep),
+					//  "\nvertices of C", PrintVertices(verticesCurrent), "\n\nunion o both",
+					//        PrintVertices(verticesExtended), "\n bag: ", PrintVertices(bag))
 
 					// for i := range sepActual.Vertices() {
 					//  if Mem(verticesCurrent, sepActual.Vertices()[i]) && !Mem(bag, sepActual.Vertices()[i]) {
 
 					//      fmt.Println("Another union: ", PrintVertices(append(oldSep, verticesCurrent...)))
 
-					//      fmt.Println("Another intersect: ", PrintVertices(Inter(sepActual.Vertices(), verticesExtended)))
+					//      fmt.Println("Another intersect: ", PrintVertices(Inter(sepActual.Vertices(),
+					//            verticesExtended)))
 
-					//      fmt.Println("sep", sep, "\nsepActual", sepActual, "\n B of SepActual", PrintVertices(sepActual.Vertices()), "\noldSep ", PrintVertices(oldSep),
-					//          "\nvertices of C", PrintVertices(verticesCurrent), "\n\nunion o both", PrintVertices(verticesExtended), "\n bag: ", PrintVertices(bag))
+					//      fmt.Println("sep", sep, "\nsepActual", sepActual, "\n B of SepActual",
+					//        PrintVertices(sepActual.Vertices()), "\noldSep ", PrintVertices(oldSep),
+					//          "\nvertices of C", PrintVertices(verticesCurrent), "\n\nunion o both",
+					//            PrintVertices(verticesExtended), "\n bag: ", PrintVertices(bag))
 
 					//      log.Panicln("something is not right in the state of this program!")
 					//  }
@@ -208,9 +213,10 @@ OUTER:
 
 						decomp := d.findDecomp(K, comps[i], bag, compsSp[i], depth+1)
 						if reflect.DeepEqual(decomp, Decomp{}) {
-							//cache[sepActual.Hash()].Fail = append(cache[sepActual.Hash()].Fail, comps[i].Edges.Hash())
+
 							d.addNegative(sepActual, comps[i])
-							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: sepActual}, comps[i], compsSp[i])
+							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n",
+							//        Graph{Edges: sepActual}, comps[i], compsSp[i])
 							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
 							// log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
 							// log.Printf("Current Special Edges: %v\n\n", Sp)
@@ -226,8 +232,9 @@ OUTER:
 									if sepSub.HasNext() {
 										sepActual = sepSub.GetCurrent()
 										sepActual = NewEdges(append(sepActual.Slice(), sepConst...))
-										// log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
-										//log.Println("Sep const: ", sepConst, "sepChang ", sepChanging)
+										// log.Printf("Testing SSep: %v of %v , Special Edges %v \n",
+										//        Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
+										// log.Println("Sep const: ", sepConst, "sepChang ", sepChanging)
 										// log.Println("SubSep: ")
 										// for _, s := range sepSub.Edges {
 										//  log.Println(s.Combination)
@@ -236,7 +243,8 @@ OUTER:
 											nextBalsepFound = true
 										}
 									} else {
-										// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: sepActualOrigin}, Sp)
+										// log.Printf("No SubSep found for %v with Sp %v  \n",
+										//        Graph{Edges: sepActualOrigin}, Sp)
 										if addEdges {
 											// i_add++
 											continue addingEdges
@@ -245,7 +253,8 @@ OUTER:
 										}
 									}
 								}
-								// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual}, Graph{Edges: sepActualOrigin}, Sp)
+								// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual},
+								//        Graph{Edges: sepActualOrigin}, Sp)
 								continue subEdges
 							}
 
@@ -256,7 +265,7 @@ OUTER:
 								continue OUTER
 							}
 						}
-						//cache[sepActual.Hash()].Succ = append(cache[sepActual.Hash()].Succ, comps[i].Edges.Hash())
+
 						//d.addPositive(sepActual, comps[i])
 
 						// log.Printf("Produced Decomp: %v\n", decomp)

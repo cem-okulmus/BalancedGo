@@ -37,15 +37,15 @@ func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-	Ident = (digit| alpha | "_") { Punct |  "_" | alpha | digit } .
-	String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
-	Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
-	Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
-	Paranthesis = "(" | ")"  | "," .
+    Ident = (digit| alpha | "_") { Punct |  "_" | alpha | digit } .
+    String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
+    Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
+    Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
+    Paranthesis = "(" | ")"  | "," .
     Whitespace = " " | "\t" | "\n" | "\r" .
-	alpha = "a"…"z" | "A"…"Z" .
-	digit = "0"…"9" .
-	any = "\u0000"…"\uffff" .
+    alpha = "a"…"z" | "A"…"Z" .
+    digit = "0"…"9" .
+    any = "\u0000"…"\uffff" .
     `))
 
 	var parser = participle.MustBuild(&ParseGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
@@ -203,7 +203,7 @@ func GetGraphPACE(s string) Graph {
 	// log.Println("Vertices", pgraph.Info.Vertices)
 
 	// for _, e := range output.Edges.Slice() {
-	// 	log.Println(e.FullString())
+	//  log.Println(e.FullString())
 	// }
 
 	// log.Panicln("")
@@ -508,43 +508,43 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 // Updated PACE 2019 format, with initial Special Edges
 
 // type ParseEdgeUpdate struct {
-// 	Name     string   ` @(Ident|Number)`
-// 	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
+//  Name     string   ` @(Ident|Number)`
+//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 // }
 
 // type ParseSpecialEdgeUpdate struct {
-// 	Name     string   ` @(Ident|Number)`
-// 	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
+//  Name     string   ` @(Ident|Number)`
+//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 // }
 
 // type ParseGhostEdgeUpdate struct {
-// 	Name     string   ` @(Ident|Number)`
-// 	Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
+//  Name     string   ` @(Ident|Number)`
+//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
 // }
 
 // type ParseGraphUpdate struct {
-// 	Edges   []ParseEdgeUpdate        `( @@ ","?)* "."`
-// 	Ghost   []ParseSpecialEdgeUpdate `("👻" ( @@ ","?)*)?`
-// 	Special []ParseGhostEdgeUpdate   `"✨" ( @@ ","?)*`
-// 	m       map[string]int
+//  Edges   []ParseEdgeUpdate        `( @@ ","?)* "."`
+//  Ghost   []ParseSpecialEdgeUpdate `("👻" ( @@ ","?)*)?`
+//  Special []ParseGhostEdgeUpdate   `"✨" ( @@ ","?)*`
+//  m       map[string]int
 // }
 
 // type ParseGraphUpdateInfo struct {
-// 	Vertices int `"p htd":Begin @(Number) `
-// 	Edges    int `@(Number) "\n"`
+//  Vertices int `"p htd":Begin @(Number) `
+//  Edges    int `@(Number) "\n"`
 // }
 
 // type ParseGraphUpdate struct {
-// 	Info         ParseGraphUpdateInfo     `@@`
-// 	Edges        []ParseEdgeUpdate        `(@@) *`
-// 	SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
-// 	GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
-// 	m            map[int]int
+//  Info         ParseGraphUpdateInfo     `@@`
+//  Edges        []ParseEdgeUpdate        `(@@) *`
+//  SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
+//  GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
+//  m            map[int]int
 // }
 
 // func GetGraphUpdate(s string) (Graph, Graph, []Special) {
 
-// 	graphLexer := lexer.Must(ebnf.New(`
+//  graphLexer := lexer.Must(ebnf.New(`
 //     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
 //     Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
 //     Number = ("." | digit | "_"){"." | digit | "_"} .
@@ -556,112 +556,112 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 //     GhostSep  = "👻" .
 //     digit = "0"…"9" .`))
 
-// 	var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
-// 		participle.Elide("Comment", "Whitespace"))
-// 	var output Graph
-// 	var ghostGraph Graph
-// 	var edges []Edge
-// 	var ghostEdges []Edge
-// 	var special []Special
+//  var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+//      participle.Elide("Comment", "Whitespace"))
+//  var output Graph
+//  var ghostGraph Graph
+//  var edges []Edge
+//  var ghostEdges []Edge
+//  var special []Special
 
-// 	pgraph := ParseGraphUpdate{}
-// 	err := parser.ParseString(s, &pgraph)
-// 	if err != nil {
-// 		fmt.Println("Couldn't parse input: ")
-// 		panic(err)
-// 	}
-// 	encode = 1 // initialize to 1
+//  pgraph := ParseGraphUpdate{}
+//  err := parser.ParseString(s, &pgraph)
+//  if err != nil {
+//      fmt.Println("Couldn't parse input: ")
+//      panic(err)
+//  }
+//  encode = 1 // initialize to 1
 
-// 	encoding := make(map[int]string)
-// 	pgraph.m = make(map[string]int)
+//  encoding := make(map[int]string)
+//  pgraph.m = make(map[string]int)
 
-// 	for _, e := range pgraph.Edges {
-// 		_, ok := pgraph.m[e.Name]
-// 		if ok {
-// 			log.Panicln("Edge names not unique, not a vald hypergraph!")
-// 		}
-// 		pgraph.m[e.Name] = encode
-// 		encoding[encode] = e.Name
-// 		encode++
-// 	}
+//  for _, e := range pgraph.Edges {
+//      _, ok := pgraph.m[e.Name]
+//      if ok {
+//          log.Panicln("Edge names not unique, not a vald hypergraph!")
+//      }
+//      pgraph.m[e.Name] = encode
+//      encoding[encode] = e.Name
+//      encode++
+//  }
 
-// 	for _, e := range pgraph.Ghost {
-// 		encoding[encode] = "👻" + e.Name
-// 		pgraph.m["👻"+e.Name] = encode
-// 		encode++
-// 	}
+//  for _, e := range pgraph.Ghost {
+//      encoding[encode] = "👻" + e.Name
+//      pgraph.m["👻"+e.Name] = encode
+//      encode++
+//  }
 
-// 	for _, e := range pgraph.Special {
-// 		encoding[encode] = e.Name + " ✨"
-// 		pgraph.m[e.Name+" ✨"] = encode
-// 		encode++
-// 	}
+//  for _, e := range pgraph.Special {
+//      encoding[encode] = e.Name + " ✨"
+//      pgraph.m[e.Name+" ✨"] = encode
+//      encode++
+//  }
 
-// 	for _, e := range pgraph.Edges {
-// 		var outputEdge []int
-// 		for _, n := range e.Vertices {
-// 			i, ok := pgraph.m[n]
-// 			if ok {
-// 				outputEdge = append(outputEdge, i)
-// 			} else {
-// 				pgraph.m[n] = encode
-// 				encoding[encode] = n
-// 				outputEdge = append(outputEdge, encode)
-// 				encode++
-// 			}
-// 		}
-// 		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
-// 	}
+//  for _, e := range pgraph.Edges {
+//      var outputEdge []int
+//      for _, n := range e.Vertices {
+//          i, ok := pgraph.m[n]
+//          if ok {
+//              outputEdge = append(outputEdge, i)
+//          } else {
+//              pgraph.m[n] = encode
+//              encoding[encode] = n
+//              outputEdge = append(outputEdge, encode)
+//              encode++
+//          }
+//      }
+//      edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
+//  }
 
-// 	for _, e := range pgraph.Ghost {
-// 		var outputEdge []int
-// 		for _, n := range e.Vertices {
-// 			i, ok := pgraph.m[n]
-// 			if ok {
-// 				outputEdge = append(outputEdge, i)
-// 			} else {
-// 				pgraph.m[n] = encode
-// 				encoding[encode] = n
-// 				outputEdge = append(outputEdge, encode)
-// 				encode++
+//  for _, e := range pgraph.Ghost {
+//      var outputEdge []int
+//      for _, n := range e.Vertices {
+//          i, ok := pgraph.m[n]
+//          if ok {
+//              outputEdge = append(outputEdge, i)
+//          } else {
+//              pgraph.m[n] = encode
+//              encoding[encode] = n
+//              outputEdge = append(outputEdge, encode)
+//              encode++
 
-// 			}
-// 		}
-// 		ghostEdges = append(ghostEdges, Edge{Name: pgraph.m["👻"+e.Name], Vertices: outputEdge})
-// 	}
+//          }
+//      }
+//      ghostEdges = append(ghostEdges, Edge{Name: pgraph.m["👻"+e.Name], Vertices: outputEdge})
+//  }
 
-// 	for _, s := range pgraph.Special {
-// 		var outputSpecialEdge []int
-// 		for _, n := range s.Vertices {
-// 			i, ok := pgraph.m[n]
-// 			if ok {
-// 				outputSpecialEdge = append(outputSpecialEdge, i)
-// 			} else {
-// 				pgraph.m[n] = encode
-// 				encoding[encode] = n
-// 				outputSpecialEdge = append(outputSpecialEdge, encode)
-// 				encode++
-// 			}
-// 		}
-// 		dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ✨"], Vertices: outputSpecialEdge}})
-// 		special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
-// 	}
+//  for _, s := range pgraph.Special {
+//      var outputSpecialEdge []int
+//      for _, n := range s.Vertices {
+//          i, ok := pgraph.m[n]
+//          if ok {
+//              outputSpecialEdge = append(outputSpecialEdge, i)
+//          } else {
+//              pgraph.m[n] = encode
+//              encoding[encode] = n
+//              outputSpecialEdge = append(outputSpecialEdge, encode)
+//              encode++
+//          }
+//      }
+//      dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ✨"], Vertices: outputSpecialEdge}})
+//      special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
+//  }
 
-// 	m = encoding
+//  m = encoding
 
-// 	output.Edges = NewEdges(edges)
-// 	ghostGraph.Edges = NewEdges(append(edges, ghostEdges...))
+//  output.Edges = NewEdges(edges)
+//  ghostGraph.Edges = NewEdges(append(edges, ghostEdges...))
 
-// 	// log.Println("Edges", pgraph.Info.Edges)
-// 	// log.Println("Vertices", pgraph.Info.Vertices)
+//  // log.Println("Edges", pgraph.Info.Edges)
+//  // log.Println("Vertices", pgraph.Info.Vertices)
 
-// 	// for _, e := range output.Edges.Slice() {
-// 	// 	log.Println(e.FullString())
-// 	// }
+//  // for _, e := range output.Edges.Slice() {
+//  //  log.Println(e.FullString())
+//  // }
 
-// 	// for _, e := range special {
-// 	// 	log.Println(e)
-// 	// }
+//  // for _, e := range special {
+//  //  log.Println(e)
+//  // }
 
-// 	return ghostGraph, output, special
+//  return ghostGraph, output, special
 // }

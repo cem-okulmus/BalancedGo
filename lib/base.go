@@ -9,23 +9,23 @@ import (
 var Empty struct{}
 
 // func RemoveDuplicates(elements []int) []int {
-// 	// Use map to record duplicates as we find them.
-// 	encountered := make(map[int]struct{})
-// 	result := []int{}
+//  // Use map to record duplicates as we find them.
+//  encountered := make(map[int]struct{})
+//  result := []int{}
 
-// 	for v := range elements {
-// 		if _, ok := encountered[elements[v]]; ok {
-// 			// Do not add duplicate.
-// 		} else {
-// 			// Record this element as an encountered element.
-// 			var Empty struct{}
-// 			encountered[elements[v]] = Empty
-// 			// Append to result slice.
-// 			result = append(result, elements[v])
-// 		}
-// 	}
-// 	// Return the new slice.
-// 	return result
+//  for v := range elements {
+//      if _, ok := encountered[elements[v]]; ok {
+//          // Do not add duplicate.
+//      } else {
+//          // Record this element as an encountered element.
+//          var Empty struct{}
+//          encountered[elements[v]] = Empty
+//          // Append to result slice.
+//          result = append(result, elements[v])
+//      }
+//  }
+//  // Return the new slice.
+//  return result
 // }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
@@ -50,23 +50,23 @@ func RemoveDuplicates(elements []int) []int {
 }
 
 // func Diff(as, bs []int) []int {
-// 	encountered_b := map[int]bool{}
+//  encountered_b := map[int]bool{}
 
-// 	for _, b := range bs {
-// 		encountered_b[b] = true
-// 	}
+//  for _, b := range bs {
+//      encountered_b[b] = true
+//  }
 
-// 	var output []int
+//  var output []int
 
-// 	for _, a := range as {
-// 		if _, ok := encountered_b[a]; !ok {
-// 			output = append(output, a)
-// 		}
-// 	}
-// 	// if !reflect.DeepEqual(output, diff2(as, bs)) {
-// 	// 	log.Panicf("What the hell?", output, diff2(as, bs))
-// 	// }
-// 	return output
+//  for _, a := range as {
+//      if _, ok := encountered_b[a]; !ok {
+//          output = append(output, a)
+//      }
+//  }
+//  // if !reflect.DeepEqual(output, diff2(as, bs)) {
+//  //  log.Panicf("What the hell?", output, diff2(as, bs))
+//  // }
+//  return output
 
 // }
 
@@ -98,35 +98,35 @@ OUTER:
 }
 
 // func Diff(a, b []int) []int {
-// 	var output []int
+//  var output []int
 
-// 	// a = RemoveDuplicates(a)
-// 	// b = RemoveDuplicates(b)
+//  // a = RemoveDuplicates(a)
+//  // b = RemoveDuplicates(b)
 
-// 	sort.Ints(a)
-// 	sort.Ints(b)
+//  sort.Ints(a)
+//  sort.Ints(b)
 
-// 	i, j := 0, 0
+//  i, j := 0, 0
 
-// 	for i < len(a) && j < len(b) {
-// 		if b[j] > a[i] {
-// 			output = append(output, a[i])
-// 			i++
-// 		} else if b[j] < a[i] {
-// 			j++
-// 		} else {
-// 			i++
-// 		}
+//  for i < len(a) && j < len(b) {
+//      if b[j] > a[i] {
+//          output = append(output, a[i])
+//          i++
+//      } else if b[j] < a[i] {
+//          j++
+//      } else {
+//          i++
+//      }
 
-// 	}
+//  }
 
-// 	for i < len(a) {
-// 		output = append(output, a[i])
-// 		i++
+//  for i < len(a) {
+//      output = append(output, a[i])
+//      i++
 
-// 	}
+//  }
 
-// 	return output
+//  return output
 
 // }
 
@@ -141,7 +141,7 @@ func Mem32(as []uint32, b uint32) bool {
 
 func DiffEdges(a Edges, e ...Edge) Edges {
 	var output []Edge
-	///	log.Println("Edges ", a, "Other ", e)
+	/// log.Println("Edges ", a, "Other ", e)
 
 	var hashes []uint32
 	for i := range e {
@@ -154,7 +154,7 @@ func DiffEdges(a Edges, e ...Edge) Edges {
 		}
 	}
 
-	//	log.Println("Result ", output)
+	//  log.Println("Result ", output)
 
 	return NewEdges(output)
 
@@ -177,20 +177,20 @@ OUTER:
 }
 
 // func Inter(as, bs []int) []int {
-// 	encountered_b := make(map[int]struct{})
-// 	for _, b := range bs {
-// 		encountered_b[b] = Empty
-// 	}
+//  encountered_b := make(map[int]struct{})
+//  for _, b := range bs {
+//      encountered_b[b] = Empty
+//  }
 
-// 	var output []int
+//  var output []int
 
-// 	for _, a := range as {
-// 		if _, ok := encountered_b[a]; ok {
-// 			output = append(output, a)
-// 		}
-// 	}
+//  for _, a := range as {
+//      if _, ok := encountered_b[a]; ok {
+//          output = append(output, a)
+//      }
+//  }
 
-// 	return output
+//  return output
 
 // }
 
@@ -253,15 +253,15 @@ func Equiv(as []int, bs []int) bool {
 // func Subset(a []int, b []int) bool {
 
 // OUTER:
-// 	for _, n := range a {
-// 		for _, k := range b {
-// 			if k == n {
-// 				continue OUTER
-// 			}
-// 		}
-// 		return false
-// 	}
-// 	return true
+//  for _, n := range a {
+//      for _, k := range b {
+//          if k == n {
+//              continue OUTER
+//          }
+//      }
+//      return false
+//  }
+//  return true
 // }
 
 type TwoSlicesEdge struct {

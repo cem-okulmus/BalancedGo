@@ -30,7 +30,7 @@ func IntHash(vertices []int) uint32 {
 func (e Edge) Hash() uint32 {
 	var output uint32
 	// arrBytes := []byte{}
-	//	sort.Ints(e.Vertices)
+	//  sort.Ints(e.Vertices)
 	for _, item := range e.Vertices {
 		h := fnv.New32a()
 		bs := make([]byte, 4)
@@ -61,7 +61,7 @@ func (e *Edges) Hash() uint64 {
 		// sort.Sort(copyE)
 
 		//sort.Sort(e)
-		//	fmt.Println(e)
+		//  fmt.Println(e)
 		for i := range e.Slice() {
 			h := fnv.New64a()
 			bs := make([]byte, 8)
@@ -105,27 +105,27 @@ func (e *Edges) HashExtended(Sp []Special) uint64 {
 
 // func testHash() {
 
-// 	e1 := Edge{Vertices: []int{58, 96, 97}}
-// 	e2 := Edge{Vertices: []int{65, 66, 67}}
-// 	//	e3 := Edge{Vertices: []int{61, 18, 7}}
+//  e1 := Edge{Vertices: []int{58, 96, 97}}
+//  e2 := Edge{Vertices: []int{65, 66, 67}}
+//  //  e3 := Edge{Vertices: []int{61, 18, 7}}
 
-// 	edges := Edges{slice: []Edge{e2, e1}}
-// 	fmt.Println("Edges ", edges)
+//  edges := Edges{slice: []Edge{e2, e1}}
+//  fmt.Println("Edges ", edges)
 
-// 	fmt.Println("Hash 1", edges.Hash())
-// 	sort.Sort(edges)
-// 	fmt.Println("Hash 1", edges.Hash())
-// 	sort.Sort(edges)
-// 	fmt.Println("Hash 1", edges.Hash())
-// 	// sort.Sort(edges)
-// 	// fmt.Println("Hash 1", edges)
-// 	// sort.Sort(edges)
-// 	// fmt.Println("Hash 1", edges)
-// 	// sort.Sort(edges)
-// 	// fmt.Println("Hash 1", edges)
+//  fmt.Println("Hash 1", edges.Hash())
+//  sort.Sort(edges)
+//  fmt.Println("Hash 1", edges.Hash())
+//  sort.Sort(edges)
+//  fmt.Println("Hash 1", edges.Hash())
+//  // sort.Sort(edges)
+//  // fmt.Println("Hash 1", edges)
+//  // sort.Sort(edges)
+//  // fmt.Println("Hash 1", edges)
+//  // sort.Sort(edges)
+//  // fmt.Println("Hash 1", edges)
 
-// 	// var cache map[uint32][]uint32
+//  // var cache map[uint32][]uint32
 
-// 	fmt.Println("Edges ", edges)
+//  fmt.Println("Edges ", edges)
 
 // }

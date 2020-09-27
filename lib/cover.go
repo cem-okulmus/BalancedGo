@@ -115,8 +115,8 @@ func (c *Cover) NextSubset() int {
 			continue
 		}
 
-		//	log.Println("Edge actual ", c.Bound.Slice()[c.pos])
-		//	log.Println("Current selection: ", GetSubset(c.Bound, c.Subset))
+		//  log.Println("Edge actual ", c.Bound.Slice()[c.pos])
+		//  log.Println("Current selection: ", GetSubset(c.Bound, c.Subset))
 		//check if current edge lies in component (precomputation via inComp ?)
 		selected := false
 
@@ -211,7 +211,7 @@ func testCover() {
 	edges := Edges{slice: []Edge{e1, e2, e3, e4}}
 
 	//comp := Edges{Slice: []Edge{e3, e4}}
-	//	sep := Edges{Slice: []Edge{e1, e2}}
+	//  sep := Edges{Slice: []Edge{e1, e2}}
 
 	c := NewCover(3, []int{3, 4, 5, 6}, edges, edges.Vertices())
 
