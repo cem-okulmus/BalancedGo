@@ -1,4 +1,5 @@
-// Functions that simplify graphs, and transform decompositions of the simplified graph back to decomposition of original graph
+// Functions that simplify graphs, and transform decompositions of the simplified graph back to
+// decomposition of original graph
 
 package lib
 
@@ -111,7 +112,7 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 		g2, ops2 := g1.removeVertices()
 		// fmt.Println("After Vertex Removal:")
 		// for _, e := range g2.Edges.Slice() {
-		// 	fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
+		//  fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
 		// }
 
 		ops = append(ops, ops2...)

@@ -216,7 +216,8 @@ func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 // 	// fmt.Printf("%v %v\n", e8, Edge{Vertices: e8.Vertices})
 
 // 	// H := Graph{Edges: []Edge{e2, e3, e4}}
-// 	// Sp := []Special{Special{Edges: []Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1}, Vertices: Vertices([]Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1})}}
+// 	// Sp := []Special{Special{Edges: []Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1}, Vertices:
+// Vertices([]Edge{Edge{Vertices: []int{e5.Vertices[0], e5.Vertices[2]}}, e1})}}
 
 // 	// fmt.Println("H: ", H)
 // 	// fmt.Println("Sp: ", Sp)

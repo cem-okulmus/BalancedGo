@@ -153,17 +153,17 @@ func (s Edges) Less(i, j int) bool {
 
 // func (s *Edges) Append(es ...Edge) {
 
-// 	// mux.Lock() // ensure that hash is computed only on one gorutine at a time
-// 	// defer mux.Unlock()
-// 	for _, e := range es {
-// 		s.slice = append(s.slice, e)
-// 	}
-// 	if len(s.vertices) > 0 {
-// 		s.vertices = s.vertices[:0] // do this to preserve allocated memory
-// 	}
-// 	if s.hash != nil {
-// 		s.hash = nil
-// 	}
+//  // mux.Lock() // ensure that hash is computed only on one gorutine at a time
+//  // defer mux.Unlock()
+//  for _, e := range es {
+//      s.slice = append(s.slice, e)
+//  }
+//  if len(s.vertices) > 0 {
+//      s.vertices = s.vertices[:0] // do this to preserve allocated memory
+//  }
+//  if s.hash != nil {
+//      s.hash = nil
+//  }
 // }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
@@ -398,7 +398,7 @@ func (e Edges) Mem(other Edge) bool {
 // produces the union of all vertices from a slice of Edge
 func (e *Edges) Vertices() []int {
 
-	//	mux.Lock()
+	//  mux.Lock()
 	if len(e.vertices) == 0 {
 		var output []int
 		for _, otherE := range e.Slice() {

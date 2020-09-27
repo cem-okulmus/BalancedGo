@@ -177,7 +177,8 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 
 	for i, _ := range n.Children {
 		n.Children[i].getNumber()
-		output = append(output, Edge{Vertices: []int{n.num, n.Children[i].num}}) //using breadth-first ordering to number nodes
+		output = append(output, Edge{Vertices: []int{n.num, n.Children[i].num}}) // using breadth-first ordering
+		// to number nodes
 	}
 
 	for _, c := range n.Children {
@@ -189,17 +190,17 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 }
 
 // func (n *Node) allChildrenContaining(vert int) []int {
-// 	var output []int
+//  var output []int
 
-// 	if Mem(n.Bag, vert) {
-// 		output = append(output, n.num)
-// 	}
+//  if Mem(n.Bag, vert) {
+//      output = append(output, n.num)
+//  }
 
-// 	for _, c := range n.Children {
-// 		output = append(output, c.allChildrenContaining(vert)...)
-// 	}
+//  for _, c := range n.Children {
+//      output = append(output, c.allChildrenContaining(vert)...)
+//  }
 
-// 	return output
+//  return output
 // }
 
 func (n Node) coversEdge(e Edge) bool {

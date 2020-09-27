@@ -48,7 +48,8 @@ func (l labelTime) String() string {
 	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
-func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGraph Graph, gml string, K int, skipCheck bool) {
+func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGraph Graph, gml string, K int,
+	skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -149,7 +150,8 @@ func main() {
 
 	// Outpt usage message if graph and width not specified
 	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
-		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/", Build, ", ", Date, ")")
+		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/",
+			Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
 		flagSet.VisitAll(func(f *flag.Flag) {
 			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" {
@@ -423,15 +425,15 @@ func main() {
 	}
 
 	// if *divideTest {
-	// 	div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
-	// 	solver = div
-	// 	chosen++
+	//  div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+	//  solver = div
+	//  chosen++
 	// }
 
 	// if *divideParTest {
-	// 	div := DivideKDecompPar{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
-	// 	solver = div
-	// 	chosen++
+	//  div := DivideKDecompPar{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+	//  solver = div
+	//  chosen++
 	// }
 
 	if *globalBal {

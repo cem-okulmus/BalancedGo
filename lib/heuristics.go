@@ -49,7 +49,7 @@ func GetMSCOrder(edges Edges) Edges {
 
 	// //reverse order of selected
 	// for i, j := 0, len(selected)-1; i < j; i, j = i+1, j-1 {
-	// 	selected[i], selected[j] = selected[j], selected[i]
+	//  selected[i], selected[j] = selected[j], selected[i]
 	// }
 
 	return NewEdges(selected)

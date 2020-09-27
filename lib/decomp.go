@@ -217,7 +217,7 @@ OUTER:
 
 	INNER:
 		for _, c := range comps {
-			if len(Inter(Diff(c.Vertices(), sep.Vertices()), u.Bag)) == 0 { // check if this node belongs to this subgraph
+			if len(Inter(Diff(c.Vertices(), sep.Vertices()), u.Bag)) == 0 { //check if node belongs to this subgraph
 				continue INNER
 			}
 
