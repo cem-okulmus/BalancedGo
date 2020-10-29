@@ -8,3 +8,5 @@ hypergraphs/
 # ignore project files
 *.sublime-workspace
 *.sublime-project
+.vscode
+__debug_bin

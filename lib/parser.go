@@ -66,7 +66,7 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	for _, e := range pgraph.Edges {
 		_, ok := pgraph.Encoding[e.Name]
 		if ok {
-			log.Panicln("Edge names not unique, not a vald hypergraph!")
+			log.Panicln("Edge names not unique, not a valid hypergraph!")
 		}
 
 		pgraph.Encoding[e.Name] = encode

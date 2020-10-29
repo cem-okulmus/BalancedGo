@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -10,6 +12,7 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"time"
 
 	. "github.com/cem-okulmus/BalancedGo/algorithms"
@@ -123,6 +126,7 @@ func main() {
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
 	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
 	decomp := flagSet.String("decomp", "", "A decomposition to be used as a starting point, needs to have certain nodes marked (those which need to be updated).")
+	jCostPath := flagSet.String("joinCost", "", "The file path to a join cost function.")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -454,6 +458,71 @@ func main() {
 	}
 
 	if solver != nil {
+		if *jCostPath != "" {
+			if *balDetTest == 0 {
+				fmt.Println("Join cost can be used only in combination with: balDet.")
+				return
+			}
+			if *pace {
+				fmt.Println("Join cost cannot be used with PACE input format.")
+				return
+			}
+
+			// load cost function
+			// 1. read the csv file
+			csvfile, err := os.Open(*jCostPath)
+			if err != nil {
+				fmt.Println("Can't open jCost", *jCostPath, err)
+				return
+			}
+
+			// 2. init map
+			var w EdgesCostMap
+			numEdges := len(parsedGraph.Edges.Slice())
+			edges := make([]int, numEdges)
+			for p, e := range parsedGraph.Edges.Slice() {
+				edges[p] = e.Name
+			}
+			w.Init(edges, *width)
+
+			r := csv.NewReader(csvfile)
+			r.FieldsPerRecord = -1
+			for {
+				record, err := r.Read()
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				// 3. encode the key (?) and put the record into the map
+				fmt.Println(record)
+
+				last := len(record) - 1
+				cost, _ := strconv.ParseFloat(record[last], 64)
+				rec := record[:last]
+				comb := make([]int, len(rec))
+				for p, s := range rec {
+					comb[p] = parseGraph.Encoding[s]
+				}
+				fmt.Println("comb=", comb)
+
+				w.Put(comb, cost)
+			}
+
+			fmt.Println("Printing w:")
+			wCombs, wCosts := w.Records()
+			for i := 0; i < len(wCombs); i++ {
+				fmt.Println(i, wCombs[i], wCosts[i])
+			}
+
+			// initialize solver
+			jBalDet := JCostBalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1, JCosts: w}
+			solver = jBalDet
+		}
+
 		var decomp Decomp
 		start := time.Now()
 
