@@ -10,4 +10,6 @@ Simply run `make`, alternatively on platforms without the make tool, run `go bui
   
 
 
-
+## Usage 
+No fixed command-line interface. Use "BalancedGo -h" to see the currently supported commands. 
+Generally, any run will require 1) a valid hypergraph, according to the formats specified above, 2) a specified width (unless the "exact" or "approx" flags are used) and 3) an algorithm to actually compute an HD or GHD (depending on the type of algorithm). 
