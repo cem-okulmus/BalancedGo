@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"reflect"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -44,6 +43,14 @@ func (g *Graph) Vertices() []int {
 	g.vertices = RemoveDuplicates(output)
 	return g.vertices
 }
+
+// func GetSubsetMap(edges Edges, s []int, Map []int) Edges {
+// 	var output []Edge
+// 	for _, i := range s {
+// 		output = append(output, edges.Slice()[Map[i]])
+// 	}
+// 	return NewEdges(output)
+// }
 
 func GetSubset(edges Edges, s []int) Edges {
 	var output []Edge
@@ -355,6 +362,37 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 //  return outputG, upCompIndex, lowCompIndex, isolatedEdges
 // }
 
+// func CreateOrderingMap(edges Edges, vertices []int) []int {
+// 	tmp := make([]int, edges.Len())
+// 	tmp2 := make([]int, edges.Len())
+
+// 	for i, e := range edges.Slice() {
+// 		tmp[i] = len(Inter(e.Vertices, vertices))
+// 		tmp2[i] = i
+// 	}
+
+// 	// log.Println("map b4", tmp2)
+// 	// log.Println("values b4", tmp)
+// 	// log.Println("values b4", edges)
+
+// 	two := TwoSlicesInt{main_slice: tmp2, other_slice: tmp}
+// 	sort.Sort(SortByOtherInt(two))
+
+// 	// log.Println("map afterwards", tmp2)
+
+// 	return tmp2
+// }
+
+// func FilterVerticesSort(edges Edges, vertices []int) []int {
+// 	tmp := make([]int, edges.Len())
+
+// 	for i, e := range edges.Slice() {
+// 		tmp[i] = len(Inter(e.Vertices, vertices))
+// 	}
+
+// 	return tmp
+// }
+
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output []Edge
 
@@ -404,39 +442,6 @@ func CutEdges(edges Edges, vertices []int) Edges {
 
 	return NewEdges(output)
 
-}
-
-func (g Graph) CheckBalancedSep(sep Edges, sp []Special, balancedFactor int) bool {
-	// log.Printf("Current considered sep %+v\n", sep)
-	// log.Printf("Current present SP %+v\n", sp)
-
-	//balancedness condition
-	comps, compSps, _, _ := g.GetComponents(sep, sp)
-	// log.Printf("Components of sep %+v\n", comps)
-	for i := range comps {
-		if comps[i].Edges.Len()+len(compSps[i]) > (((g.Edges.Len() + len(sp)) * (balancedFactor - 1)) / balancedFactor) {
-			//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep,
-			//        comps[i], comps[i].Edges.Len()+len(compSps[i]), ((g.Edges.Len() + len(sp)) / 2))
-			return false
-		}
-	}
-
-	// Check if subset of V(H) + Vertices of Sp
-	// var allowedVertices = append(g.Vertices(), VerticesSpecial(sp)...)
-	// if !Subset(Vertices(sep), allowedVertices) {
-	//  // log.Println("Subset condition violated")
-	//  return false
-	// }
-
-	// Make sure that "special seps can never be used as separators"
-	for _, s := range sp {
-		if reflect.DeepEqual(s.Vertices, sep.Vertices()) {
-			//log.Println("Special edge %+v\n used again", s)
-			return false
-		}
-	}
-
-	return true
 }
 
 func (g Graph) CheckNextSep(sep Edges, oldSep Edges, Sp []Special) bool {

@@ -46,37 +46,41 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 	var balsep Edges
 
 	//find a balanced separator
-	var decomposed = false
 	edges := CutEdges(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
-	var subtrees []Decomp
+
+	parallelSearch := Search{H: &H, Sp: Sp, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+
+	pred := BalancedCheck{}
+
+	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
 	cache = make(map[uint32]struct{})
 
-	//find a balanced separator
-OUTER:
-	for !decomposed {
-		var found []int
+	// OUTER:
+	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
+		// var found []int
 
-		//g.startSearchSimple(&found, &generator, result, input, &wg)
-		parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
+		// //g.startSearchSimple(&found, &generator, result, input, &wg)
+		// parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
 
-		if len(found) == 0 { // meaning that the search above never found anything
-			log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-			return Decomp{}
-		}
+		// if len(found) == 0 { // meaning that the search above never found anything
+		// 	log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+		// 	return Decomp{}
+		// }
 
-		//wait until first worker finds a balanced sep
-		balsep = GetSubset(edges, found)
+		balsep = GetSubset(edges, parallelSearch.Result)
+
 		//  balsepOrig := balsep
 		var sepSub *SepSub
 
 		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
+		exhaustedSubedges := false
 
 	INNER:
-		for !decomposed {
+		for !exhaustedSubedges {
 			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
@@ -84,6 +88,8 @@ OUTER:
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
 			ch := make(chan Decomp)
+			var subtrees []Decomp
+
 			//var outDecomp []Decomp
 			for i := range comps {
 
@@ -165,13 +171,14 @@ OUTER:
 							if ok { //skip since already seen
 								continue thisLoop
 							}
-							if H.CheckBalancedSep(balsep, Sp, b.BalFactor) {
+
+							if pred.Check(&H, Sp, &balsep, b.BalFactor) {
 								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
 						} else {
-							//log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
-							continue OUTER
+							exhaustedSubedges = true
+							continue INNER
 						}
 					}
 					//      log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()),
@@ -182,30 +189,30 @@ OUTER:
 				subtrees = append(subtrees, decomp)
 			}
 
-			decomposed = true
+			output := Node{Bag: balsep.Vertices(), Cover: balsep}
+
+			for _, s := range subtrees {
+				//TODO: Reroot only after all subtrees received
+				if currentDepth == 0 && s.SkipRerooting {
+					// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
+					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
+					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
+					// fmt.Println("Output from Balsep: ", decomp_deux)
+				} else {
+					s.Root = s.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
+					s.Root = s.Root.Children[0]
+					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
+				}
+
+				output.Children = append(output.Children, s.Root)
+			}
+
+			return Decomp{Graph: H, Root: output}
 		}
 	}
 
-	output := Node{Bag: balsep.Vertices(), Cover: balsep}
-
-	for _, s := range subtrees {
-		//TODO: Reroot only after all subtrees received
-		if currentDepth == 0 && s.SkipRerooting {
-			// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
-			// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
-			// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
-			// fmt.Println("Output from Balsep: ", decomp_deux)
-		} else {
-			s.Root = s.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
-			s.Root = s.Root.Children[0]
-			// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
-		}
-
-		output.Children = append(output.Children, s.Root)
-	}
-
-	return Decomp{Graph: H, Root: output}
-
+	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+	return Decomp{} // empty Decomp signifiyng reject
 }
 
 func (b BalDetKDecomp) FindGHD(K int, currentGraph Graph, Sp []Special) Decomp {
@@ -259,18 +266,21 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 	var balsep Edges
 
 	//find a balanced separator
-	var decomposed = false
 	edges := CutEdges(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
-	var subtrees []Decomp
+
+	parallelSearch := Search{H: &H, Sp: Sp, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+
+	pred := BalancedCheck{}
+
+	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
 	cache = make(map[uint32]struct{})
 
-	//find a balanced separator
-OUTER:
-	for !decomposed {
+	// OUTER:
+	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
 
 		hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
 		val, ok := savedScenes[hash]
@@ -283,18 +293,18 @@ OUTER:
 		// }
 
 		if !ok {
-			var found []int
+			// var found []int
 
-			//g.startSearchSimple(&found, &generator, result, input, &wg)
-			parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
+			// //g.startSearchSimple(&found, &generator, result, input, &wg)
+			// parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
 
-			if len(found) == 0 { // meaning that the search above never found anything
-				log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-				return Decomp{}
-			}
+			// if len(found) == 0 { // meaning that the search above never found anything
+			// 	log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+			// 	return Decomp{}
+			// }
 
 			//wait until first worker finds a balanced sep
-			balsep = GetSubset(edges, found)
+			balsep = GetSubset(edges, parallelSearch.Result)
 			//  balsepOrig := balsep
 
 		} else {
@@ -314,9 +324,10 @@ OUTER:
 		var sepSub *SepSub
 
 		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
+		exhaustedSubedges := false
 
 	INNER:
-		for !decomposed {
+		for !exhaustedSubedges {
 			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
@@ -324,6 +335,8 @@ OUTER:
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
 			ch := make(chan Decomp)
+			var subtrees []Decomp
+
 			//var outDecomp []Decomp
 			for i := range comps {
 
@@ -408,13 +421,14 @@ OUTER:
 							if ok { //skip since already seen
 								continue thisLoop
 							}
-							if H.CheckBalancedSep(balsep, Sp, b.BalFactor) {
+							if pred.Check(&H, Sp, &balsep, b.BalFactor) {
 								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
 						} else {
 							//      log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
-							continue OUTER
+							exhaustedSubedges = true
+							continue INNER
 						}
 					}
 					// log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ",
@@ -422,33 +436,33 @@ OUTER:
 					continue INNER
 				}
 
+				subtrees = append(subtrees, decomp)
+			}
+
+			output := Node{Bag: balsep.Vertices(), Cover: balsep}
+
+			for _, s := range subtrees {
 				//TODO: Reroot only after all subtrees received
-				if currentDepth == 0 && decomp.SkipRerooting {
+				if currentDepth == 0 && s.SkipRerooting {
 					// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
 					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}
 					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
 					// fmt.Println("Output from Balsep: ", decomp_deux)
 				} else {
-					decomp.Root = decomp.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
-					decomp.Root = decomp.Root.Children[0]
+					s.Root = s.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
+					s.Root = s.Root.Children[0]
 					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
 
-				subtrees = append(subtrees, decomp)
+				output.Children = append(output.Children, s.Root)
 			}
 
-			decomposed = true
+			return Decomp{Graph: H, Root: output}
 		}
 	}
 
-	output := Node{Bag: balsep.Vertices(), Cover: balsep}
-
-	for _, s := range subtrees {
-		output.Children = append(output.Children, s.Root)
-	}
-
-	return Decomp{Graph: H, Root: output}
-
+	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+	return Decomp{} // empty Decomp signifiyng reject
 }
 
 func (b BalDetKDecomp) Name() string {

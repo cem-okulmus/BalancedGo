@@ -109,8 +109,8 @@ func main() {
 	hingeFlag := flagSet.Bool("h", false, "use hingeTree Optimization")
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
-	akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
-	logDetKAlgo := flagSet.Bool("logdetk", false, "Use log-depth version of DetKDecomp algorithm")
+	// akatovTest := flagSet.Bool("akatov", false, "Use Balanced Decomposition algorithm")
+	// logDetKAlgo := flagSet.Bool("logdetk", false, "Use log-depth version of DetKDecomp algorithm")
 	logK := flagSet.Bool("logk", false, "Use LogKDecomp algoritm")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "To be used in combination with \"det\": turns on local subedge handling")
@@ -394,11 +394,11 @@ func main() {
 	// Check for multiple flags
 	chosen := 0
 
-	if *akatovTest {
-		bal := BalKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
-		solver = bal
-		chosen++
-	}
+	// if *akatovTest {
+	// 	bal := BalKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor}
+	// 	solver = bal
+	// 	chosen++
+	// }
 
 	if *balDetTest > 0 {
 		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
@@ -413,16 +413,16 @@ func main() {
 	}
 
 	if *logK {
-		logK := LogKDecomp{Graph: parsedGraph, K: *width}
+		logK := LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
 		solver = logK
 		chosen++
 	}
 
-	if *logDetKAlgo {
-		logDetk := LogDetKDecomp{Graph: parsedGraph, SubEdge: *localBIP}
-		solver = logDetk
-		chosen++
-	}
+	// if *logDetKAlgo {
+	// 	logDetk := LogDetKDecomp{Graph: parsedGraph, SubEdge: *localBIP}
+	// 	solver = logDetk
+	// 	chosen++
+	// }
 
 	// if *divideTest {
 	//  div := DivideKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
@@ -512,9 +512,9 @@ func main() {
 			}
 		}
 
-		if *akatovTest {
-			decomp.Blowup()
-		}
+		// if *akatovTest {
+		// 	decomp.Blowup()
+		// }
 
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
