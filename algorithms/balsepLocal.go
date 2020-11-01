@@ -24,13 +24,14 @@ func searchSubEdge(g *BalSepLocal, H *Graph, Sp []Special, balsepOrig Edges, sep
 		sepSub = GetSepSub(g.Graph.Edges, balsep, K)
 	}
 	nextBalsepFound := false
+	pred := BalancedCheck{}
 
 	for !nextBalsepFound {
 		if sepSub.HasNext() {
 			balsep = sepSub.GetCurrent()
 			// log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
 			//        Graph{Edges: balsepOrig}, Sp)
-			if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+			if pred.Check(H, Sp, &balsep, g.BalFactor) {
 				nextBalsepFound = true
 			}
 		} else {
@@ -60,11 +61,13 @@ func (g BalSepLocal) findDecomp(K int, H Graph, Sp []Special) Decomp {
 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	gen := GetCombinUnextend(edges.Len(), K)
+
+	pred := BalancedCheck{}
 OUTER:
 	for gen.HasNext() {
 		balsep := GetSubset(edges, gen.Combination)
 		gen.Confirm()
-		if !H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+		if !pred.Check(&H, Sp, &balsep, g.BalFactor) {
 			continue
 		}
 		var sepSub *SepSub
@@ -99,7 +102,7 @@ OUTER:
 							// for _, s := range sepSub.Edges {
 							//  log.Println(s.Combination)
 							// }
-							if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+							if pred.Check(&H, Sp, &balsep, g.BalFactor) {
 								nextBalsepFound = true
 							}
 						} else {
@@ -108,7 +111,7 @@ OUTER:
 						}
 					}
 					// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep},
-					//        Graph{Edges: balsepOrig}, Sp)
+					// Graph{Edges: balsepOrig}, Sp)
 					continue INNER
 
 				}
@@ -145,35 +148,40 @@ func (g BalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp
 	}
 	var balsep Edges
 
-	//find a balanced separator
-	var decomposed = false
 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
 
 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
-	var subtrees []Decomp
+
+	parallelSearch := Search{H: &H, Sp: Sp, Edges: &edges, BalFactor: g.BalFactor, Generators: generators}
+
+	pred := BalancedCheck{}
+
+	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
 	cache = make(map[uint32]struct{})
 
-OUTER:
-	for !decomposed {
-		var found []int
+	// OUTER:
+	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
+		// var found []int
 
-		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
+		// parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 
-		if len(found) == 0 { // meaning that the search above never found anything
-			// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-			return Decomp{}
-		}
+		// if len(found) == 0 { // meaning that the search above never found anything
+		// 	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+		// 	return Decomp{}
+		// }
 
-		//wait until first worker finds a balanced sep
-		balsep = GetSubset(edges, found)
+		balsep = GetSubset(edges, parallelSearch.Result)
+
 		var sepSub *SepSub
 		// balsepOrig := balsep
 		// log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
 
+		exhaustedSubedges := false
+
 	INNER:
-		for !decomposed {
+		for !exhaustedSubedges {
 			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
 
 			// log.Printf("Comps of Sep: %v\n", comps)
@@ -181,6 +189,8 @@ OUTER:
 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
 
 			ch := make(chan Decomp)
+			var subtrees []Decomp
+
 			for i := range comps {
 				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
 
@@ -214,205 +224,19 @@ OUTER:
 							if ok { //skip since already seen
 								continue thisLoop
 							}
-							if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+							if pred.Check(&H, Sp, &balsep, g.BalFactor) {
 								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
 						} else {
 							// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
-							continue OUTER
+
+							exhaustedSubedges = true
+							continue INNER
 						}
 					}
 					// log.Println("Sub Sep chosen: ", balsep, "Vertices: ", PrintVertices(balsep.Vertices()), " of ",
-					//        balsepOrig, " , ", Sp)
-					continue INNER
-				}
-
-				// log.Printf("Produced Decomp: %+v\n", decomp)
-
-				subtrees = append(subtrees, decomp)
-			}
-
-			decomposed = true
-		}
-	}
-
-	return rerooting(H, balsep, subtrees)
-}
-
-func (g BalSepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
-
-	// log.Printf("Current SubGraph: %+v\n", H)
-	// log.Printf("Current Special Edges: %+v\n\n", Sp)
-
-	//stop if there are at most two special edges left
-	if H.Edges.Len()+len(Sp) <= 2 {
-		return baseCaseSmart(g.Graph, H, Sp)
-	}
-
-	//Early termination
-	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
-	}
-	var balsep Edges
-
-	var decomposed = false
-	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
-
-	//var numProc = runtime.GOMAXPROCS(-1)
-	//var wg sync.WaitGroup
-	// wg.Add(numProc)
-	// result := make(chan []int)
-	// input := make(chan []int)
-	// for i := 0; i < numProc; i++ {
-	//  go g.workerSimple(H, Sp, result, input, &wg)
-	// }
-	//generator := GetCombin(len(g.Graph.Edges), K)
-
-	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
-
-	var subtrees []Decomp
-
-	//find a balanced separator
-OUTER:
-	for !decomposed {
-		var found []int
-
-		//g.startSearchSimple(&found, &generator, result, input, &wg)
-		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
-
-		if len(found) == 0 { // meaning that the search above never found anything
-			// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-			return Decomp{}
-		}
-
-		//wait until first worker finds a balanced sep
-		balsep = GetSubset(edges, found)
-		var sepSub *SepSub
-		balsepOrig := balsep
-		// log.Printf("Balanced Sep chosen: %+v\n", balsep)
-	INNER:
-		for !decomposed {
-			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
-
-			log.Printf("Comps of Sep: %+v\n", comps)
-
-			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
-
-			for i := range comps {
-
-				decomp := g.findDecompParallelSearch(K, comps[i], append(compsSp[i], SepSpecial))
-				if reflect.DeepEqual(decomp, Decomp{}) {
-					// log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep},
-					//        comps[i], append(compsSp[i], SepSpecial))
-					subtrees = []Decomp{}
-					// log.Printf("\n\nCurrent SubGraph: %v\n", H)
-					// log.Printf("Current Special Edges: %v\n\n", Sp)
-					if sepSub == nil {
-						sepSub = GetSepSub(g.Graph.Edges, balsep, K)
-					}
-					nextBalsepFound := false
-
-					for !nextBalsepFound {
-						if sepSub.HasNext() {
-							balsep = sepSub.GetCurrent()
-							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
-								Graph{Edges: balsepOrig}, Sp)
-							// log.Println("SubSep: ")
-							// for _, s := range sepSub.Edges {
-							//  log.Println(s.Combination)
-							// }
-							if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
-								nextBalsepFound = true
-							}
-						} else {
-							// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
-							continue OUTER
-						}
-					}
-					// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep},
-					//        Graph{Edges: balsepOrig}, Sp)
-					continue INNER
-				}
-
-				// log.Printf("Produced Decomp: %v\n", decomp)
-
-				subtrees = append(subtrees, decomp)
-			}
-			decomposed = true
-		}
-
-	}
-
-	return rerooting(H, balsep, subtrees)
-}
-
-func (g BalSepLocal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
-
-	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	// log.Printf("Current Special Edges: %v\n\n", Sp)
-
-	//stop if there are at most two special edges left
-	if H.Edges.Len()+len(Sp) <= 2 {
-		return baseCaseSmart(g.Graph, H, Sp)
-	}
-
-	//Early termination
-	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
-	}
-
-	//find a balanced separator
-	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
-
-	gen := GetCombin(edges.Len(), K)
-OUTER:
-	for gen.HasNext() {
-		balsep := GetSubset(edges, gen.Combination)
-		gen.Confirm()
-		if !H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
-			continue
-		}
-		var sepSub *SepSub
-
-		// log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
-		//balsepOrig := balsep
-	INNER:
-		for {
-			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
-
-			// log.Printf("Comps of Sep: %v\n", comps)
-
-			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
-
-			var subtrees []Decomp
-
-			ch := make(chan Decomp)
-			quit := make(chan struct{})
-			for i := range comps {
-				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-					select {
-					case <-quit:
-						return
-					case ch <- g.findDecompParallelComp(K, comps[i], append(compsSp[i], SepSpecial)):
-					}
-
-				}(K, i, comps, compsSp, SepSpecial)
-			}
-
-			for i := 0; i < len(comps); i++ {
-				decomp := <-ch
-				if reflect.DeepEqual(decomp, Decomp{}) {
-
-					close(quit)
-					// log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep},
-					//        comps[i], append(compsSp[i], SepSpecial))
-
-					subBalSep := searchSubEdge(&g, &H, Sp, balsep, sepSub, K)
-					if subBalSep.Len() == 0 {
-						continue OUTER
-					}
-					balsep = subBalSep
+					// 	balsepOrig, " , ", Sp)
 					continue INNER
 				}
 
@@ -429,6 +253,195 @@ OUTER:
 	return Decomp{} // empty Decomp signifiyng reject
 }
 
+// func (g BalSepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
+
+// 	// log.Printf("Current SubGraph: %+v\n", H)
+// 	// log.Printf("Current Special Edges: %+v\n\n", Sp)
+
+// 	//stop if there are at most two special edges left
+// 	if H.Edges.Len()+len(Sp) <= 2 {
+// 		return baseCaseSmart(g.Graph, H, Sp)
+// 	}
+
+// 	//Early termination
+// 	if H.Edges.Len() <= K && len(Sp) == 1 {
+// 		return earlyTermination(H, Sp[0])
+// 	}
+// 	var balsep Edges
+
+// 	var decomposed = false
+// 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+
+// 	//var numProc = runtime.GOMAXPROCS(-1)
+// 	//var wg sync.WaitGroup
+// 	// wg.Add(numProc)
+// 	// result := make(chan []int)
+// 	// input := make(chan []int)
+// 	// for i := 0; i < numProc; i++ {
+// 	//  go g.workerSimple(H, Sp, result, input, &wg)
+// 	// }
+// 	//generator := GetCombin(len(g.Graph.Edges), K)
+
+// 	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
+
+// 	var subtrees []Decomp
+
+// 	//find a balanced separator
+// OUTER:
+// 	for !decomposed {
+// 		var found []int
+
+// 		//g.startSearchSimple(&found, &generator, result, input, &wg)
+// 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
+
+// 		if len(found) == 0 { // meaning that the search above never found anything
+// 			// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+// 			return Decomp{}
+// 		}
+
+// 		//wait until first worker finds a balanced sep
+// 		balsep = GetSubset(edges, found)
+// 		var sepSub *SepSub
+// 		balsepOrig := balsep
+// 		// log.Printf("Balanced Sep chosen: %+v\n", balsep)
+// 	INNER:
+// 		for !decomposed {
+// 			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
+
+// 			log.Printf("Comps of Sep: %+v\n", comps)
+
+// 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
+
+// 			for i := range comps {
+
+// 				decomp := g.findDecompParallelSearch(K, comps[i], append(compsSp[i], SepSpecial))
+// 				if reflect.DeepEqual(decomp, Decomp{}) {
+// 					// log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep},
+// 					//        comps[i], append(compsSp[i], SepSpecial))
+// 					subtrees = []Decomp{}
+// 					// log.Printf("\n\nCurrent SubGraph: %v\n", H)
+// 					// log.Printf("Current Special Edges: %v\n\n", Sp)
+// 					if sepSub == nil {
+// 						sepSub = GetSepSub(g.Graph.Edges, balsep, K)
+// 					}
+// 					nextBalsepFound := false
+
+// 					for !nextBalsepFound {
+// 						if sepSub.HasNext() {
+// 							balsep = sepSub.GetCurrent()
+// 							log.Printf("Testing SSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
+// 								Graph{Edges: balsepOrig}, Sp)
+// 							// log.Println("SubSep: ")
+// 							// for _, s := range sepSub.Edges {
+// 							//  log.Println(s.Combination)
+// 							// }
+// 							if H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+// 								nextBalsepFound = true
+// 							}
+// 						} else {
+// 							// log.Printf("No SubSep found for %v with Sp %v  \n", Graph{Edges: balsepOrig}, Sp)
+// 							continue OUTER
+// 						}
+// 					}
+// 					// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: balsep},
+// 					//        Graph{Edges: balsepOrig}, Sp)
+// 					continue INNER
+// 				}
+
+// 				// log.Printf("Produced Decomp: %v\n", decomp)
+
+// 				subtrees = append(subtrees, decomp)
+// 			}
+// 			decomposed = true
+// 		}
+
+// 	}
+
+// 	return rerooting(H, balsep, subtrees)
+// }
+
+// func (g BalSepLocal) findDecompParallelComp(K int, H Graph, Sp []Special) Decomp {
+
+// 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
+// 	// log.Printf("Current Special Edges: %v\n\n", Sp)
+
+// 	//stop if there are at most two special edges left
+// 	if H.Edges.Len()+len(Sp) <= 2 {
+// 		return baseCaseSmart(g.Graph, H, Sp)
+// 	}
+
+// 	//Early termination
+// 	if H.Edges.Len() <= K && len(Sp) == 1 {
+// 		return earlyTermination(H, Sp[0])
+// 	}
+
+// 	//find a balanced separator
+// 	edges := CutEdges(g.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+
+// 	gen := GetCombin(edges.Len(), K)
+// OUTER:
+// 	for gen.HasNext() {
+// 		balsep := GetSubset(edges, gen.Combination)
+// 		gen.Confirm()
+// 		if !H.CheckBalancedSep(balsep, Sp, g.BalFactor) {
+// 			continue
+// 		}
+// 		var sepSub *SepSub
+
+// 		// log.Printf("Balanced Sep chosen: %v\n", Graph{Edges: balsep})
+// 		//balsepOrig := balsep
+// 	INNER:
+// 		for {
+// 			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
+
+// 			// log.Printf("Comps of Sep: %v\n", comps)
+
+// 			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
+
+// 			var subtrees []Decomp
+
+// 			ch := make(chan Decomp)
+// 			quit := make(chan struct{})
+// 			for i := range comps {
+// 				go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
+// 					select {
+// 					case <-quit:
+// 						return
+// 					case ch <- g.findDecompParallelComp(K, comps[i], append(compsSp[i], SepSpecial)):
+// 					}
+
+// 				}(K, i, comps, compsSp, SepSpecial)
+// 			}
+
+// 			for i := 0; i < len(comps); i++ {
+// 				decomp := <-ch
+// 				if reflect.DeepEqual(decomp, Decomp{}) {
+
+// 					close(quit)
+// 					// log.Printf("REJECTING %v: couldn't decompose %v with SP %v \n", Graph{Edges: balsep},
+// 					//        comps[i], append(compsSp[i], SepSpecial))
+
+// 					subBalSep := searchSubEdge(&g, &H, Sp, balsep, sepSub, K)
+// 					if subBalSep.Len() == 0 {
+// 						continue OUTER
+// 					}
+// 					balsep = subBalSep
+// 					continue INNER
+// 				}
+
+// 				// log.Printf("Produced Decomp: %+v\n", decomp)
+
+// 				subtrees = append(subtrees, decomp)
+// 			}
+
+// 			return rerooting(H, balsep, subtrees)
+// 		}
+// 	}
+
+// 	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
+// 	return Decomp{} // empty Decomp signifiyng reject
+// }
+
 func (g BalSepLocal) FindGHD(K int) Decomp {
 	return g.findDecomp(K, g.Graph, []Special{})
 }
@@ -437,13 +450,13 @@ func (g BalSepLocal) FindGHDParallelFull(K int) Decomp {
 	return g.findDecompParallelFull(K, g.Graph, []Special{})
 }
 
-func (g BalSepLocal) FindGHDParallelSearch(K int) Decomp {
-	return g.findDecompParallelSearch(K, g.Graph, []Special{})
-}
+// func (g BalSepLocal) FindGHDParallelSearch(K int) Decomp {
+// 	return g.findDecompParallelSearch(K, g.Graph, []Special{})
+// }
 
-func (g BalSepLocal) FindGHDParallelComp(K int) Decomp {
-	return g.findDecompParallelComp(K, g.Graph, []Special{})
-}
+// func (g BalSepLocal) FindGHDParallelComp(K int) Decomp {
+// 	return g.findDecompParallelComp(K, g.Graph, []Special{})
+// }
 
 func (g BalSepLocal) FindDecomp(K int) Decomp {
 	return g.findDecompParallelFull(K, g.Graph, []Special{})
