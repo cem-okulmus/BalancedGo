@@ -3,7 +3,6 @@
 package lib
 
 import (
-	"log"
 	"runtime"
 	"sync"
 )
@@ -29,7 +28,7 @@ func (s *Search) FindNext(pred Predicate) {
 		}
 	}()
 
-	log.Println("starting search")
+	// log.Println("starting search")
 
 	s.Result = []int{} // reset result
 
@@ -63,7 +62,7 @@ func (s *Search) FindNext(pred Predicate) {
 func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, finished *bool, pred Predicate) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
+			// log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
 			return
 		}
 	}()
@@ -73,7 +72,7 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 
 	for gen.HasNext() {
 		if *finished {
-			log.Printf("Worker %d told to quit", workernum)
+			// log.Printf("Worker %d told to quit", workernum)
 			return
 		}
 		j := gen.Combination
@@ -82,7 +81,7 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 		if gen.BalSep || pred.Check(s.H, s.Sp, &sep, s.BalFactor) {
 			gen.BalSep = true // cache result
 			found <- j
-			log.Printf("Worker %d \" won \"", workernum)
+			// log.Printf("Worker %d \" won \"", workernum)
 			gen.Confirm()
 			*finished = true
 			return

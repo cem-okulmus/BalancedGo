@@ -101,7 +101,7 @@ func (l LogKDecomp) baseCaseCheck(lenE int, lenSp int, lenAE int) bool {
 }
 
 func (l LogKDecomp) baseCase(H Graph, Sp []Special, lenAE int) Decomp {
-	log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
+	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var output Decomp
 
 	// cover faiure cases
@@ -130,8 +130,8 @@ func (l LogKDecomp) baseCase(H Graph, Sp []Special, lenAE int) Decomp {
 
 //attach the two subtrees to form one
 func (l LogKDecomp) attachingSubtrees(subtreeAbove Node, subtreeBelow Node, connecting Special) Node {
-	log.Println("Two Nodes enter: ", subtreeAbove, subtreeBelow)
-	log.Println("Connecting: ", PrintVertices(connecting.Vertices))
+	// log.Println("Two Nodes enter: ", subtreeAbove, subtreeBelow)
+	// log.Println("Connecting: ", PrintVertices(connecting.Vertices))
 	// up = Inter(up, parent.Vertices())
 	//finding connecting leaf in parent
 	leaf := subtreeAbove.CombineNodes(subtreeBelow, connecting)
@@ -146,10 +146,11 @@ func (l LogKDecomp) attachingSubtrees(subtreeAbove Node, subtreeBelow Node, conn
 	// //attaching subtree to parent
 	// leaf.Children = []Node{subtree}
 	// log.Println("Leaf ", leaf)
-	log.Println("One Node leaves: ", leaf)
+	// log.Println("One Node leaves: ", leaf)
 	return *leaf
 }
 
+// sequential version, for developement purposes only
 func (l LogKDecomp) findHD(H Graph, Sp []Special, Conn []int, allowedFull Edges) Decomp {
 
 	log.Printf("\n\nCurrent SubGraph: %v\n", H)
@@ -248,36 +249,6 @@ CHILD:
 			return Decomp{Graph: H, Root: root}
 		}
 
-		// //Connectivity Check Parent
-		// vertCompLow := append(comp_low.Vertices(), VerticesSpecial(compSp_low)...)
-		// vertCompLowProper := Diff(vertCompLow, parentλ.Vertices())
-
-		// if !Subset(Inter(vertCompLow, Conn), parentλ.Vertices()) {
-		// 	log.Println("Parent breaks connectivity wrt. comp_low", len(Inter(parentλ.Vertices(), Conn)))
-		// 	continue PARENT
-		// }
-
-		// log.Printf("Parent cover chosen: %v\n", Graph{Edges: parentλ})
-
-		// log.Printf("Comps of Parent: %v\n", comps_p)
-
-		// log.Println("Lower comp: \n", comp_low)
-
-		// Conn_child := Inter(vertCompLow, parentλ.Vertices())
-		// bound := FilterVertices(allowed, Conn_child)
-
-		// genChildCover := NewCover(l.K, Inter(vertCompLow, parentλ.Vertices()), bound, vertCompLow)
-
-		// allowedInsideComplow := FilterVertices(allowed, vertCompLowProper)
-
-		//Parent loops checks all possible parents that fit the chosen child node
-
-		// Set up iterator for parent
-
-		// parentMap := CreateOrderingMap(allowed, append(childλ.Vertices(), Conn...))
-
-		// allowedParent := FilterVertices(allowed, append(childλ.Vertices(), Conn...))
-
 		genParent := GetCombin(allowed.Len(), l.K)
 
 	PARENT:
@@ -287,71 +258,6 @@ CHILD:
 			parentλ := GetSubset(allowed, genParent.Combination)
 			// parentλ := GetSubset(allowedParent, genParent.Combination)
 			genParent.Confirm()
-
-			// 	var tryPartAlone bool
-
-			// 	out := genChildCover.NextSubset()
-
-			// 	if out == -1 {
-			// 		if genChildCover.HasNext {
-			// 			log.Panicln(" -1 but hasNext not false!")
-			// 		}
-			// 		continue CHILD_OUTER
-			// 	}
-
-			// 	childPart := GetSubset(bound, genChildCover.Subset)
-			// 	if len(Inter(childPart.Vertices(), vertCompLowProper)) > 0 {
-			// 		tryPartAlone = true
-			// 	}
-
-			// 	remainingAllowed := allowedInsideComplow.Diff(childPart)
-
-			// 	genChild := GetCombin(remainingAllowed.Len(), l.K-childPart.Len())
-			// CHILD_INNER:
-			// 	for genChild.HasNext() || tryPartAlone {
-			// 		if !genChild.HasNext() { // run once on just childPart if it extends into comp
-			// 			tryPartAlone = false
-			// 		}
-
-			// 		var childλ Edges
-			// 		if !genChild.HasNext() {
-			// 			childλ = childPart
-			// 		} else {
-			// 			childAdded := GetSubset(remainingAllowed, genChild.Combination)
-			// 			childλ = NewEdges(append(childAdded.Slice(), childPart.Slice()...))
-			// 		}
-			// 		genChild.Confirm()
-
-			// 		childχ := Inter(childλ.Vertices(), vertCompLow)
-
-			// 		// Connectivity check
-			// 		if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
-			// 			// log.Println("Child ", childλ, " breaks connectivity!")
-			// 			log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
-			// 			log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
-
-			// 			log.Println("Child_part ", childPart)
-
-			// 			log.Println("Child Full ", childλ)
-
-			// 			log.Panicln("new loop not working, connectivity broken")
-			// 			continue CHILD_INNER
-			// 		}
-
-			// // Check if progress made (TODO: implement this properly with minimal covers + extensions !)
-			// if Subset(childχ, parentλ.Vertices()) {
-			//  // log.Println("No progress made!")
-
-			//  log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
-			//  log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
-
-			//  log.Println("Child_part ", childPart)
-
-			//  log.Println("Child Full ", childλ)
-
-			//  log.Panicln("New loop not working, no progress made")
-			//  continue CHILD_INNER
-			// }
 
 			comps_p, compsSp_p, _, isolatedEdges := H.GetComponents(parentλ, Sp)
 
@@ -423,16 +329,6 @@ CHILD:
 					}
 				}
 			}
-
-			// log.Println("Size of H' : ", H.Edges.Len()+len(Sp))
-
-			// // Check childχ is balanced separator
-			// for i := range comps_c {
-			// 	if comps_c[i].Edges.Len()+len(compsSp_c[i]) > (H.Edges.Len()+len(Sp))/2 {
-			// 		log.Println("Child is not a bal. sep. !")
-			// 		continue CHILD_INNER
-			// 	}
-			// }
 
 			log.Printf("Parent Found: %v (%s) \n", Graph{Edges: parentλ}, PrintVertices(parentλ.Vertices()))
 
@@ -539,10 +435,10 @@ CHILD:
 // a parallel version of logK, using goroutines and channels to run various parts concurrently
 func (l LogKDecomp) findHDParallel(H Graph, Sp []Special, Conn []int, allowedFull Edges) Decomp {
 
-	log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	log.Printf("Current Allowed Edges: %v\n", allowedFull)
-	log.Printf("Current Special Edges: %v\n", Sp)
-	log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
+	// log.Printf("Current Allowed Edges: %v\n", allowedFull)
+	// log.Printf("Current Special Edges: %v\n", Sp)
+	// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 
 	// Base Case
 	if l.baseCaseCheck(H.Edges.Len(), len(Sp), allowedFull.Len()) {
@@ -563,45 +459,21 @@ func (l LogKDecomp) findHDParallel(H Graph, Sp []Special, Conn []int, allowedFul
 
 	parallelSearch.FindNext(pred) // initial Search
 
-	// genChild := GetCombin(allowed.Len(), l.K)
-
 	// checks all possibles nodes in H, together with PARENT loops, it covers all parent-child pairings
 CHILD:
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
-
-		// var found []int
-
-		// parallelSearch(H, Sp, allowed, &found, genChild, l.BalFactor)
-
-		// if len(found) == 0 { // meaning that the search above never found anything
-		// 	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-		// 	genChild_hasNext = false
-		// 	continue
-		// }
 
 		childλ := GetSubset(allowed, parallelSearch.Result)
 
 		comps_c, compsSp_c, _, _ := H.GetComponents(childλ, Sp)
 
-		// // Check if child is balanced
-		// for i := range comps_c {
-		// 	if comps_c[i].Edges.Len()+len(compsSp_c[i]) > (H.Edges.Len()+len(Sp))/2 {
-		// 		continue CHILD
-		// 		// lowFound = true
-		// 		// comp_low_index = i //keep track of the index for composing comp_up later
-		// 		// comp_low = comps_p[i]
-		// 		// compSp_low = compsSp_p[i]
-		// 	}
-
-		// }
-
-		log.Println("Balanced Child found, ", childλ)
+		// log.Println("Balanced Child found, ", childλ)
 
 		// Check if child is possible root
 		if Subset(Conn, childλ.Vertices()) {
 
-			log.Printf("Child-Root cover chosen: %v\n", Graph{Edges: childλ})
-			log.Printf("Comps of Child-Root: %v\n", comps_c)
+			// log.Printf("Child-Root cover chosen: %v\n", Graph{Edges: childλ})
+			// log.Printf("Comps of Child-Root: %v\n", comps_c)
 
 			childχ := Inter(childλ.Vertices(), Vertices_H)
 
@@ -618,7 +490,7 @@ CHILD:
 			} else {
 				for j := range comps_c {
 					if l.checkNegative(childχ, comps_c[j], Sp) { //TODO: Add positive check and cutNodes
-						log.Println("Skipping a child sep", childχ)
+						// log.Println("Skipping a child sep", childχ)
 						continue CHILD
 					}
 
@@ -632,11 +504,11 @@ CHILD:
 
 				decomp := l.findHDParallel(comps_c[y], compsSp_c[y], Conn_y, allowedFull)
 				if reflect.DeepEqual(decomp, Decomp{}) {
-					log.Println("Rejecting child-root")
-					log.Printf("\nCurrent SubGraph: %v\n", H)
-					log.Printf("Current Allowed Edges: %v\n", allowed)
-					log.Printf("Current Special Edges: %v\n", Sp)
-					log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+					// log.Println("Rejecting child-root")
+					// log.Printf("\nCurrent SubGraph: %v\n", H)
+					// log.Printf("Current Allowed Edges: %v\n", allowed)
+					// log.Printf("Current Special Edges: %v\n", Sp)
+					// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 					l.addNegative(childχ, comps_c[y], compsSp_c[y])
 					continue CHILD
 				}
@@ -649,8 +521,6 @@ CHILD:
 			return Decomp{Graph: H, Root: root}
 		}
 
-		// genParent := GetCombin(allowed.Len(), l.K)
-
 		genParent := SplitCombin(allowed.Len(), l.K, runtime.GOMAXPROCS(-1), false)
 
 		parentalSearch := Search{H: &H, Sp: Sp, Edges: &allowed, BalFactor: l.BalFactor, Generators: genParent}
@@ -662,21 +532,9 @@ CHILD:
 	PARENT:
 		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
 
-			// var foundParent []int
-
-			// parallelSearch(H, Sp, allowed, &foundParent, genParent, l.BalFactor)
-
-			// if len(foundParent) == 0 { // meaning that the search above never found anything
-			// 	log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-			// 	genChild_hasNext = false
-			// 	continue
-			// }
-
-			// parentλ := GetSubsetMap(allowed, genParent.Combination, parentMap)
 			parentλ := GetSubset(allowed, parentalSearch.Result)
-			// parentλ := GetSubset(allowedParent, genParent.Combination)
 
-			log.Println("Looking at parent ", parentλ)
+			// log.Println("Looking at parent ", parentλ)
 
 			comps_p, compsSp_p, _, isolatedEdges := H.GetComponents(parentλ, Sp)
 
@@ -727,20 +585,10 @@ CHILD:
 				}
 			}
 
-			// log.Println("Size of H' : ", H.Edges.Len()+len(Sp))
+			// log.Printf("Parent Found: %v (%s) \n", Graph{Edges: parentλ}, PrintVertices(parentλ.Vertices()))
 
-			// // Check childχ is balanced separator
-			// for i := range comps_c {
-			// 	if comps_c[i].Edges.Len()+len(compsSp_c[i]) > (H.Edges.Len()+len(Sp))/2 {
-			// 		log.Println("Child is not a bal. sep. !")
-			// 		continue CHILD_INNER
-			// 	}
-			// }
-
-			log.Printf("Parent Found: %v (%s) \n", Graph{Edges: parentλ}, PrintVertices(parentλ.Vertices()))
-
-			log.Printf("Child chosen: %v (%s) \n", Graph{Edges: childλ}, PrintVertices(childχ))
-			log.Printf("Comps of Child: %v\n", comps_c)
+			// log.Printf("Child chosen: %v (%s) \n", Graph{Edges: childλ}, PrintVertices(childχ))
+			// log.Printf("Comps of Child: %v\n", comps_c)
 
 			//Computing subcomponents of Child
 
@@ -751,11 +599,11 @@ CHILD:
 				decomp := l.findHDParallel(comps_c[x], compsSp_c[x], Conn_x, allowedFull)
 				if reflect.DeepEqual(decomp, Decomp{}) {
 					l.addNegative(childχ, comps_c[x], compsSp_c[x])
-					log.Println("Rejecting child")
+					// log.Println("Rejecting child")
 					continue PARENT
 				}
 
-				log.Printf("Produced Decomp: %+v\n", decomp)
+				// log.Printf("Produced Decomp: %+v\n", decomp)
 				subtrees = append(subtrees, decomp.Root)
 
 			}
@@ -797,7 +645,7 @@ CHILD:
 
 				comp_up.Edges = NewEdges(tempEdgeSlice)
 
-				log.Println("Upper component:", comp_up)
+				// log.Println("Upper component:", comp_up)
 
 				//Reducing the allowed edges
 				allowedReduced := allowedFull.Diff(comp_low.Edges)
@@ -810,7 +658,7 @@ CHILD:
 				if reflect.DeepEqual(decompUp, Decomp{}) {
 
 					// l.addNegative(childχ, comp_up, Sp)
-					log.Println("Rejecting comp_up")
+					// log.Println("Rejecting comp_up")
 
 					continue PARENT
 				}
@@ -827,11 +675,11 @@ CHILD:
 				finalRoot = rootChild
 			}
 
-			log.Printf("Produced Decomp: %v\n", finalRoot)
+			// log.Printf("Produced Decomp: %v\n", finalRoot)
 			return Decomp{Graph: H, Root: finalRoot}
 
 		}
-		log.Println("ran out of parents", parentalSearch.ExhaustedSearch, "\n\n")
+		// log.Println("ran out of parents", parentalSearch.ExhaustedSearch, "\n\n")
 	}
 
 	// exhausted search space
