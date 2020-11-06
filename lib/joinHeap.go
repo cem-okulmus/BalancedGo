@@ -1,6 +1,7 @@
 package lib
 
 type Separator struct {
+	Found    []int
 	EdgeComb []int
 	Cost     float64
 }

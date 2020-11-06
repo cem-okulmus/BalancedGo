@@ -65,37 +65,57 @@ func (b JCostBalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, S
 		log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 		return Decomp{}
 	}
-	for i := 0; len(found) != 0; i++ {
-		for _, g := range generators {
-			fmt.Print(*g, " ")
-		}
-		fmt.Println()
-		fmt.Println("found=", found)
+	lenFound := len(found)
+	for i := 0; lenFound != 0; i++ {
+		//for _, g := range generators {
+		//	fmt.Print(*g, " ")
+		//}
+		//fmt.Println()
+		//fmt.Println("edges=", edges)
+		//fmt.Println("found=", found)
 		seps = append(seps, make([]int, len(found)))
 		copy(seps[i], found)
+		var found []int
 		parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
+		lenFound = len(found)
 	}
+	fmt.Println()
 
 	// populate heap
+	fmt.Println(edges)
 	jh := make(JoinHeap, len(seps))
-	for i, s := range seps {
-		cost := b.JCosts.Cost(s) // TODO is s in the correct encoding?
+	for i, fnd := range seps {
+		fmt.Println("f=", fnd)
+		s := make([]int, len(fnd))
+		for i, f := range fnd {
+			s[i] = edges.Slice()[f].Name
+		}
+		fmt.Println("s=", s)
+		cost := b.JCosts.Cost(s)
+		fmt.Println("cost=", cost)
 		jh[i] = &Separator{
+			Found:    fnd,
 			EdgeComb: s,
 			Cost:     cost,
 		}
 	}
+	fmt.Println()
 	heap.Init(&jh)
-	for jh.Len() > 0 {
-		fmt.Println(heap.Pop(&jh).(*Separator).EdgeComb, heap.Pop(&jh).(*Separator).Cost)
+	/*for jh.Len() > 0 {
+		s := heap.Pop(&jh).(*Separator)
+		fmt.Println(s.EdgeComb, s.Cost)
+		balsep = GetSubset(edges, s.Found)
+		comps, _, _, _ := H.GetComponents(balsep, Sp)
+		fmt.Println("comps=", comps)
+		fmt.Println()
 	}
 	return Decomp{}
-
+	*/
 	//find a balanced separator
 OUTER:
 	for !decomposed {
 		if jh.Len() > 0 {
-			found = heap.Pop(&jh).(*Separator).EdgeComb
+			found = heap.Pop(&jh).(*Separator).Found
 		} else { // meaning that the search above never found anything
 			log.Printf("balDet REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 			return Decomp{}
@@ -485,5 +505,5 @@ OUTER:
 }
 
 func (b JCostBalDetKDecomp) Name() string {
-	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(b.Depth+1) + " + Join Costs"
+	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(b.Depth+1) + " + Join Optimization"
 }

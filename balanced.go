@@ -459,8 +459,8 @@ func main() {
 
 	if solver != nil {
 		if *jCostPath != "" {
-			if *balDetTest == 0 {
-				fmt.Println("Join cost can be used only in combination with: balDet.")
+			if !*localBal && !*globalBal && *balDetTest == 0 {
+				fmt.Println("Join cost can be used only in combination with: local, global, balDet.")
 				return
 			}
 			if *pace {
@@ -478,12 +478,7 @@ func main() {
 
 			// 2. init map
 			var w EdgesCostMap
-			numEdges := len(parsedGraph.Edges.Slice())
-			edges := make([]int, numEdges)
-			for p, e := range parsedGraph.Edges.Slice() {
-				edges[p] = e.Name
-			}
-			w.Init(edges, *width)
+			w.Init()
 
 			r := csv.NewReader(csvfile)
 			r.FieldsPerRecord = -1
@@ -507,20 +502,32 @@ func main() {
 				for p, s := range rec {
 					comb[p] = parseGraph.Encoding[s]
 				}
-				fmt.Println("comb=", comb)
 
+				fmt.Println("comb=", comb)
 				w.Put(comb, cost)
 			}
 
 			fmt.Println("Printing w:")
-			wCombs, wCosts := w.Records()
-			for i := 0; i < len(wCombs); i++ {
-				fmt.Println(i, wCombs[i], wCosts[i])
+			wComb, wCost := w.Records()
+			for i := 0; i < len(wComb); i++ {
+				fmt.Println(i, wComb[i], wCost[i])
 			}
+			fmt.Println()
 
 			// initialize solver
-			jBalDet := JCostBalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1, JCosts: w}
-			solver = jBalDet
+			if *localBal {
+				local := JCostBalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
+				solver = local
+			} else if *globalBal {
+				jGlobal := JCostBalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
+				solver = jGlobal
+			} else if *balDetTest != 0 {
+				jBalDet := JCostBalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1, JCosts: w}
+				solver = jBalDet
+			} else {
+				fmt.Println("Weird solver chosen.")
+				return
+			}
 		}
 
 		var decomp Decomp
