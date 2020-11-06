@@ -2,7 +2,6 @@ package algorithms
 
 import (
 	"container/heap"
-	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -168,50 +167,28 @@ func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) D
 	}
 	lenFound := len(found)
 	for i := 0; lenFound != 0; i++ {
-		//for _, g := range generators {
-		//	fmt.Print(*g, " ")
-		//}
-		//fmt.Println()
-		//fmt.Println("edges=", edges)
-		//fmt.Println("found=", found)
 		seps = append(seps, make([]int, len(found)))
 		copy(seps[i], found)
 		var found []int
 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 		lenFound = len(found)
 	}
-	fmt.Println()
 
 	// populate heap
-	fmt.Println(edges)
 	jh := make(JoinHeap, len(seps))
 	for i, fnd := range seps {
-		fmt.Println("f=", fnd)
 		s := make([]int, len(fnd))
 		for i, f := range fnd {
 			s[i] = edges.Slice()[f].Name
 		}
-		fmt.Println("s=", s)
 		cost := g.JCosts.Cost(s)
-		fmt.Println("cost=", cost)
 		jh[i] = &Separator{
 			Found:    fnd,
 			EdgeComb: s,
 			Cost:     cost,
 		}
 	}
-	fmt.Println()
 	heap.Init(&jh)
-	/*for jh.Len() > 0 {
-		s := heap.Pop(&jh).(*Separator)
-		fmt.Println(s.EdgeComb, s.Cost)
-		balsep = GetSubset(edges, s.Found)
-		comps, _, _, _ := H.GetComponents(balsep, Sp)
-		fmt.Println("comps=", comps)
-		fmt.Println()
-	}
-	return Decomp{}
-	*/
 
 OUTER:
 	for !decomposed {

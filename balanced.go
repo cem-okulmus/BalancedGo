@@ -459,8 +459,8 @@ func main() {
 
 	if solver != nil {
 		if *jCostPath != "" {
-			if !*localBal && !*globalBal && *balDetTest == 0 {
-				fmt.Println("Join cost can be used only in combination with: local, global, balDet.")
+			if !*localBal && *balDetTest == 0 {
+				fmt.Println("Join cost can be used only in combination with: local, balDet.")
 				return
 			}
 			if *pace {
@@ -492,9 +492,7 @@ func main() {
 					return
 				}
 
-				// 3. encode the key (?) and put the record into the map
-				fmt.Println(record)
-
+				// 3. put the record into the map
 				last := len(record) - 1
 				cost, _ := strconv.ParseFloat(record[last], 64)
 				rec := record[:last]
@@ -502,25 +500,23 @@ func main() {
 				for p, s := range rec {
 					comb[p] = parseGraph.Encoding[s]
 				}
-
-				fmt.Println("comb=", comb)
 				w.Put(comb, cost)
 			}
 
-			fmt.Println("Printing w:")
-			wComb, wCost := w.Records()
-			for i := 0; i < len(wComb); i++ {
-				fmt.Println(i, wComb[i], wCost[i])
-			}
-			fmt.Println()
+			//fmt.Println("Printing w:")
+			//wComb, wCost := w.Records()
+			//for i := 0; i < len(wComb); i++ {
+			//	fmt.Println(i, wComb[i], wCost[i])
+			//}
+			//fmt.Println()
 
 			// initialize solver
 			if *localBal {
 				local := JCostBalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
 				solver = local
-			} else if *globalBal {
-				jGlobal := JCostBalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
-				solver = jGlobal
+				//} else if *globalBal {
+				//jGlobal := JCostBalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
+				//solver = jGlobal
 			} else if *balDetTest != 0 {
 				jBalDet := JCostBalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1, JCosts: w}
 				solver = jBalDet

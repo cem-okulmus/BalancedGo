@@ -135,7 +135,7 @@ func (g JCostBalSepGlobal) findDecompParallelFull(K int, H Graph, Sp []Special) 
 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 		lenFound = len(found)
 	}
-	fmt.Println()
+	//fmt.Println()
 
 	// populate heap
 	fmt.Println(edges)

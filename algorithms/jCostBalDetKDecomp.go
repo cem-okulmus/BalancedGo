@@ -67,19 +67,12 @@ func (b JCostBalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, S
 	}
 	lenFound := len(found)
 	for i := 0; lenFound != 0; i++ {
-		//for _, g := range generators {
-		//	fmt.Print(*g, " ")
-		//}
-		//fmt.Println()
-		//fmt.Println("edges=", edges)
-		//fmt.Println("found=", found)
 		seps = append(seps, make([]int, len(found)))
 		copy(seps[i], found)
 		var found []int
 		parallelSearch(H, Sp, edges, &found, generators, b.BalFactor)
 		lenFound = len(found)
 	}
-	fmt.Println()
 
 	// populate heap
 	fmt.Println(edges)

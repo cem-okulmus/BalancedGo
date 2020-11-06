@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -21,13 +20,11 @@ func hash(comb []int) uint64 {
 // Init an EdgeCostMap with the edges on which it will work
 func (m *EdgesCostMap) Init() {
 	m.e2c = make(map[uint64]float64)
-	fmt.Println("m.e2c=", m.e2c)
 }
 
 // Put the cost of an edge comibnation into the map
 func (m *EdgesCostMap) Put(edgeComb []int, c float64) {
 	code := hash(edgeComb)
-	fmt.Println(code, c)
 	m.e2c[code] = c
 }
 
