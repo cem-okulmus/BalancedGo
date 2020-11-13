@@ -42,7 +42,7 @@ func TestIntHash(t *testing.T) {
 		if different && hash3 == hash2 {
 
 			fmt.Println("vertex", vertices)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 1")
 		}
 
 	}
@@ -76,7 +76,7 @@ func TestIntHash(t *testing.T) {
 
 		if hash1 == hash2 {
 			fmt.Println("Collission", temp1, temp2)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 2")
 		}
 	}
 
@@ -151,7 +151,7 @@ func TestEdgeHash(t *testing.T) {
 		if different && hash3 == hash2 {
 
 			fmt.Println("vertex", vertices)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 3")
 		}
 
 	}
@@ -172,16 +172,16 @@ func TestEdgeHash(t *testing.T) {
 		}
 
 		for i := 0; i < arity; i++ {
-			temp1 = append(temp1, r.Intn(100))
+			temp2 = append(temp2, r.Intn(100))
 		}
 
 		if reflect.DeepEqual(temp1, temp2) {
 			continue
 		}
 
-		edge := Edge{Name: 0, Vertices: temp1}
+		edge := Edge{Name: 0, Vertices: RemoveDuplicates(temp1)}
 
-		edge2 := Edge{Name: 0, Vertices: temp2}
+		edge2 := Edge{Name: 0, Vertices: RemoveDuplicates(temp2)}
 
 		hash1 := edge.Hash()
 
@@ -189,7 +189,7 @@ func TestEdgeHash(t *testing.T) {
 
 		if hash1 == hash2 {
 			fmt.Println("Collission", temp1, temp2)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 4")
 		}
 	}
 
@@ -246,7 +246,7 @@ func TestEdgesHash(t *testing.T) {
 		}
 
 		if hash3 == hash2 {
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 5")
 		}
 
 	}
@@ -303,7 +303,7 @@ func TestEdgesHash(t *testing.T) {
 
 		if hash1 == hash2 {
 			fmt.Println("Collission", temp, temp2)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 6")
 		}
 	}
 
@@ -380,7 +380,7 @@ func TestEdgesExtendedHash(t *testing.T) {
 		}
 
 		if hash3 == hash2 {
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 7")
 		}
 
 	}
@@ -437,7 +437,7 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 		if hash1 == hash2 {
 			fmt.Println("Collission", temp, temp2)
-			t.Errorf("hash collision")
+			t.Errorf("hash collision 9")
 		}
 	}
 

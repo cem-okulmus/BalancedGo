@@ -31,7 +31,7 @@ func (e Edge) Hash() uint32 {
 	var output uint32
 	// arrBytes := []byte{}
 	//  sort.Ints(e.Vertices)
-	for _, item := range e.Vertices {
+	for _, item := range append(e.Vertices, len(e.Vertices)) {
 		h := fnv.New32a()
 		bs := make([]byte, 4)
 		binary.PutVarint(bs, int64(item))
