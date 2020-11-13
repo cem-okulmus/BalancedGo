@@ -398,7 +398,6 @@ func (e Edges) Mem(other Edge) bool {
 // produces the union of all vertices from a slice of Edge
 func (e *Edges) Vertices() []int {
 
-	//  mux.Lock()
 	if len(e.vertices) == 0 {
 		var output []int
 		for _, otherE := range e.Slice() {
@@ -406,7 +405,6 @@ func (e *Edges) Vertices() []int {
 		}
 		e.vertices = RemoveDuplicates(output)
 	}
-	//mux.Unlock()
 
 	return e.vertices
 }

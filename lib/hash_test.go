@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -81,6 +82,34 @@ func TestIntHash(t *testing.T) {
 
 }
 
+func BenchmarkSeparator(b *testing.B) {
+
+	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/Nonogram-007-table.xml.hg")
+	check(err)
+
+	s := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s)
+
+	parsedGraph, _ := GetGraph(string(dat))
+
+	pred := BalancedCheck{}
+
+	for i := 0; i < b.N; i++ {
+
+		var edges []int
+
+		k := 20
+
+		for i := 0; i < k; i++ {
+			edges = append(edges, r.Intn(parsedGraph.Edges.Len()))
+		}
+
+		sep := GetSubset(parsedGraph.Edges, edges)
+
+		pred.Check(&parsedGraph, []Special{}, &sep, 1)
+	}
+}
+
 func TestEdgeHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
@@ -91,10 +120,10 @@ func TestEdgeHash(t *testing.T) {
 
 		var vertices []int
 
-		name := rand.Intn(1000)
+		name := r.Intn(1000)
 
 		for i := 0; i < arity; i++ {
-			vertices = append(vertices, rand.Intn(1000)+i)
+			vertices = append(vertices, r.Intn(1000)+i)
 		}
 
 		edge := Edge{Name: name, Vertices: vertices}
@@ -107,7 +136,7 @@ func TestEdgeHash(t *testing.T) {
 
 		hash2 := edge2.Hash()
 
-		newVal := rand.Intn(100) + len(vertices)
+		newVal := r.Intn(100) + len(vertices)
 		different := vertices[len(vertices)/2] != newVal
 		vertices[len(vertices)/2] = newVal
 
@@ -133,17 +162,17 @@ func TestEdgeHash(t *testing.T) {
 	for x := 0; x < 1000; x++ {
 
 		// arity1 := rand.Intn(100) + 1
-		arity := rand.Intn(20) + 1
+		arity := r.Intn(20) + 1
 
 		var temp1 []int
 		var temp2 []int
 
 		for i := 0; i < arity; i++ {
-			temp1 = append(temp1, rand.Intn(100))
+			temp1 = append(temp1, r.Intn(100))
 		}
 
 		for i := 0; i < arity; i++ {
-			temp1 = append(temp1, rand.Intn(100))
+			temp1 = append(temp1, r.Intn(100))
 		}
 
 		if reflect.DeepEqual(temp1, temp2) {
@@ -173,19 +202,19 @@ func TestEdgesHash(t *testing.T) {
 
 	for x := 0; x < 100; x++ {
 
-		length := rand.Intn(20) + 1
+		length := r.Intn(20) + 1
 		var temp []Edge
 
 		for c := 0; c < length; c++ {
 
-			arity := rand.Intn(100) + 1
+			arity := r.Intn(100) + 1
 
 			var vertices []int
 
-			name := rand.Intn(1000)
+			name := r.Intn(1000)
 
 			for i := 0; i < arity; i++ {
-				vertices = append(vertices, rand.Intn(1000)+i)
+				vertices = append(vertices, r.Intn(1000)+i)
 			}
 
 			edge := Edge{Name: name, Vertices: vertices}
@@ -204,8 +233,8 @@ func TestEdgesHash(t *testing.T) {
 
 		hash2 := edges.Hash()
 
-		index := rand.Intn(len(temp))
-		index2 := rand.Intn(len(temp[index].Vertices))
+		index := r.Intn(len(temp))
+		index2 := r.Intn(len(temp[index].Vertices))
 		temp[index].Vertices[index2] = temp[index].Vertices[index2] + 1
 
 		edges = NewEdges(temp)
@@ -227,7 +256,7 @@ func TestEdgesHash(t *testing.T) {
 
 	for x := 0; x < 1000; x++ {
 
-		length := rand.Intn(20) + 1
+		length := r.Intn(20) + 1
 
 		var temp []Edge
 		var temp2 []Edge
@@ -235,28 +264,28 @@ func TestEdgesHash(t *testing.T) {
 		for j := 0; j < length; j++ {
 
 			// arity1 := rand.Intn(100) + 1
-			arity := rand.Intn(20) + 1
+			arity := r.Intn(20) + 1
 
 			var temp1a []int
 
 			for i := 0; i < arity; i++ {
-				temp1a = append(temp1a, rand.Intn(100))
+				temp1a = append(temp1a, r.Intn(100))
 			}
-			temp = append(temp, Edge{Name: rand.Intn(100) + 1, Vertices: temp1a})
+			temp = append(temp, Edge{Name: r.Intn(100) + 1, Vertices: temp1a})
 
 		}
 
 		for j := 0; j < length; j++ {
 
 			// arity1 := rand.Intn(100) + 1
-			arity := rand.Intn(20) + 1
+			arity := r.Intn(20) + 1
 
 			var temp1a []int
 
 			for i := 0; i < arity; i++ {
-				temp1a = append(temp1a, rand.Intn(100))
+				temp1a = append(temp1a, r.Intn(100))
 			}
-			temp2 = append(temp2, Edge{Name: rand.Intn(100) + 1, Vertices: temp1a})
+			temp2 = append(temp2, Edge{Name: r.Intn(100) + 1, Vertices: temp1a})
 
 		}
 
@@ -307,19 +336,19 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 	for x := 0; x < 100; x++ {
 
-		length := rand.Intn(20) + 1
+		length := r.Intn(20) + 1
 		var temp []Edge
 
 		for c := 0; c < length; c++ {
 
-			arity := rand.Intn(100) + 1
+			arity := r.Intn(100) + 1
 
 			var vertices []int
 
-			name := rand.Intn(1000)
+			name := r.Intn(1000)
 
 			for i := 0; i < arity; i++ {
-				vertices = append(vertices, rand.Intn(1000)+i)
+				vertices = append(vertices, r.Intn(1000)+i)
 			}
 
 			edge := Edge{Name: name, Vertices: vertices}
@@ -338,8 +367,8 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 		hash2 := edges.HashExtended(Sp)
 
-		index := rand.Intn(len(temp))
-		index2 := rand.Intn(len(temp[index].Vertices))
+		index := r.Intn(len(temp))
+		index2 := r.Intn(len(temp[index].Vertices))
 		temp[index].Vertices[index2] = temp[index].Vertices[index2] + 1
 
 		edges = NewEdges(temp)
@@ -361,36 +390,36 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 	for x := 0; x < 1000; x++ {
 
-		length := rand.Intn(20) + 1
+		length := r.Intn(20) + 1
 
 		var temp []Edge
 		var temp2 []Edge
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := rand.Intn(100) + 1
-			arity := rand.Intn(20) + 1
+			// arity1 := r.Intn(100) + 1
+			arity := r.Intn(20) + 1
 
 			var temp1a []int
 
 			for i := 0; i < arity; i++ {
-				temp1a = append(temp1a, rand.Intn(100))
+				temp1a = append(temp1a, r.Intn(100))
 			}
-			temp = append(temp, Edge{Name: rand.Intn(100) + 1, Vertices: temp1a})
+			temp = append(temp, Edge{Name: r.Intn(100) + 1, Vertices: temp1a})
 
 		}
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := rand.Intn(100) + 1
-			arity := rand.Intn(20) + 1
+			// arity1 := r.Intn(100) + 1
+			arity := r.Intn(20) + 1
 
 			var temp1a []int
 
 			for i := 0; i < arity; i++ {
-				temp1a = append(temp1a, rand.Intn(100))
+				temp1a = append(temp1a, r.Intn(100))
 			}
-			temp2 = append(temp2, Edge{Name: rand.Intn(100) + 1, Vertices: temp1a})
+			temp2 = append(temp2, Edge{Name: r.Intn(100) + 1, Vertices: temp1a})
 
 		}
 

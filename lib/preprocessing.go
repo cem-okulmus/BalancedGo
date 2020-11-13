@@ -303,7 +303,15 @@ func (e Edges) addVertex(target int, oldVertices []int) Edges {
 
 	for i := range edges {
 		if Mem(edges[i].Vertices, target) {
-			edges[i].Vertices = append(edges[i].Vertices, oldVertices...)
+
+			newLambda := make([]int, len(edges[i].Vertices))
+
+			copy(newLambda, edges[i].Vertices)
+
+			newLambda = append(newLambda, oldVertices...)
+
+			edges[i].Vertices = newLambda
+
 		}
 	}
 
@@ -315,7 +323,6 @@ func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
 	if Mem(n.Bag, target) {
 		n.Bag = append(n.Bag, oldVertices...)
 		n.Cover = n.Cover.addVertex(target, oldVertices)
-		found = true
 		found = true
 	}
 
