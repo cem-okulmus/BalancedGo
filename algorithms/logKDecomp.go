@@ -249,13 +249,15 @@ CHILD:
 			return Decomp{Graph: H, Root: root}
 		}
 
-		genParent := GetCombin(allowed.Len(), l.K)
+		alowedParent := FilterVertices(allowed, append(Conn, childλ.Vertices()...))
+
+		genParent := GetCombin(alowedParent.Len(), l.K)
 
 	PARENT:
 		for genParent.HasNext() {
 
 			// parentλ := GetSubsetMap(allowed, genParent.Combination, parentMap)
-			parentλ := GetSubset(allowed, genParent.Combination)
+			parentλ := GetSubset(alowedParent, genParent.Combination)
 			// parentλ := GetSubset(allowedParent, genParent.Combination)
 			genParent.Confirm()
 
@@ -521,9 +523,10 @@ CHILD:
 			return Decomp{Graph: H, Root: root}
 		}
 
-		genParent := SplitCombin(allowed.Len(), l.K, runtime.GOMAXPROCS(-1), false)
+		alowedParent := FilterVertices(allowed, append(Conn, childλ.Vertices()...))
+		genParent := SplitCombin(alowedParent.Len(), l.K, runtime.GOMAXPROCS(-1), false)
 
-		parentalSearch := Search{H: &H, Sp: Sp, Edges: &allowed, BalFactor: l.BalFactor, Generators: genParent}
+		parentalSearch := Search{H: &H, Sp: Sp, Edges: &alowedParent, BalFactor: l.BalFactor, Generators: genParent}
 
 		predPar := ParentCheck{Conn: Conn, Child: childλ.Vertices()}
 
@@ -532,7 +535,7 @@ CHILD:
 	PARENT:
 		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
 
-			parentλ := GetSubset(allowed, parentalSearch.Result)
+			parentλ := GetSubset(alowedParent, parentalSearch.Result)
 
 			// log.Println("Looking at parent ", parentλ)
 
