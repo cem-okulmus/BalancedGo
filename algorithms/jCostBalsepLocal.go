@@ -2,6 +2,7 @@ package algorithms
 
 import (
 	"container/heap"
+	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -166,13 +167,17 @@ func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) D
 		return Decomp{}
 	}
 	lenFound := len(found)
+	fmt.Println("NEW SEARCH")
+	fmt.Println("found=", found)
 	for i := 0; lenFound != 0; i++ {
 		seps = append(seps, make([]int, len(found)))
 		copy(seps[i], found)
 		var found []int
 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 		lenFound = len(found)
+		fmt.Println("found=", found)
 	}
+	fmt.Println()
 
 	// populate heap
 	jh := make(JoinHeap, len(seps))

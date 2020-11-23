@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/pprof"
+	"sort"
 	"strconv"
 	"time"
 
@@ -500,6 +501,7 @@ func main() {
 				for p, s := range rec {
 					comb[p] = parseGraph.Encoding[s]
 				}
+				sort.Ints(comb)
 				w.Put(comb, cost)
 			}
 

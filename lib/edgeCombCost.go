@@ -25,6 +25,9 @@ func (m *EdgesCostMap) Init() {
 // Put the cost of an edge comibnation into the map
 func (m *EdgesCostMap) Put(edgeComb []int, c float64) {
 	code := hash(edgeComb)
+	if _, ok := m.e2c[code]; ok {
+		log.Panicln("Edge combination", edgeComb, "already present")
+	}
 	m.e2c[code] = c
 }
 
