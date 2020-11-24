@@ -208,12 +208,12 @@ func main() {
 		// Determine solver
 
 		if *detKTest {
-			det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
+			det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 			solverUpdate = det
 		}
 
 		if *balDetTest > 0 {
-			balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
+			balDet := &BalDetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
 			solverUpdate = balDet
 		}
 
@@ -358,7 +358,7 @@ func main() {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solverUpdate.FindDecompUpdate(*width, parsedGraph, scenes)
+			decomp = solverUpdate.FindDecompUpdate(parsedGraph, scenes)
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
@@ -401,19 +401,19 @@ func main() {
 	// }
 
 	if *balDetTest > 0 {
-		balDet := BalDetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
+		balDet := &BalDetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
 		solver = balDet
 		chosen++
 	}
 
 	if *detKTest {
-		det := DetKDecomp{Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
+		det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
 		solver = det
 		chosen++
 	}
 
 	if *logK {
-		logK := LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		logK := &LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
 		solver = logK
 		chosen++
 	}
@@ -437,13 +437,13 @@ func main() {
 	// }
 
 	if *globalBal {
-		global := BalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor}
+		global := &BalSepGlobal{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor}
 		solver = global
 		chosen++
 	}
 
 	if *localBal {
-		local := BalSepLocal{Graph: parsedGraph, BalFactor: BalancedFactor}
+		local := &BalSepLocal{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor}
 		solver = local
 		chosen++
 	}
@@ -459,12 +459,16 @@ func main() {
 
 		if *exact {
 			k := 1
+
 			solved := false
 			for !solved {
+
+				solver.SetWidth(k)
+
 				if *hingeFlag {
-					decomp = hinget.DecompHinge(solver, k, parsedGraph)
+					decomp = hinget.DecompHinge(solver, parsedGraph)
 				} else {
-					decomp = solver.FindDecomp(k)
+					decomp = solver.FindDecomp()
 				}
 
 				solved = decomp.Correct(parsedGraph)
@@ -476,17 +480,20 @@ func main() {
 			go func() {
 				m := parsedGraph.Edges.Len()
 				k := int(math.Ceil(float64(m) / 2))
-				decomp = solver.FindDecomp(k)
+				decomp = solver.FindDecomp()
 				k = decomp.CheckWidth()
 				solved := false
 
 				var newDecomp Decomp
 				for !solved {
 					newK := k - 1
+
+					solver.SetWidth(newK)
+
 					if *hingeFlag {
-						newDecomp = hinget.DecompHinge(solver, newK, parsedGraph)
+						newDecomp = hinget.DecompHinge(solver, parsedGraph)
 					} else {
-						newDecomp = solver.FindDecomp(newK)
+						newDecomp = solver.FindDecomp()
 					}
 					if newDecomp.Correct(parsedGraph) {
 						k = newDecomp.CheckWidth()
@@ -506,9 +513,9 @@ func main() {
 			}
 		} else {
 			if *hingeFlag {
-				decomp = hinget.DecompHinge(solver, *width, parsedGraph)
+				decomp = hinget.DecompHinge(solver, parsedGraph)
 			} else {
-				decomp = solver.FindDecomp(*width)
+				decomp = solver.FindDecomp()
 			}
 		}
 

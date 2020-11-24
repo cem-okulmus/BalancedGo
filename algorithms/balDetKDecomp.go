@@ -14,9 +14,49 @@ import (
 )
 
 type BalDetKDecomp struct {
+	K         int
 	Graph     Graph
 	BalFactor int
 	Depth     int // how many rounds of balSep are used
+}
+
+func (b *BalDetKDecomp) SetWidth(K int) {
+	b.K = K
+}
+
+func (b BalDetKDecomp) FindGHD(currentGraph Graph) Decomp {
+	return b.findDecompBalSep(b.Depth, currentGraph)
+}
+
+func (b BalDetKDecomp) FindDecomp() Decomp {
+	return b.FindGHD(b.Graph)
+}
+
+func (b BalDetKDecomp) FindDecompGraph(G Graph) Decomp {
+	return b.FindGHD(G)
+}
+
+func (b BalDetKDecomp) FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
+	// b.cache = make(map[uint32]*CompCache)
+
+	if log.Flags() == 0 {
+		counterMap = make(map[string]int)
+		defer func(map[string]int) {
+
+			fmt.Println("Counter Map:")
+
+			for k, v := range counterMap {
+				fmt.Println("Scene: ", k, "\nTimes Used: ", v)
+			}
+
+		}(counterMap)
+	}
+
+	return b.findDecompBalSepUpdate(b.Depth, currentGraph, savedScenes)
+}
+
+func (b BalDetKDecomp) Name() string {
+	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(b.Depth+1)
 }
 
 func decrease(count int) int {
@@ -28,29 +68,29 @@ func decrease(count int) int {
 	}
 }
 
-func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []Special) Decomp {
+func (b BalDetKDecomp) findDecompBalSep(currentDepth int, H Graph) Decomp {
 	// log.Println("Current Depth: ", (b.Depth - currentDepth))
 	// log.Printf("Current SubGraph: %+v\n", H)
 	// log.Printf("Current Special Edges: %+v\n\n", Sp)
 
 	//stop if there are at most two special edges left
-	if H.Edges.Len()+len(Sp) <= 2 {
-		return baseCaseSmart(b.Graph, H, Sp)
+	if H.Len() <= 2 {
+		return baseCaseSmart(b.Graph, H)
 	}
 
 	//Early termination
-	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
+	if H.Edges.Len() <= b.K && len(H.Special) == 1 {
+		return earlyTermination(H)
 	}
 
 	var balsep Edges
 
 	//find a balanced separator
-	edges := CutEdges(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := CutEdges(b.Graph.Edges, append(H.Vertices()))
 
-	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
+	generators := SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
 
-	parallelSearch := Search{H: &H, Sp: Sp, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+	parallelSearch := Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
 
 	pred := BalancedCheck{}
 
@@ -81,11 +121,11 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 	INNER:
 		for !exhaustedSubedges {
-			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
+			comps, _, _ := H.GetComponents(balsep)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
-			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
+			SepSpecial := NewEdges(balsep.Slice())
 
 			ch := make(chan Decomp)
 			var subtrees []Decomp
@@ -94,36 +134,38 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 			for i := range comps {
 
 				if currentDepth > 0 {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
-						ch <- b.findDecompBalSep(K, decrease(currentDepth), comps[i], append(compsSp[i], SepSpecial))
-					}(K, i, comps, compsSp, SepSpecial)
+					go func(i int, comps []Graph, SepSpecial Edges) {
+						comps[i].Special = append(comps[i].Special, SepSpecial)
+						ch <- b.findDecompBalSep(decrease(currentDepth), comps[i])
+					}(i, comps, SepSpecial)
 				} else {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special) {
+					go func(i int, comps []Graph, SepSpecial Edges) {
 
 						// Base case handling
+						comps[i].Special = append(comps[i].Special, SepSpecial)
 
-						Sp := append(compsSp[i], SepSpecial)
 						//stop if there are at most two special edges left
-						if comps[i].Edges.Len()+len(Sp) <= 2 {
-							ch <- baseCaseSmart(b.Graph, comps[i], Sp)
+						if comps[i].Len() <= 2 {
+							ch <- baseCaseSmart(b.Graph, comps[i])
 							//outDecomp = append(outDecomp, baseCaseSmart(b.Graph, comps[i], Sp))
 							return
 						}
 
 						//Early termination
-						if comps[i].Edges.Len() <= K && len(Sp) == 1 {
-							ch <- earlyTermination(comps[i], Sp[0])
+						if comps[i].Edges.Len() <= b.K && len(comps[i].Special) == 1 {
+							ch <- earlyTermination(comps[i])
 							//outDecomp = append(outDecomp, earlyTermination(comps[i], Sp[0]))
 							return
 						}
 
-						det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
+						det := DetKDecomp{K: b.K, Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
 
 						// edgesFromSpecial := EdgesSpecial(Sp)
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
-						det.cache = make(map[uint64]*CompCache)
-						result := det.findDecomp(K, comps[i], balsep.Vertices(), compsSp[i])
+						// det.cache = make(map[uint64]*CompCache)
+						det.cache.Init()
+						result := det.findDecomp(comps[i], balsep.Vertices())
 						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
 						} else {
@@ -137,7 +179,7 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 						}
 						ch <- result
 						// outDecomp = append(outDecomp, result)
-					}(K, i, comps, compsSp, SepSpecial)
+					}(i, comps, SepSpecial)
 				}
 
 			}
@@ -154,7 +196,7 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 
 					subtrees = []Decomp{}
 					if sepSub == nil {
-						sepSub = GetSepSub(b.Graph.Edges, balsep, K)
+						sepSub = GetSepSub(b.Graph.Edges, balsep, b.K)
 					}
 					nextBalsepFound := false
 				thisLoop:
@@ -172,7 +214,7 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 								continue thisLoop
 							}
 
-							if pred.Check(&H, Sp, &balsep, b.BalFactor) {
+							if pred.Check(&H, &balsep, b.BalFactor) {
 								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
@@ -215,62 +257,30 @@ func (b BalDetKDecomp) findDecompBalSep(K int, currentDepth int, H Graph, Sp []S
 	return Decomp{} // empty Decomp signifiyng reject
 }
 
-func (b BalDetKDecomp) FindGHD(K int, currentGraph Graph, Sp []Special) Decomp {
-	return b.findDecompBalSep(K, b.Depth, currentGraph, Sp)
-}
-
-func (b BalDetKDecomp) FindDecomp(K int) Decomp {
-	return b.FindGHD(K, b.Graph, []Special{})
-}
-
-func (b BalDetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
-	return b.FindGHD(K, G, []Special{})
-}
-
-func (b BalDetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
-	// b.cache = make(map[uint32]*CompCache)
-
-	if log.Flags() == 0 {
-		counterMap = make(map[string]int)
-		defer func(map[string]int) {
-
-			fmt.Println("Counter Map:")
-
-			for k, v := range counterMap {
-				fmt.Println("Scene: ", k, "\nTimes Used: ", v)
-			}
-
-		}(counterMap)
-	}
-
-	return b.findDecompBalSepUpdate(K, b.Depth, currentGraph, []Special{}, savedScenes)
-}
-
-func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, Sp []Special,
-	savedScenes map[uint32]SceneValue) Decomp {
+func (b BalDetKDecomp) findDecompBalSepUpdate(currentDepth int, H Graph, savedScenes map[uint32]SceneValue) Decomp {
 	// log.Println("Current Depth: ", (b.Depth - currentDepth))
 	// log.Printf("Current SubGraph: %+v\n", H)
 	// log.Printf("Current Special Edges: %+v\n\n", Sp)
-	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
+	verticesCurrent := append(H.Vertices())
 
 	//stop if there are at most two special edges left
-	if H.Edges.Len()+len(Sp) <= 2 {
-		return baseCaseSmart(b.Graph, H, Sp)
+	if H.Len() <= 2 {
+		return baseCaseSmart(b.Graph, H)
 	}
 
 	//Early termination
-	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
+	if H.Edges.Len() <= b.K && len(H.Special) == 1 {
+		return earlyTermination(H)
 	}
 
 	var balsep Edges
 
 	//find a balanced separator
-	edges := CutEdges(b.Graph.Edges, append(H.Vertices(), VerticesSpecial(Sp)...))
+	edges := CutEdges(b.Graph.Edges, append(H.Vertices()))
 
-	generators := SplitCombin(edges.Len(), K, runtime.GOMAXPROCS(-1), true)
+	generators := SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
 
-	parallelSearch := Search{H: &H, Sp: Sp, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+	parallelSearch := Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
 
 	pred := BalancedCheck{}
 
@@ -328,11 +338,11 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 
 	INNER:
 		for !exhaustedSubedges {
-			comps, compsSp, _, _ := H.GetComponents(balsep, Sp)
+			comps, _, _ := H.GetComponents(balsep)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
-			SepSpecial := Special{Edges: balsep, Vertices: balsep.Vertices()}
+			SepSpecial := NewEdges(balsep.Slice())
 
 			ch := make(chan Decomp)
 			var subtrees []Decomp
@@ -341,39 +351,39 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 			for i := range comps {
 
 				if currentDepth > 0 {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special,
-						savedScenes map[uint32]SceneValue) {
-						ch <- b.findDecompBalSepUpdate(K, decrease(currentDepth), comps[i], append(compsSp[i],
-							SepSpecial), savedScenes)
-					}(K, i, comps, compsSp, SepSpecial, savedScenes)
+					go func(i int, comps []Graph, SepSpecial Edges, savedScenes map[uint32]SceneValue) {
+						comps[i].Special = append(comps[i].Special, SepSpecial)
+						ch <- b.findDecompBalSepUpdate(decrease(currentDepth), comps[i], savedScenes)
+					}(i, comps, SepSpecial, savedScenes)
 				} else {
-					go func(K int, i int, comps []Graph, compsSp [][]Special, SepSpecial Special,
+					go func(i int, comps []Graph, SepSpecial Edges,
 						savedScenes map[uint32]SceneValue) {
 
 						// Base case handling
+						comps[i].Special = append(comps[i].Special, SepSpecial)
 
-						Sp := append(compsSp[i], SepSpecial)
 						//stop if there are at most two special edges left
-						if comps[i].Edges.Len()+len(Sp) <= 2 {
-							ch <- baseCaseSmart(b.Graph, comps[i], Sp)
+						if comps[i].Len() <= 2 {
+							ch <- baseCaseSmart(b.Graph, comps[i])
 							//outDecomp = append(outDecomp, baseCaseSmart(b.Graph, comps[i], Sp))
 							return
 						}
 
 						//Early termination
-						if comps[i].Edges.Len() <= K && len(Sp) == 1 {
-							ch <- earlyTermination(comps[i], Sp[0])
+						if comps[i].Edges.Len() <= b.K && len(comps[i].Special) == 1 {
+							ch <- earlyTermination(comps[i])
 							//outDecomp = append(outDecomp, earlyTermination(comps[i], Sp[0]))
 							return
 						}
 
-						det := DetKDecomp{Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
+						det := DetKDecomp{K: b.K, Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
 
 						// edgesFromSpecial := EdgesSpecial(Sp)
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
-						det.cache = make(map[uint64]*CompCache)
-						result := det.findDecompUpdate(K, comps[i], balsep.Vertices(), compsSp[i], savedScenes)
+						// det.cache = make(map[uint64]*CompCache)
+						det.cache.Init()
+						result := det.findDecompUpdate(comps[i], balsep.Vertices(), savedScenes)
 						if !reflect.DeepEqual(result, Decomp{}) {
 							result.SkipRerooting = true
 						} else {
@@ -387,7 +397,7 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 						}
 						ch <- result
 						// outDecomp = append(outDecomp, result)
-					}(K, i, comps, compsSp, SepSpecial, savedScenes)
+					}(i, comps, SepSpecial, savedScenes)
 				}
 
 			}
@@ -404,7 +414,7 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 
 					subtrees = []Decomp{}
 					if sepSub == nil {
-						sepSub = GetSepSub(b.Graph.Edges, balsep, K)
+						sepSub = GetSepSub(b.Graph.Edges, balsep, b.K)
 					}
 					nextBalsepFound := false
 				thisLoop:
@@ -421,7 +431,7 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 							if ok { //skip since already seen
 								continue thisLoop
 							}
-							if pred.Check(&H, Sp, &balsep, b.BalFactor) {
+							if pred.Check(&H, &balsep, b.BalFactor) {
 								cache[IntHash(balsep.Vertices())] = Empty
 								nextBalsepFound = true
 							}
@@ -463,8 +473,4 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(K int, currentDepth int, H Graph, 
 
 	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 	return Decomp{} // empty Decomp signifiyng reject
-}
-
-func (b BalDetKDecomp) Name() string {
-	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(b.Depth+1)
 }

@@ -80,20 +80,20 @@ func (e *Edges) Hash() uint64 {
 	return *e.hash
 }
 
-func (e *Edges) HashExtended(Sp []Special) uint64 {
+func (g *Graph) Hash() uint64 {
 
-	var specialEdges []Edge
+	// var specialEdges []Edge
 
-	for i := range Sp {
-		specialEdges = append(specialEdges, Edge{Name: 0, Vertices: Sp[i].Vertices})
-	}
+	// for i := range Sp {
+	// 	specialEdges = append(specialEdges, Edge{Name: 0, Vertices: Sp[i].Vertices})
+	// }
 
-	output := e.Hash() // start with hash on Edges itself
+	output := g.Edges.Hash() // start with hash on Edges itself
 
-	for i := range specialEdges {
+	for i := range g.Special {
 		h := fnv.New64a()
 		bs := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bs, uint64(specialEdges[i].Hash()))
+		binary.LittleEndian.PutUint64(bs, uint64(g.Special[i].Hash()))
 		// arrBytes = append(arrBytes, bs...)
 		h.Write(bs)
 		output = output ^ h.Sum64()

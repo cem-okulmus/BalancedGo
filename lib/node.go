@@ -341,10 +341,10 @@ OUTER:
 }
 
 // attach subtree to n, via the connecting special edge
-func (n *Node) CombineNodes(subtree Node, connecting Special) *Node {
+func (n *Node) CombineNodes(subtree Node, connecting Edges) *Node {
 
 	// leaf that covers the connecting vertices
-	if Subset(n.Bag, connecting.Vertices) && len(n.Children) == 0 {
+	if Subset(n.Bag, connecting.Vertices()) && len(n.Children) == 0 {
 		n.Children = subtree.Children
 		log.Println("Base case activated at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
 		return n

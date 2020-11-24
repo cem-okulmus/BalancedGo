@@ -2,15 +2,17 @@ package lib
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spakin/disjoint"
 )
 
-// A Graph is a collection of edges
+// A Graph is a collection of (special) edges
 type Graph struct {
 	Edges    Edges
+	Special  []Edges
 	vertices []int
 }
 
@@ -24,6 +26,18 @@ func (g Graph) String() string {
 		}
 	}
 	buffer.WriteString("}")
+
+	if len(g.Special) > 0 {
+		buffer.WriteString(" & Special Edges [")
+		for i := range g.Special {
+			buffer.WriteString(g.Special[i].String())
+			if i != len(g.Special)-1 {
+				buffer.WriteString(", ")
+			}
+		}
+		buffer.WriteString(" ]")
+	}
+
 	return buffer.String()
 }
 
@@ -40,8 +54,15 @@ func (g *Graph) Vertices() []int {
 	for _, otherE := range g.Edges.Slice() {
 		output = append(output, otherE.Vertices...)
 	}
+	for i := range g.Special {
+		output = append(output, g.Special[i].Vertices()...)
+	}
 	g.vertices = RemoveDuplicates(output)
 	return g.vertices
+}
+
+func (g Graph) Len() int {
+	return g.Edges.Len() + len(g.Special)
 }
 
 // func GetSubsetMap(edges Edges, s []int, Map []int) Edges {
@@ -52,6 +73,8 @@ func (g *Graph) Vertices() []int {
 // 	return NewEdges(output)
 // }
 
+// Special edges are ignored here, since they should never be
+// considered when choosing a separator
 func GetSubset(edges Edges, s []int) Edges {
 	var output []Edge
 	for _, i := range s {
@@ -65,13 +88,12 @@ func (g Graph) GetSubset(s []int) Edges {
 }
 
 // Uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map[int]int, []Edge) {
+func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 	var outputG []Graph
-	var outputS [][]Special
 
 	var vertices = make(map[int]*disjoint.Element)
 	var comps = make(map[*disjoint.Element][]Edge)
-	var compsSp = make(map[*disjoint.Element][]Special)
+	var compsSp = make(map[*disjoint.Element][]Edges)
 
 	balsepVert := sep.Vertices()
 	balSepCache := make(map[int]bool, len(balsepVert))
@@ -81,7 +103,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 	}
 
 	//  Set up the disjoint sets for each node
-	for _, i := range append(g.Edges.Vertices(), VerticesSpecial(Sp)...) {
+	for _, i := range g.Vertices() {
 		vertices[i] = disjoint.NewElement()
 	}
 
@@ -110,21 +132,21 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		}
 	}
 
-	for k := range Sp {
+	for k := range g.Special {
 		//actualVertices := Diff(s.Vertices, balsepVert)
 		// for i := 0; i < len(actualVertices)-1 && i+1 < len(actualVertices); i++ {
 		//  disjoint.Union(vertices[actualVertices[i]], vertices[actualVertices[i+1]])
 		// }
 
-		for i := 0; i < len(Sp[k].Vertices)-1; i++ {
-			if balSepCache[Sp[k].Vertices[i]] {
+		for i := 0; i < len(g.Special[k].Vertices())-1; i++ {
+			if balSepCache[g.Special[k].Vertices()[i]] {
 				continue
 			}
-			for j := i + 1; j < len(Sp[k].Vertices); j++ {
-				if balSepCache[Sp[k].Vertices[j]] {
+			for j := i + 1; j < len(g.Special[k].Vertices()); j++ {
+				if balSepCache[g.Special[k].Vertices()[j]] {
 					continue
 				}
-				disjoint.Union(vertices[Sp[k].Vertices[i]], vertices[Sp[k].Vertices[j]])
+				disjoint.Union(vertices[g.Special[k].Vertices()[i]], vertices[g.Special[k].Vertices()[j]])
 				// j = i-1
 				break
 			}
@@ -167,8 +189,8 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 	}
 
-	var isolatedSp []Special
-	for i := range Sp {
+	var isolatedSp []Edges
+	for i := range g.Special {
 		// actualVertices := Diff(s.Vertices, balsepVert)
 		// if len(actualVertices) > 0 {
 		//  compsSp[vertices[actualVertices[0]].Find()] = append(compsSp[vertices[actualVertices[0]].Find()], s)
@@ -177,7 +199,7 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		// }
 		var vertexRep int
 		found := false
-		for _, v := range Sp[i].Vertices {
+		for _, v := range g.Special[i].Vertices() {
 			if balSepCache[v] {
 				continue
 			}
@@ -186,7 +208,8 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 			break
 		}
 		if !found {
-			isolatedSp = append(isolatedSp, Sp[i])
+			fmt.Println("Found isolated special edges", g.Special[i])
+			isolatedSp = append(isolatedSp, g.Special[i])
 			continue
 		}
 
@@ -194,13 +217,12 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 
 		slice, ok := compsSp[vertices[vertexRep].Find()]
 		if !ok {
-			newslice := make([]Special, 0, len(Sp))
+			newslice := make([]Edges, 0, len(g.Special))
 			compsSp[vertices[vertexRep].Find()] = newslice
 			slice = newslice
 		}
 
-		compsSp[vertices[vertexRep].Find()] = append(slice, Sp[i])
-
+		compsSp[vertices[vertexRep].Find()] = append(slice, g.Special[i])
 	}
 
 	edgeToComp := make(map[int]int)
@@ -211,9 +233,9 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		for i := range slice {
 			edgeToComp[slice[i].Name] = len(outputG)
 		}
-		g := Graph{Edges: Edges{slice: slice}}
+		g := Graph{Edges: Edges{slice: slice}, Special: compsSp[k]}
 		outputG = append(outputG, g)
-		outputS = append(outputS, compsSp[k])
+		// outputS = append(outputS, compsSp[k])
 
 	}
 
@@ -222,18 +244,18 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 		if ok {
 			continue
 		}
-		g := Graph{}
+		g := Graph{Special: compsSp[k]}
 		outputG = append(outputG, g)
-		outputS = append(outputS, compsSp[k])
+		// outputS = append(outputS, compsSp[k])
 	}
 
-	for _, s := range isolatedSp {
-		g := Graph{}
+	for i := range isolatedSp {
+		g := Graph{Special: []Edges{isolatedSp[i]}}
 		outputG = append(outputG, g)
-		outputS = append(outputS, []Special{s})
+		// outputS = append(outputS, []Special{s})
 	}
 
-	return outputG, outputS, edgeToComp, isolatedEdges
+	return outputG, edgeToComp, isolatedEdges
 }
 
 // // Uses Disjoint Set data structure to compute connected components
@@ -393,6 +415,8 @@ func (g Graph) GetComponents(sep Edges, Sp []Special) ([]Graph, [][]Special, map
 // 	return tmp
 // }
 
+// ignoring special edges here, as this concerns search for separators,
+// which may not use special edges
 func FilterVertices(edges Edges, vertices []int) Edges {
 	var output []Edge
 
@@ -444,9 +468,9 @@ func CutEdges(edges Edges, vertices []int) Edges {
 
 }
 
-func (g Graph) CheckNextSep(sep Edges, oldSep Edges, Sp []Special) bool {
+func (g Graph) CheckNextSep(sep Edges, oldSep Edges) bool {
 
-	verticesCurrent := append(g.Vertices(), VerticesSpecial(Sp)...)
+	verticesCurrent := append(g.Vertices())
 
 	// check if balsep covers the intersection of oldsep and H
 	if !Subset(Inter(oldSep.Vertices(), verticesCurrent), sep.Vertices()) {
@@ -461,6 +485,7 @@ func (g Graph) CheckNextSep(sep Edges, oldSep Edges, Sp []Special) bool {
 
 }
 
+// special edges not relevant for subedges
 func (g Graph) ComputeSubEdges(K int) Graph {
 	var output = g.Edges.Slice()
 

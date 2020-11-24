@@ -16,8 +16,9 @@ type hingeEdge struct {
 
 type Algorithm_h interface {
 	Name() string
-	FindDecomp(K int) Decomp
-	FindDecompGraph(G Graph, K int) Decomp
+	FindDecomp() Decomp
+	FindDecompGraph(G Graph) Decomp
+	SetWidth(K int)
 }
 
 type Hingetree struct {
@@ -110,7 +111,7 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 		}
 
 		sepEdge := NewEdges([]Edge{*e})
-		hinges, _, gamma, _ := h.hinge.GetComponents(sepEdge, []Special{})
+		hinges, gamma, _ := h.hinge.GetComponents(sepEdge)
 
 		//fmt.Printf("Hinges of Sep: %v\n", hinges)
 
@@ -240,9 +241,9 @@ func (n Node) RerootEdge(edge []int) Node {
 	return child
 }
 
-func (h Hingetree) DecompHinge(alg Algorithm_h, K int, g Graph) Decomp {
+func (h Hingetree) DecompHinge(alg Algorithm_h, g Graph) Decomp {
 
-	h.decomp = alg.FindDecompGraph(h.hinge, K)
+	h.decomp = alg.FindDecompGraph(h.hinge)
 
 	if reflect.DeepEqual(h.decomp, Decomp{}) {
 		return Decomp{}
@@ -251,7 +252,7 @@ func (h Hingetree) DecompHinge(alg Algorithm_h, K int, g Graph) Decomp {
 	// go recursively over children
 
 	for i := range h.children {
-		out := h.children[i].h.DecompHinge(alg, K, g)
+		out := h.children[i].h.DecompHinge(alg, g)
 		if reflect.DeepEqual(out, Decomp{}) { // reject if subtree cannot be merged to GHD
 			return Decomp{}
 		}

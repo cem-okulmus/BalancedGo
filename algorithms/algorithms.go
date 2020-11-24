@@ -4,11 +4,13 @@ import . "github.com/cem-okulmus/BalancedGo/lib"
 
 type Algorithm interface {
 	Name() string
-	FindDecomp(K int) Decomp
-	FindDecompGraph(G Graph, K int) Decomp
+	FindDecomp() Decomp
+	FindDecompGraph(G Graph) Decomp
+	SetWidth(K int)
 }
 
 type UpdateAlgorithm interface {
 	Name() string
-	FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp
+	FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp
+	SetWidth(K int)
 }

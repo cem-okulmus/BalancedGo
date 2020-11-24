@@ -4,67 +4,116 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"sync"
 
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
-type CompCache struct {
-	Succ []uint64
-	Fail []uint64
-}
+// type CompCache struct {
+// 	Succ []uint64
+// 	Fail []uint64
+// }
 
 type DetKDecomp struct {
+	K         int
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
-	cache     map[uint64]*CompCache
-	cacheMux  sync.RWMutex
+	cache     Cache
+	// cache     map[uint64]*CompCache
+	// cacheMux  sync.RWMutex
 }
 
-func (d *DetKDecomp) addPositive(sep Edges, comp Graph) {
-	d.cacheMux.Lock()
-	d.cache[sep.Hash()].Succ = append(d.cache[sep.Hash()].Succ, comp.Edges.Hash())
-	d.cacheMux.Unlock()
+func (d *DetKDecomp) SetWidth(K int) {
+	d.K = K
 }
 
-func (d *DetKDecomp) addNegative(sep Edges, comp Graph) {
-	d.cacheMux.Lock()
-	d.cache[sep.Hash()].Fail = append(d.cache[sep.Hash()].Fail, comp.Edges.Hash())
-	d.cacheMux.Unlock()
+func (d DetKDecomp) FindHD(currentGraph Graph) Decomp {
+	// d.cache = make(map[uint64]*CompCache)
+	d.cache.Init()
+	return d.findDecomp(currentGraph, []int{})
 }
 
-func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
-	d.cacheMux.RLock()
-	defer d.cacheMux.RUnlock()
+func (d DetKDecomp) FindDecomp() Decomp {
+	return d.FindHD(d.Graph)
+}
 
-	compCachePrev, _ := d.cache[sep.Hash()]
-	for i := range compCachePrev.Fail {
-		if comp.Edges.Hash() == compCachePrev.Fail[i] {
-			//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
-			return true
-		}
+func (d DetKDecomp) Name() string {
+	if d.SubEdge {
+		return "DetK with local BIP"
+	} else {
+		return "DetK"
+	}
+}
 
+func (d DetKDecomp) FindDecompGraph(G Graph) Decomp {
+	return d.FindHD(G)
+}
+
+var counterMap map[string]int
+
+func (d DetKDecomp) FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
+	// d.cache = make(map[uint64]*CompCache)
+	d.cache.Init()
+
+	if log.Flags() == 0 {
+		counterMap = make(map[string]int)
+		defer func(map[string]int) {
+
+			fmt.Println("Counter Map:")
+
+			for k, v := range counterMap {
+				fmt.Println("Scene: ", k, "\nTimes Used: ", v)
+			}
+
+		}(counterMap)
 	}
 
-	return false
+	return d.findDecompUpdate(currentGraph, []int{}, savedScenes)
 }
 
-func (d *DetKDecomp) checkPositive(sep Edges, comp Graph) bool {
-	d.cacheMux.RLock()
-	defer d.cacheMux.RUnlock()
+// func (d *DetKDecomp) addPositive(sep Edges, comp Graph) {
+// 	d.cacheMux.Lock()
+// 	d.cache[sep.Hash()].Succ = append(d.cache[sep.Hash()].Succ, comp.Edges.Hash())
+// 	d.cacheMux.Unlock()
+// }
 
-	compCachePrev, _ := d.cache[sep.Hash()]
-	for i := range compCachePrev.Fail {
-		if comp.Edges.Hash() == compCachePrev.Succ[i] {
-			//  log.Println("Comp ", comp, " known as negative for sep ", sep)
-			return true
-		}
+// func (d *DetKDecomp) addNegative(sep Edges, comp Graph) {
+// 	d.cacheMux.Lock()
+// 	d.cache[sep.Hash()].Fail = append(d.cache[sep.Hash()].Fail, comp.Edges.Hash())
+// 	d.cacheMux.Unlock()
+// }
 
-	}
+// func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
+// 	d.cacheMux.RLock()
+// 	defer d.cacheMux.RUnlock()
 
-	return false
-}
+// 	compCachePrev, _ := d.cache[sep.Hash()]
+// 	for i := range compCachePrev.Fail {
+// 		if comp.Edges.Hash() == compCachePrev.Fail[i] {
+// 			//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
+// 			return true
+// 		}
+
+// 	}
+
+// 	return false
+// }
+
+// func (d *DetKDecomp) checkPositive(sep Edges, comp Graph) bool {
+// 	d.cacheMux.RLock()
+// 	defer d.cacheMux.RUnlock()
+
+// 	compCachePrev, _ := d.cache[sep.Hash()]
+// 	for i := range compCachePrev.Fail {
+// 		if comp.Edges.Hash() == compCachePrev.Succ[i] {
+// 			//  log.Println("Comp ", comp, " known as negative for sep ", sep)
+// 			return true
+// 		}
+
+// 	}
+
+// 	return false
+// }
 
 func connectingSep(sep []int, conn []int, comp []int) bool {
 	if !Subset(conn, sep) {
@@ -79,16 +128,17 @@ func connectingSep(sep []int, conn []int, comp []int) bool {
 }
 
 //Note: as implemented this breaks Special Condition (bag must be limited by oldSep)
-func baseCaseDetK(H Graph, Sp []Special) Decomp {
+func baseCaseDetK(H Graph) Decomp {
 	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var children Node
 
-	switch len(Sp) {
+	switch len(H.Special) {
 	case 0:
 		return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges}}
 
 	case 1:
-		children = Node{Bag: Sp[0].Vertices, Cover: Sp[0].Edges}
+		sp1 := H.Special[0]
+		children = Node{Bag: sp1.Vertices(), Cover: sp1}
 	}
 
 	if H.Edges.Len() == 0 {
@@ -97,8 +147,8 @@ func baseCaseDetK(H Graph, Sp []Special) Decomp {
 	return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges, Children: []Node{children}}}
 }
 
-func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Decomp {
-	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
+func (d *DetKDecomp) findDecomp(H Graph, oldSep []int) Decomp {
+	verticesCurrent := append(H.Vertices())
 	verticesExtended := append(verticesCurrent, oldSep...)
 	conn := Inter(oldSep, verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep)
@@ -112,11 +162,11 @@ func (d *DetKDecomp) findDecomp(K int, H Graph, oldSep []int, Sp []Special) Deco
 	// log.Println("D Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
-	if H.Edges.Len() == 0 && len(Sp) <= 1 {
-		return baseCaseDetK(H, Sp)
+	if H.Edges.Len() == 0 && len(H.Special) <= 1 {
+		return baseCaseDetK(H)
 	}
 
-	gen := NewCover(K, conn, bound, H.Edges.Vertices())
+	gen := NewCover(d.K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
@@ -146,7 +196,7 @@ OUTER:
 			addEdges = true
 		}
 
-		if !addEdges || K-sep.Len() > 0 {
+		if !addEdges || d.K-sep.Len() > 0 {
 			i_add := 0
 
 		addingEdges:
@@ -180,31 +230,41 @@ OUTER:
 				for true {
 
 					// log.Println("Sep chosen ", sepActual, " out ", out)
-					comps, compsSp, _, _ := H.GetComponents(sepActual, Sp)
+					comps, _, _ := H.GetComponents(sepActual)
 
 					//check chache for previous encounters
-					d.cacheMux.RLock()
-					_, ok := d.cache[sepActual.Hash()]
-					d.cacheMux.RUnlock()
-					if !ok {
-						var newCache CompCache
-						d.cacheMux.Lock()
-						d.cache[sepActual.Hash()] = &newCache
-						d.cacheMux.Unlock()
-
-					} else {
-						for j := range comps {
-							if d.checkNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
-								//fmt.Println("Skipping a sep", sepActual)
-								if addEdges {
-									i_add++
-									continue addingEdges
-								} else {
-									continue OUTER
-								}
-							}
+					if d.cache.CheckNegative(sepActual, comps) {
+						if addEdges {
+							i_add++
+							continue addingEdges
+						} else {
+							continue OUTER
 						}
 					}
+
+					// //check chache for previous encounters
+					// d.cacheMux.RLock()
+					// _, ok := d.cache[sepActual.Hash()]
+					// d.cacheMux.RUnlock()
+					// if !ok {
+					// 	var newCache CompCache
+					// 	d.cacheMux.Lock()
+					// 	d.cache[sepActual.Hash()] = &newCache
+					// 	d.cacheMux.Unlock()
+
+					// } else {
+					// 	for j := range comps {
+					// 		if d.cache.CheckNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
+					// 			//fmt.Println("Skipping a sep", sepActual)
+					// 			if addEdges {
+					// 				i_add++
+					// 				continue addingEdges
+					// 			} else {
+					// 				continue OUTER
+					// 			}
+					// 		}
+					// 	}
+					// }
 
 					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
@@ -234,10 +294,10 @@ OUTER:
 					// }
 
 					for i := range comps {
-						decomp := d.findDecomp(K, comps[i], bag, compsSp[i])
+						decomp := d.findDecomp(comps[i], bag)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 
-							d.addNegative(sepActual, comps[i])
+							d.cache.AddNegative(sepActual, comps[i])
 							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n",
 							// Graph{Edges: sepActual}, comps[i], compsSp[i])
 							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
@@ -246,7 +306,7 @@ OUTER:
 
 							if d.SubEdge {
 								if sepSub == nil {
-									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), K)
+									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), d.K)
 								}
 
 								nextBalsepFound := false
@@ -289,7 +349,7 @@ OUTER:
 							}
 						}
 
-						//d.addPositive(sepActual, comps[i])
+						//d.cache.AddPositive(sepActual, comps[i])
 
 						// log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)
@@ -306,51 +366,7 @@ OUTER:
 	return Decomp{} // Reject if no separator could be found
 }
 
-func (d DetKDecomp) FindHD(K int, currentGraph Graph, Sp []Special) Decomp {
-	d.cache = make(map[uint64]*CompCache)
-	return d.findDecomp(K, currentGraph, []int{}, Sp)
-}
-
-func (d DetKDecomp) FindDecomp(K int) Decomp {
-	return d.FindHD(K, d.Graph, []Special{})
-}
-
-func (d DetKDecomp) Name() string {
-	if d.SubEdge {
-		return "DetK with local BIP"
-	} else {
-		return "DetK"
-	}
-}
-
-func (d DetKDecomp) FindDecompGraph(G Graph, K int) Decomp {
-	return d.FindHD(K, G, []Special{})
-}
-
-var counterMap map[string]int
-
-func (d DetKDecomp) FindDecompUpdate(K int, currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
-	d.cache = make(map[uint64]*CompCache)
-
-	if log.Flags() == 0 {
-		counterMap = make(map[string]int)
-		defer func(map[string]int) {
-
-			fmt.Println("Counter Map:")
-
-			for k, v := range counterMap {
-				fmt.Println("Scene: ", k, "\nTimes Used: ", v)
-			}
-
-		}(counterMap)
-	}
-
-	return d.findDecompUpdate(K, currentGraph, []int{}, []Special{}, savedScenes)
-}
-
-func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special,
-	savedScenes map[uint32]SceneValue) Decomp {
-
+func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uint32]SceneValue) Decomp {
 	//Check current scenario for saved scene
 	// usingScene := false
 	// usingSep := Edges{}
@@ -363,7 +379,7 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special
 	//  }
 	// }
 
-	verticesCurrent := append(H.Vertices(), VerticesSpecial(Sp)...)
+	verticesCurrent := append(H.Vertices())
 	verticesExtended := append(verticesCurrent, oldSep...)
 	conn := Inter(oldSep, verticesCurrent)
 	compVertices := Diff(verticesCurrent, oldSep)
@@ -377,12 +393,12 @@ func (d *DetKDecomp) findDecompUpdate(K int, H Graph, oldSep []int, Sp []Special
 	// log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
-	if H.Edges.Len() == 0 && len(Sp) <= 1 {
+	if H.Edges.Len() == 0 && len(H.Special) <= 1 {
 
-		return baseCaseDetK(H, Sp)
+		return baseCaseDetK(H)
 	}
 
-	gen := NewCover(K, conn, bound, H.Edges.Vertices())
+	gen := NewCover(d.K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
@@ -434,7 +450,7 @@ OUTER:
 
 		}
 
-		if !addEdges || K-sep.Len() > 0 {
+		if !addEdges || d.K-sep.Len() > 0 {
 			i_add := 0
 
 		addingEdges:
@@ -475,31 +491,41 @@ OUTER:
 					// } else {
 					//
 					// }
-					comps, compsSp, _, _ := H.GetComponents(sepActual, Sp)
+					comps, _, _ := H.GetComponents(sepActual)
 
 					//check chache for previous encounters
-					d.cacheMux.RLock()
-					_, ok := d.cache[sepActual.Hash()]
-					d.cacheMux.RUnlock()
-					if !ok {
-						var newCache CompCache
-						d.cacheMux.Lock()
-						d.cache[sepActual.Hash()] = &newCache
-						d.cacheMux.Unlock()
-
-					} else {
-						for j := range comps {
-							if d.checkNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
-								//fmt.Println("Skipping a sep", sepActual)
-								if addEdges {
-									i_add++
-									continue addingEdges
-								} else {
-									continue OUTER
-								}
-							}
+					if d.cache.CheckNegative(sep, comps) {
+						if addEdges {
+							i_add++
+							continue addingEdges
+						} else {
+							continue OUTER
 						}
 					}
+
+					// //check chache for previous encounters
+					// d.cacheMux.RLock()
+					// _, ok := d.cache[sepActual.Hash()]
+					// d.cacheMux.RUnlock()
+					// if !ok {
+					// 	var newCache CompCache
+					// 	d.cacheMux.Lock()
+					// 	d.cache[sepActual.Hash()] = &newCache
+					// 	d.cacheMux.Unlock()
+
+					// } else {
+					// 	for j := range comps {
+					// 		if d.cache.CheckNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
+					// 			//fmt.Println("Skipping a sep", sepActual)
+					// 			if addEdges {
+					// 				i_add++
+					// 				continue addingEdges
+					// 			} else {
+					// 				continue OUTER
+					// 			}
+					// 		}
+					// 	}
+					// }
 
 					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
@@ -508,10 +534,10 @@ OUTER:
 
 					for i := range comps {
 
-						decomp := d.findDecompUpdate(K, comps[i], bag, compsSp[i], savedScenes)
+						decomp := d.findDecompUpdate(comps[i], bag, savedScenes)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 
-							d.addNegative(sepActual, comps[i])
+							d.cache.AddNegative(sepActual, comps[i])
 							// log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n",
 							//        Graph{Edges: sepActual}, comps[i])
 							// log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
@@ -520,7 +546,7 @@ OUTER:
 
 							if d.SubEdge {
 								if sepSub == nil {
-									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), K)
+									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), d.K)
 								}
 
 								nextBalsepFound := false
@@ -563,7 +589,7 @@ OUTER:
 							}
 						}
 
-						//d.addPositive(sepActual, comps[i])
+						//d.cache.AddPositive(sepActual, comps[i])
 
 						// log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)

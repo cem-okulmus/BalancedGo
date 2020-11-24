@@ -8,8 +8,8 @@ import (
 )
 
 type Search struct {
-	H               *Graph
-	Sp              []Special
+	H *Graph
+	// Sp              []Special
 	Edges           *Edges
 	BalFactor       int
 	Result          []int
@@ -18,7 +18,7 @@ type Search struct {
 }
 
 type Predicate interface {
-	Check(H *Graph, Sp []Special, sep *Edges, balancedFactor int) bool
+	Check(H *Graph, sep *Edges, balancedFactor int) bool
 }
 
 func (s *Search) FindNext(pred Predicate) {
@@ -78,7 +78,7 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 		j := gen.Combination
 
 		sep := GetSubset(*s.Edges, j)
-		if gen.BalSep || pred.Check(s.H, s.Sp, &sep, s.BalFactor) {
+		if gen.BalSep || pred.Check(s.H, &sep, s.BalFactor) {
 			gen.BalSep = true // cache result
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
@@ -93,18 +93,18 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 type BalancedCheck struct {
 }
 
-func (b BalancedCheck) Check(H *Graph, Sp []Special, sep *Edges, balFactor int) bool {
+func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
 
 	//balancedness condition
-	comps, compSps, _, _ := H.GetComponents(*sep, Sp)
+	comps, _, _ := H.GetComponents(*sep)
 	// log.Printf("Components of sep %+v\n", comps)
 
-	balancednessLimit := (((H.Edges.Len() + len(Sp)) * (balFactor - 1)) / balFactor)
+	balancednessLimit := (((H.Len()) * (balFactor - 1)) / balFactor)
 
 	for i := range comps {
-		if comps[i].Edges.Len()+len(compSps[i]) > balancednessLimit {
+		if comps[i].Len() > balancednessLimit {
 			//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep,
 			//        comps[i], comps[i].Edges.Len()+len(compSps[i]), ((g.Edges.Len() + len(sp)) / 2))
 			return false
@@ -112,8 +112,8 @@ func (b BalancedCheck) Check(H *Graph, Sp []Special, sep *Edges, balFactor int) 
 	}
 
 	// Make sure that "special seps can never be used as separators"
-	for _, s := range Sp {
-		if IntHash(s.Vertices) == IntHash(sep.Vertices()) {
+	for i := range H.Special {
+		if IntHash(H.Special[i].Vertices()) == IntHash(sep.Vertices()) {
 			//log.Println("Special edge %+v\n used again", s)
 			return false
 		}
@@ -127,28 +127,28 @@ type ParentCheck struct {
 	Child []int
 }
 
-func (p ParentCheck) Check(H *Graph, Sp []Special, sep *Edges, balFactor int) bool {
+func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
 
 	//balancedness condition
-	comps, compSps, _, _ := H.GetComponents(*sep, Sp)
+	comps, _, _ := H.GetComponents(*sep)
 
 	foundCompLow := false
 	// var comp_low_index int
 	var comp_low Graph
-	var compSp_low []Special
+	// var compSp_low []Special
 
 	// log.Printf("Components of sep %+v\n", comps)
 
-	balancednessLimit := (((H.Edges.Len() + len(Sp)) * (balFactor - 1)) / balFactor)
+	balancednessLimit := (((H.Len()) * (balFactor - 1)) / balFactor)
 
 	for i := range comps {
-		if comps[i].Edges.Len()+len(compSps[i]) > balancednessLimit {
+		if comps[i].Len() > balancednessLimit {
 			foundCompLow = true
 			// comp_low_index = i //keep track of the index for composing comp_up later
 			comp_low = comps[i]
-			compSp_low = compSps[i]
+			// compSp_low = compSps[i]
 		}
 	}
 
@@ -156,7 +156,7 @@ func (p ParentCheck) Check(H *Graph, Sp []Special, sep *Edges, balFactor int) bo
 		return false
 	}
 
-	vertCompLow := append(comp_low.Vertices(), VerticesSpecial(compSp_low)...)
+	vertCompLow := append(comp_low.Vertices())
 	childχ := Inter(p.Child, vertCompLow)
 
 	if !Subset(Inter(vertCompLow, p.Conn), sep.Vertices()) {

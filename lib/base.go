@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"reflect"
 	"sort"
 )
 
@@ -160,21 +159,21 @@ func DiffEdges(a Edges, e ...Edge) Edges {
 
 }
 
-func DiffSpecial(a, b []Special) []Special {
-	var output []Special
-OUTER:
-	for _, n := range a {
-		for _, k := range b {
-			if reflect.DeepEqual(n, k) {
-				continue OUTER
-			}
-		}
-		output = append(output, n)
-	}
+// func DiffSpecial(a, b []Special) []Special {
+// 	var output []Special
+// OUTER:
+// 	for _, n := range a {
+// 		for _, k := range b {
+// 			if reflect.DeepEqual(n, k) {
+// 				continue OUTER
+// 			}
+// 		}
+// 		output = append(output, n)
+// 	}
 
-	return output
+// 	return output
 
-}
+// }
 
 // func Inter(as, bs []int) []int {
 //  encountered_b := make(map[int]struct{})
