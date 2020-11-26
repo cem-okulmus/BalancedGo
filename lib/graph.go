@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -208,7 +207,6 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 			break
 		}
 		if !found {
-			fmt.Println("Found isolated special edges", g.Special[i])
 			isolatedSp = append(isolatedSp, g.Special[i])
 			continue
 		}

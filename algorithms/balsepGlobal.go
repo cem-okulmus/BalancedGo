@@ -56,7 +56,7 @@ func baseCaseSmart(g Graph, H Graph) Decomp {
 	} else if H.Edges.Len() == 1 && len(H.Special) == 1 {
 		sp1 := H.Special[0]
 		output = Decomp{Graph: H,
-			Root: Node{Bag: H.Vertices(), Cover: H.Edges,
+			Root: Node{Bag: H.Edges.Vertices(), Cover: H.Edges,
 				Children: []Node{Node{Bag: sp1.Vertices(), Cover: sp1}}}}
 	} else {
 		return baseCase(g, H)
@@ -88,7 +88,7 @@ func baseCase(g Graph, H Graph) Decomp {
 func earlyTermination(H Graph) Decomp {
 	//We assume that H as less than K edges, and only one special edge
 	return Decomp{Graph: H,
-		Root: Node{Bag: H.Vertices(), Cover: H.Edges,
+		Root: Node{Bag: H.Edges.Vertices(), Cover: H.Edges,
 			Children: []Node{Node{Bag: H.Special[0].Vertices(), Cover: H.Special[0]}}}}
 }
 

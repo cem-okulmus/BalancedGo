@@ -346,21 +346,21 @@ func (n *Node) CombineNodes(subtree Node, connecting Edges) *Node {
 	// leaf that covers the connecting vertices
 	if Subset(n.Bag, connecting.Vertices()) && len(n.Children) == 0 {
 		n.Children = subtree.Children
-		log.Println("Base case activated at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
-		return n
+		// log.Println("Base case activated at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
+		return &subtree
 	}
 
 	for i := range n.Children {
 		result := n.Children[i].CombineNodes(subtree, connecting)
 
 		if result != nil {
-			log.Println("Child of node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover, " activated")
+			// log.Println("Child of node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover, " activated")
 			n.Children[i] = *result
 			return n
 		}
 	}
 
-	log.Println("encountered error case at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
+	// log.Println("encountered error case at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
 	// failure case, no connecting node was found inside n
 	return nil
 }
