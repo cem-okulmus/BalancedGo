@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"reflect"
 	"strconv"
@@ -15,6 +16,7 @@ type Node struct {
 	Low        []int
 	Bag        []int
 	Cover      Edges
+	Cost       float64
 	Children   []Node
 	Star       bool // used to indicate nodes which need to be updated
 	parPointer *Node
@@ -91,6 +93,9 @@ func (n Node) stringIdent(i int) string {
 		}
 	}
 	buffer.WriteString("}\n")
+	if n.Cost != 0 {
+		buffer.WriteString(indent(i) + "Cost: " + fmt.Sprintf("%.2f", n.Cost) + "\n")
+	}
 	if len(n.Children) > 0 {
 		buffer.WriteString(indent(i) + "Children:\n" + indent(i) + "[")
 		for _, c := range n.Children {
@@ -337,7 +342,7 @@ OUTER:
 		nuChildern = append(nuChildern, n.Children[i].RestoreEdges(edges))
 	}
 
-	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
+	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Cost: n.Cost, Children: nuChildern}
 }
 
 // attach subtree to n, via the connecting special edge

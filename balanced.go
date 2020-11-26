@@ -52,8 +52,17 @@ func (l labelTime) String() string {
 	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
+func computeCost(n Node) float64 {
+	var childrenCost float64
+	for _, c := range n.Children {
+		childrenCost += computeCost(c)
+	}
+	return n.Cost + childrenCost
+}
+
 func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGraph Graph, gml string, K int,
 	skipCheck bool) {
+	fmt.Println("OUTPUT STANZA")
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -89,6 +98,10 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, parsedGrap
 		f.WriteString(decomp.ToGML())
 		f.Sync()
 
+	}
+	totalCost := computeCost(decomp.Root)
+	if totalCost != 0 {
+		fmt.Println("Total cost: ", totalCost)
 	}
 }
 
@@ -583,6 +596,7 @@ func main() {
 				decomp = hinget.DecompHinge(solver, *width, parsedGraph)
 			} else {
 				decomp = solver.FindDecomp(*width)
+				fmt.Println("Finished to DECOMP")
 			}
 		}
 
@@ -594,6 +608,8 @@ func main() {
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec, label: "Decomposition"})
 
+		fmt.Println("\n-------------------\n")
+
 		if !reflect.DeepEqual(decomp, Decomp{}) || (len(ops) > 0 && parsedGraph.Edges.Len() == 0) {
 			var result bool
 			decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
@@ -602,12 +618,16 @@ func main() {
 
 				log.Panicln("GYÖ reduction failed")
 			}
+			fmt.Println("GYO decomp:", decomp.Root)
+			fmt.Println("\n--- GYO made ---\n")
 			decomp.Root, result = decomp.Root.RestoreTypes(removalMap)
 			if !result {
 				fmt.Println("Partial decomp:", decomp.Root)
 
 				log.Panicln("Type Collapse reduction failed")
 			}
+			fmt.Println("TC  decomp:", decomp.Root)
+			fmt.Println("\n--- TC made ---\n")
 		}
 
 		outputStanza(solver.Name(), decomp, times, parsedGraph, *gml, *width, false)

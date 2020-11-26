@@ -132,6 +132,69 @@ OUTER:
 
 }
 
+func baseCaseSmartCosts(g Graph, H Graph, Sp []Special, jc EdgesCostMap) Decomp {
+	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
+	var output Decomp
+
+	var cost float64 = 0
+	if H.Edges.Len() > 0 {
+		s := make([]int, H.Edges.Len())
+		for i, e := range H.Edges.Slice() {
+			s[i] = e.Name
+		}
+		cost = jc.Cost(s)
+	}
+
+	if H.Edges.Len() <= 2 && len(Sp) == 0 {
+		output = Decomp{Graph: H,
+			Root: Node{Bag: H.Vertices(), Cover: H.Edges, Cost: cost}}
+	} else if H.Edges.Len() == 1 && len(Sp) == 1 {
+		sp1 := Sp[0]
+		output = Decomp{Graph: H,
+			Root: Node{Bag: H.Vertices(), Cover: H.Edges, Cost: cost,
+				Children: []Node{Node{Bag: sp1.Vertices, Cover: sp1.Edges}}}}
+	} else {
+		return baseCase(g, H, Sp)
+	}
+	return output
+}
+
+func earlyTerminationCosts(H Graph, sp Special, jc EdgesCostMap) Decomp {
+	//We assume that H as less than K edges, and only one special edge
+	var cost float64 = 0
+	if H.Edges.Len() > 0 {
+		s := make([]int, H.Edges.Len())
+		for i, e := range H.Edges.Slice() {
+			s[i] = e.Name
+		}
+		cost = jc.Cost(s)
+	}
+
+	return Decomp{Graph: H,
+		Root: Node{Bag: H.Vertices(), Cover: H.Edges, Cost: cost,
+			Children: []Node{Node{Bag: sp.Vertices, Cover: sp.Edges}}}}
+}
+
+func rerootingCosts(H Graph, balsep Edges, subtrees []Decomp, cost float64) Decomp {
+	//Create a new GHD for H
+	rerootNode := Node{Bag: balsep.Vertices(), Cover: balsep}
+	output := Node{Bag: balsep.Vertices(), Cover: balsep, Cost: cost}
+
+	// log.Printf("Node to reRoot: %v\n", rerootNode)
+	// log.Printf("My subtrees: \n")
+	// for _, s := range subtrees {
+	//  log.Printf("%v \n", s)
+	// }
+	for _, s := range subtrees {
+		// fmt.Println("H ", H, "balsep ", balsep, "comp ", s.Graph)
+		s.Root = s.Root.Reroot(rerootNode)
+		log.Printf("Rerooted Decomp: %v\n", s)
+		output.Children = append(output.Children, s.Root.Children...)
+	}
+	// log.Println("H: ", H, "output: ", output)
+	return Decomp{Graph: H, Root: output}
+}
+
 func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) Decomp {
 
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
@@ -139,12 +202,12 @@ func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) D
 
 	//stop if there are at most two special edges left
 	if H.Edges.Len()+len(Sp) <= 2 {
-		return baseCaseSmart(g.Graph, H, Sp)
+		return baseCaseSmartCosts(g.Graph, H, Sp, g.JCosts)
 	}
 
 	//Early termination
 	if H.Edges.Len() <= K && len(Sp) == 1 {
-		return earlyTermination(H, Sp[0])
+		return earlyTerminationCosts(H, Sp[0], g.JCosts)
 	}
 	var balsep Edges
 
@@ -168,14 +231,22 @@ func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) D
 	}
 	lenFound := len(found)
 	fmt.Println("NEW SEARCH")
-	fmt.Println("found=", found)
-	for i := 0; lenFound != 0; i++ {
-		seps = append(seps, make([]int, len(found)))
-		copy(seps[i], found)
+	fmt.Println("0 found=", found)
+	for i := 1; lenFound != 0; i++ {
+		newSep := make([]int, len(found))
+		copy(newSep, found)
+		seps = append(seps, newSep)
+
 		var found []int
 		parallelSearch(H, Sp, edges, &found, generators, g.BalFactor)
 		lenFound = len(found)
-		fmt.Println("found=", found)
+		fmt.Println(i, "found=", found)
+	}
+	fmt.Println()
+
+	fmt.Println("Checking seps:")
+	for i, v := range seps {
+		fmt.Println(i, v)
 	}
 	fmt.Println()
 
@@ -195,10 +266,24 @@ func (g JCostBalSepLocal) findDecompParallelFull(K int, H Graph, Sp []Special) D
 	}
 	heap.Init(&jh)
 
+	fmt.Println("Checking heap:")
+	for i, sf := range jh {
+		fmt.Println(i, sf.Found)
+	}
+	fmt.Println()
+
+	var cost float64
 OUTER:
 	for !decomposed {
 		if jh.Len() > 0 {
-			found = heap.Pop(&jh).(*Separator).Found
+			sep := heap.Pop(&jh).(*Separator)
+			found = sep.Found
+			edgeComb := sep.EdgeComb
+			cost = sep.Cost
+			fmt.Println("currSep=", found)
+			fmt.Println("currEdgeComb=", edgeComb)
+			fmt.Println("currCost=", cost)
+			fmt.Println()
 		} else { // meaning that the search above never found anything
 			log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
 			return Decomp{}
@@ -275,7 +360,7 @@ OUTER:
 		}
 	}
 
-	return rerooting(H, balsep, subtrees)
+	return rerootingCosts(H, balsep, subtrees, cost)
 }
 
 func (g JCostBalSepLocal) findDecompParallelSearch(K int, H Graph, Sp []Special) Decomp {
