@@ -37,10 +37,30 @@ func pruneTree(n *Node) {
 
 }
 
+func getDegree(edges Edges, e Edge) int {
+	output := 0
+
+	for _, node := range e.Vertices {
+		degree := 0
+		for _, e2 := range edges.Slice() {
+			if Mem(e2.Vertices, node) {
+				degree++
+			}
+		}
+		if degree > output {
+			output = degree
+		}
+	}
+
+	return output
+}
+
 func main() {
 	graphPath := flag.String("graph", "", "the file path to a hypergraph in HyperBench Format")
 	decompPath := flag.String("decomp", "", "the file path to a decomposition in GML format")
 	outPath := flag.String("out", "", "the path for outputting the graph in PACE 2019 format")
+	statFlag := flag.Bool("stats", false, "output stats of the hypergraph")
+	starRedlag := flag.Bool("statsReduced", false, "output stats of the reduced hypergraph")
 
 	flag.Parse()
 
@@ -56,7 +76,67 @@ func main() {
 
 	parsedGraph, parseGraph := GetGraph(string(dat))
 
+	if *statFlag {
+		sumEdgeSizes := 0
+		maxEdge := 0
+		maxDegree := 0
+
+		for _, e := range parsedGraph.Edges.Slice() {
+			sumEdgeSizes = sumEdgeSizes + len(e.Vertices)
+
+			if len(e.Vertices) > maxEdge {
+				maxEdge = len((e.Vertices))
+			}
+			degree := getDegree(parsedGraph.Edges, e)
+			if degree > maxDegree {
+				maxDegree = degree
+			}
+		}
+
+		average := float32(sumEdgeSizes) / float32(len(parsedGraph.Edges.Slice()))
+
+		fmt.Print(average, ",", len(parsedGraph.Vertices()), ",", len(parsedGraph.Edges.Slice()), ",", maxDegree, ",", maxEdge, ",", sumEdgeSizes)
+
+		os.Exit(0)
+	}
+
 	var reducedGraph Graph
+
+	if *starRedlag {
+
+		// Performing Type Collapse
+		reducedGraph, _, _ = parsedGraph.TypeCollapse()
+
+		// Performing GYÖ reduction
+		reducedGraph, _ = reducedGraph.GYÖReduct()
+
+		hinget := GetHingeTree(reducedGraph)
+
+		reducedGraph = hinget.GetLargestGraph()
+
+		sumEdgeSizes := 0
+		maxEdge := 0
+		maxDegree := 0
+
+		for _, e := range reducedGraph.Edges.Slice() {
+			sumEdgeSizes = sumEdgeSizes + len(e.Vertices)
+
+			if len(e.Vertices) > maxEdge {
+				maxEdge = len((e.Vertices))
+			}
+			degree := getDegree(reducedGraph.Edges, e)
+			if degree > maxDegree {
+				maxDegree = degree
+			}
+		}
+
+		average := float32(sumEdgeSizes) / float32(len(reducedGraph.Edges.Slice()))
+
+		fmt.Print(average, ",", len(reducedGraph.Vertices()), ",", len(reducedGraph.Edges.Slice()),
+			",", maxDegree, ",", maxEdge, ",", sumEdgeSizes)
+
+		os.Exit(0)
+	}
 
 	if *decompPath != "" {
 
