@@ -21,6 +21,44 @@ type LogKHybrid struct {
 	cache     Cache
 	BalFactor int
 	Predicate HybridPredicate // used to determine when to switch to DetK
+	Size      int
+}
+
+// will match the behaviour of BalDetK, with Depth 1
+func (l *LogKHybrid) OneRoundPred(H Graph, K int) bool {
+	return true
+}
+
+// checks the number of edges of the subgraph
+func (l *LogKHybrid) NumberEdgesPred(H Graph, K int) bool {
+
+	return H.Edges.Len() < l.Size
+}
+
+// checks the sum over all edges of the subgraph
+func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
+	count := 0
+
+	for i := range H.Edges.Slice() {
+		count = count + len(H.Edges.Slice()[i].Vertices)
+	}
+
+	return count < l.Size
+}
+
+// checks a complex formula over the subgraph and used K
+func (l *LogKHybrid) ETimesKDivAvgEdgePred(H Graph, K int) bool {
+
+	count := 0
+
+	for i := range H.Edges.Slice() {
+		count = count + len(H.Edges.Slice()[i].Vertices)
+	}
+
+	avgEdgeSize := count / H.Edges.Len()
+
+	return ((H.Edges.Len() * l.K) / avgEdgeSize) < l.Size
+
 }
 
 func (l *LogKHybrid) SetWidth(K int) {
@@ -47,7 +85,7 @@ func (l LogKHybrid) DetKWrapper(H Graph, Conn []int, allwowed Edges) Decomp {
 	det := DetKDecomp{K: l.K, Graph: Graph{Edges: allwowed}, BalFactor: l.BalFactor, SubEdge: false}
 
 	// TODO: reuse the same cache as for Logk?
-	det.cache.Init()
+	det.Cache.Init()
 
 	return det.findDecomp(H, Conn)
 

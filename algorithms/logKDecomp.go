@@ -112,6 +112,10 @@ func (l LogKDecomp) findHDParallel(H Graph, Conn []int, allowedFull Edges) Decom
 	log.Printf("Current Allowed Edges: %v\n", allowedFull)
 	log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 
+	if !Subset(Conn, H.Vertices()) {
+		log.Panicln("You done fucked up. ")
+	}
+
 	// Base Case
 	if l.baseCaseCheck(H.Edges.Len(), len(H.Special), allowedFull.Len()) {
 		return l.baseCase(H, allowedFull.Len())
@@ -185,9 +189,68 @@ CHILD:
 
 			parentλ := GetSubset(allowedParent, parentalSearch.Result)
 
-			// log.Println("Looking at parent ", parentλ)
+			log.Println("Looking at parent ", parentλ)
 
 			comps_p, _, isolatedEdges := H.GetComponents(parentλ)
+
+			if !predPar.Check(&H, &parentλ, l.BalFactor) {
+
+				fmt.Println("Current SubGraph, ", H)
+				fmt.Println("Conn ", PrintVertices(Conn))
+
+				log.Printf("Current Allowed Edges: %v\n", allowed)
+				log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+
+				fmt.Println("Child ", childλ, " V(childλ) ", PrintVertices(childλ.Vertices()))
+				fmt.Println("Comps of child ", comps_c)
+				fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
+
+				fmt.Println("Comps of p", comps_p)
+
+				fmt.Println("Search Exhausted: ", parentalSearch.ExhaustedSearch)
+
+				// var comp_low_index int
+				var comp_low Graph
+				// var compSp_low []Special
+
+				// log.Printf("Components of sep %+v\n", comps)
+
+				balancednessLimit := (((H.Len()) * (l.BalFactor - 1)) / l.BalFactor)
+
+				for i := range comps_p {
+					if comps_p[i].Len() > balancednessLimit {
+						// comp_low_index = i //keep track of the index for composing comp_up later
+						comp_low = comps_p[i]
+						// compSp_low = compSps[i]
+					}
+				}
+
+				vertCompLow := comp_low.Vertices()
+				childχ := Inter(childλ.Vertices(), vertCompLow)
+
+				if !Subset(Inter(vertCompLow, Conn), parentλ.Vertices()) {
+					fmt.Println("Conn not covered by parent")
+
+					// log.Println("Conn: ", PrintVertices(Conn))
+					fmt.Println("V(parentλ) \\cap Conn", PrintVertices(Inter(parentλ.Vertices(), Conn)))
+					fmt.Println("V(Comp_low) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
+
+				}
+
+				// Connectivity check
+				if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
+					fmt.Println("Child not connected to parent!")
+					// log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
+					// log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
+
+					// log.Println("Child", childλ)
+
+				}
+
+				log.Panicln("search aint doing its job")
+			}
+
+			log.Println("Parent components ", comps_p)
 
 			foundLow := false
 			var comp_low_index int
@@ -202,6 +265,19 @@ CHILD:
 				}
 			}
 			if !foundLow {
+				fmt.Println("Current SubGraph, ", H)
+				fmt.Println("Conn ", PrintVertices(Conn))
+
+				fmt.Println("Child ", childλ)
+				fmt.Println("Comps of child ", comps_c)
+				fmt.Println("parent ", parentλ)
+
+				fmt.Println("Comps of p: ")
+				for i := range comps_p {
+					fmt.Println("Component: ", comps_p[i], " Len: ", comps_p[i].Len())
+
+				}
+
 				log.Panicln("the parallel search didn't actually find a valid parent")
 			}
 
@@ -250,15 +326,18 @@ CHILD:
 				}
 			}
 
+			// specialChild = NewEdges([]Edge{Edge{Vertices: Inter(childχ, comp_up.Vertices())}})
+			specialChild = NewEdges([]Edge{Edge{Vertices: childχ}})
+
 			// if no comps_p, other than comp_low, just use parent as is
 			if len(comps_p) == 1 {
 				comp_up.Edges = parentλ
 
 				// adding new Special Edge to connect Child to comp_up
-				specialChild = NewEdges([]Edge{Edge{Vertices: childχ}})
+				comp_up.Special = append(comp_up.Special, specialChild)
 
 				decompTemp := Decomp{Graph: comp_up, Root: Node{Bag: Inter(parentλ.Vertices(), Vertices_H),
-					Cover: parentλ, Children: []Node{Node{Bag: childχ, Cover: childλ}}}}
+					Cover: parentλ, Children: []Node{Node{Bag: specialChild.Vertices(), Cover: childλ}}}}
 
 				go func(decomp Decomp) {
 					ch_up <- decomp
@@ -269,14 +348,13 @@ CHILD:
 				comp_up.Edges = NewEdges(tempEdgeSlice)
 				comp_up.Special = tempSpecialSlice
 
+				// adding new Special Edge to connect Child to comp_up
+				comp_up.Special = append(comp_up.Special, specialChild)
+
 				log.Println("Upper component:", comp_up)
 
 				//Reducing the allowed edges
 				allowedReduced := allowedFull.Diff(comp_low.Edges)
-
-				// adding new Special Edge to connect Child to comp_up
-				specialChild = NewEdges([]Edge{Edge{Vertices: childχ}})
-				comp_up.Special = append(comp_up.Special, specialChild)
 
 				go func(comp_up Graph, Conn []int, allowedReduced Edges) {
 					ch_up <- l.findHDParallel(comp_up, Conn, allowedReduced)
@@ -325,13 +403,21 @@ CHILD:
 						continue PARENT
 					}
 
-					if !Subset(Conn, decompUpChan.Root.Vertices()) {
+					if !Subset(Conn, decompUpChan.Root.Bag) {
 						fmt.Println("Current SubGraph, ", H)
-						fmt.Println("Child ", childχ)
+						fmt.Println("Conn ", PrintVertices(Conn))
+
+						fmt.Println("Child ", childλ, "  ", PrintVertices(childχ))
 						fmt.Println("Comps of child ", comps_c)
-						fmt.Println("parent ", parentλ)
-						fmt.Println("Conn ", Conn)
+						fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
+
+						fmt.Println("comp_up ", comp_up, " V(comp_up) ", PrintVertices(comp_up.Vertices()))
+
+						fmt.Println("Decomp up:  ", decompUpChan)
+
 						fmt.Println("Comps of p", comps_p)
+
+						fmt.Println("Compare against PredSearch: ")
 
 						log.Panicln("Conn not covered in parent, Wait, what?")
 					}

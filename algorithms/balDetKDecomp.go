@@ -164,7 +164,7 @@ func (b BalDetKDecomp) findDecompBalSep(currentDepth int, H Graph) Decomp {
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
 						// det.cache = make(map[uint64]*CompCache)
-						det.cache.Init()
+						det.Cache.Init()
 						result := det.findDecomp(comps[i], balsep.Vertices())
 						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
@@ -382,7 +382,7 @@ func (b BalDetKDecomp) findDecompBalSepUpdate(currentDepth int, H Graph, savedSc
 						// comps[i].Edges.Append(edgesFromSpecial...)
 
 						// det.cache = make(map[uint64]*CompCache)
-						det.cache.Init()
+						det.Cache.Init()
 						result := det.findDecompUpdate(comps[i], balsep.Vertices(), savedScenes)
 						if !reflect.DeepEqual(result, Decomp{}) {
 							result.SkipRerooting = true

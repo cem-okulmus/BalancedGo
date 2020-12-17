@@ -11,6 +11,7 @@ type Algorithm interface {
 
 type UpdateAlgorithm interface {
 	Name() string
-	FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp
+	FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue, savedCache Cache) Decomp
 	SetWidth(K int)
+	GetCache() Cache
 }

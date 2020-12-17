@@ -8,36 +8,30 @@ import (
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
-// type CompCache struct {
-// 	Succ []uint64
-// 	Fail []uint64
-// }
-
 type DetKDecomp struct {
 	K         int
 	Graph     Graph
 	BalFactor int
 	SubEdge   bool
-	cache     Cache
-	// cache     map[uint64]*CompCache
-	// cacheMux  sync.RWMutex
+	Cache     Cache
 }
 
 func (d *DetKDecomp) SetWidth(K int) {
 	d.K = K
 }
 
-func (d DetKDecomp) FindHD(currentGraph Graph) Decomp {
-	// d.cache = make(map[uint64]*CompCache)
-	d.cache.Init()
+func (d *DetKDecomp) FindHD(currentGraph Graph) Decomp {
+
+	// d.Cache = make(map[uint64]*CompCache)
+	d.Cache.Init()
 	return d.findDecomp(currentGraph, []int{})
 }
 
-func (d DetKDecomp) FindDecomp() Decomp {
+func (d *DetKDecomp) FindDecomp() Decomp {
 	return d.FindHD(d.Graph)
 }
 
-func (d DetKDecomp) Name() string {
+func (d *DetKDecomp) Name() string {
 	if d.SubEdge {
 		return "DetK with local BIP"
 	} else {
@@ -45,15 +39,18 @@ func (d DetKDecomp) Name() string {
 	}
 }
 
-func (d DetKDecomp) FindDecompGraph(G Graph) Decomp {
+func (d *DetKDecomp) FindDecompGraph(G Graph) Decomp {
 	return d.FindHD(G)
 }
 
 var counterMap map[string]int
 
-func (d DetKDecomp) FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]SceneValue) Decomp {
-	// d.cache = make(map[uint64]*CompCache)
-	d.cache.Init()
+func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes map[uint32]SceneValue, savedCache Cache) Decomp {
+	// d.Cache = make(map[uint64]*CompCache)
+	// d.Cache.Init()
+	d.Cache = savedCache // use provided cache
+
+	fmt.Println("Cache Size at start:", d.Cache.Len())
 
 	if log.Flags() == 0 {
 		counterMap = make(map[string]int)
@@ -68,52 +65,12 @@ func (d DetKDecomp) FindDecompUpdate(currentGraph Graph, savedScenes map[uint32]
 		}(counterMap)
 	}
 
-	return d.findDecompUpdate(currentGraph, []int{}, savedScenes)
+	return d.findDecompUpdate(graph, []int{}, savedScenes)
 }
 
-// func (d *DetKDecomp) addPositive(sep Edges, comp Graph) {
-// 	d.cacheMux.Lock()
-// 	d.cache[sep.Hash()].Succ = append(d.cache[sep.Hash()].Succ, comp.Edges.Hash())
-// 	d.cacheMux.Unlock()
-// }
-
-// func (d *DetKDecomp) addNegative(sep Edges, comp Graph) {
-// 	d.cacheMux.Lock()
-// 	d.cache[sep.Hash()].Fail = append(d.cache[sep.Hash()].Fail, comp.Edges.Hash())
-// 	d.cacheMux.Unlock()
-// }
-
-// func (d *DetKDecomp) checkNegative(sep Edges, comp Graph) bool {
-// 	d.cacheMux.RLock()
-// 	defer d.cacheMux.RUnlock()
-
-// 	compCachePrev, _ := d.cache[sep.Hash()]
-// 	for i := range compCachePrev.Fail {
-// 		if comp.Edges.Hash() == compCachePrev.Fail[i] {
-// 			//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
-// 			return true
-// 		}
-
-// 	}
-
-// 	return false
-// }
-
-// func (d *DetKDecomp) checkPositive(sep Edges, comp Graph) bool {
-// 	d.cacheMux.RLock()
-// 	defer d.cacheMux.RUnlock()
-
-// 	compCachePrev, _ := d.cache[sep.Hash()]
-// 	for i := range compCachePrev.Fail {
-// 		if comp.Edges.Hash() == compCachePrev.Succ[i] {
-// 			//  log.Println("Comp ", comp, " known as negative for sep ", sep)
-// 			return true
-// 		}
-
-// 	}
-
-// 	return false
-// }
+func (d *DetKDecomp) GetCache() Cache {
+	return d.Cache
+}
 
 func connectingSep(sep []int, conn []int, comp []int) bool {
 	if !Subset(conn, sep) {
@@ -233,7 +190,7 @@ OUTER:
 					comps, _, _ := H.GetComponents(sepActual)
 
 					//check chache for previous encounters
-					if d.cache.CheckNegative(sepActual, comps) {
+					if d.Cache.CheckNegative(sepActual, comps) {
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -241,30 +198,6 @@ OUTER:
 							continue OUTER
 						}
 					}
-
-					// //check chache for previous encounters
-					// d.cacheMux.RLock()
-					// _, ok := d.cache[sepActual.Hash()]
-					// d.cacheMux.RUnlock()
-					// if !ok {
-					// 	var newCache CompCache
-					// 	d.cacheMux.Lock()
-					// 	d.cache[sepActual.Hash()] = &newCache
-					// 	d.cacheMux.Unlock()
-
-					// } else {
-					// 	for j := range comps {
-					// 		if d.cache.CheckNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
-					// 			//fmt.Println("Skipping a sep", sepActual)
-					// 			if addEdges {
-					// 				i_add++
-					// 				continue addingEdges
-					// 			} else {
-					// 				continue OUTER
-					// 			}
-					// 		}
-					// 	}
-					// }
 
 					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
@@ -297,7 +230,7 @@ OUTER:
 						decomp := d.findDecomp(comps[i], bag)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 
-							d.cache.AddNegative(sepActual, comps[i])
+							d.Cache.AddNegative(sepActual, comps[i])
 							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n",
 							// Graph{Edges: sepActual}, comps[i], compsSp[i])
 							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
@@ -349,7 +282,7 @@ OUTER:
 							}
 						}
 
-						//d.cache.AddPositive(sepActual, comps[i])
+						//d.Cache.AddPositive(sepActual, comps[i])
 
 						// log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)
@@ -494,7 +427,7 @@ OUTER:
 					comps, _, _ := H.GetComponents(sepActual)
 
 					//check chache for previous encounters
-					if d.cache.CheckNegative(sep, comps) {
+					if d.Cache.CheckNegative(sep, comps) {
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -502,32 +435,6 @@ OUTER:
 							continue OUTER
 						}
 					}
-
-					// //check chache for previous encounters
-					// d.cacheMux.RLock()
-					// _, ok := d.cache[sepActual.Hash()]
-					// d.cacheMux.RUnlock()
-					// if !ok {
-					// 	var newCache CompCache
-					// 	d.cacheMux.Lock()
-					// 	d.cache[sepActual.Hash()] = &newCache
-					// 	d.cacheMux.Unlock()
-
-					// } else {
-					// 	for j := range comps {
-					// 		if d.cache.CheckNegative(sepActual, comps[j]) { //TODO: Add positive check and cutNodes
-					// 			//fmt.Println("Skipping a sep", sepActual)
-					// 			if addEdges {
-					// 				i_add++
-					// 				continue addingEdges
-					// 			} else {
-					// 				continue OUTER
-					// 			}
-					// 		}
-					// 	}
-					// }
-
-					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
 					var subtrees []Node
 					bag := Inter(sepActual.Vertices(), verticesExtended)
@@ -537,7 +444,7 @@ OUTER:
 						decomp := d.findDecompUpdate(comps[i], bag, savedScenes)
 						if reflect.DeepEqual(decomp, Decomp{}) {
 
-							d.cache.AddNegative(sepActual, comps[i])
+							d.Cache.AddNegative(sepActual, comps[i])
 							// log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n",
 							//        Graph{Edges: sepActual}, comps[i])
 							// log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
@@ -589,7 +496,7 @@ OUTER:
 							}
 						}
 
-						//d.cache.AddPositive(sepActual, comps[i])
+						//d.Cache.AddPositive(sepActual, comps[i])
 
 						// log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)

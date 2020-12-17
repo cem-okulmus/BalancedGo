@@ -321,6 +321,7 @@ func GetDecomp(input []byte, graph Graph, encoding map[string]int) Decomp {
 	err := json.Unmarshal(input, &jason)
 	if err != nil {
 		fmt.Println("error:", err)
+		log.Panicln("decomp couldn't be parased")
 	}
 
 	return jason.IntoDecomp(graph, encoding)
@@ -503,6 +504,20 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 	}
 
 	return Decomp{Graph: graph, Root: nodes[IDtoIndex[root]]}
+}
+
+func GetCache(input []byte) Cache {
+
+	var jason Cache
+
+	err := json.Unmarshal(input, &jason)
+	if err != nil {
+		fmt.Println("error:", err)
+		log.Panicln("Oh noes, can't part JSON")
+	}
+
+	return jason
+
 }
 
 // Updated PACE 2019 format, with initial Special Edges

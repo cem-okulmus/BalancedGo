@@ -9,42 +9,52 @@ type CompCache struct {
 }
 
 type Cache struct {
-	cache    map[uint64]*CompCache
+	Cache    map[uint64]*CompCache
 	cacheMux sync.RWMutex
 }
 
 // needs to be called to initialise the cache
 func (c *Cache) Init() {
-	c.cache = make(map[uint64]*CompCache)
+	c.Cache = make(map[uint64]*CompCache)
+}
+
+func (c Cache) Len() int {
+	return len(c.Cache)
 }
 
 func (c *Cache) AddPositive(sep Edges, comp Graph) {
 	c.cacheMux.Lock()
-	c.cache[sep.Hash()].Succ = append(c.cache[sep.Hash()].Succ, comp.Hash())
+
+	_, ok := c.Cache[sep.Hash()]
+
+	if !ok {
+		var newCache CompCache
+		c.Cache[sep.Hash()] = &newCache
+	}
+
+	c.Cache[sep.Hash()].Succ = append(c.Cache[sep.Hash()].Succ, comp.Hash())
 	c.cacheMux.Unlock()
 }
 
 func (c *Cache) AddNegative(sep Edges, comp Graph) {
-	c.cacheMux.Lock()
-	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
-	c.cacheMux.Unlock()
-}
 
-func (c *Cache) AddPositiveExtended(sep Edges, comp Graph) {
 	c.cacheMux.Lock()
-	c.cache[sep.Hash()].Succ = append(c.cache[sep.Hash()].Succ, comp.Hash())
-	c.cacheMux.Unlock()
-}
 
-func (c *Cache) AddNegativeExtended(sep Edges, comp Graph) {
-	c.cacheMux.Lock()
-	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
+	_, ok := c.Cache[sep.Hash()]
+
+	if !ok {
+		var newCache CompCache
+		c.Cache[sep.Hash()] = &newCache
+	}
+	// fmt.Println("Addding negative, current length of cache", len(c.Cache))
+
+	c.Cache[sep.Hash()].Fail = append(c.Cache[sep.Hash()].Fail, comp.Hash())
 	c.cacheMux.Unlock()
 }
 
 // func (c *Cache) CheckNegative(sep Edges, comp Graph) bool {
 
-// 	compCachePrev, _ := c.cache[sep.Hash()]
+// 	compCachePrev, _ := c.Cache[sep.Hash()]
 // 	for i := range compCachePrev.Fail {
 // 		if comp.Edges.Hash() == compCachePrev.Fail[i] {
 // 			//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
@@ -63,12 +73,10 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 
 	//check chache for previous encounters
 
-	compCachePrev, ok := c.cache[sep.Hash()]
+	compCachePrev, ok := c.Cache[sep.Hash()]
 
 	if !ok {
-		var newCache CompCache
-		c.cache[sep.Hash()] = &newCache
-
+		return false
 	} else {
 		for j := range comps {
 			for i := range compCachePrev.Fail {
@@ -90,7 +98,7 @@ func (c *Cache) CheckPositive(sep Edges, comp Graph) bool {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
-	compCachePrev, _ := c.cache[sep.Hash()]
+	compCachePrev, _ := c.Cache[sep.Hash()]
 	for i := range compCachePrev.Fail {
 		if comp.Hash() == compCachePrev.Succ[i] {
 			//  log.Println("Comp ", comp, " known as negative for sep ", sep)
