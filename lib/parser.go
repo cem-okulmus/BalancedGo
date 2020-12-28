@@ -93,6 +93,73 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	return output, pgraph
 }
 
+type NiceGraph struct {
+	Width    int         `"⭐️" @(Number|Ident|String) `
+	Edges    []ParseEdge `( @@ ","?)* (".")?`
+	Encoding map[string]int
+}
+
+func GetNiceGraph(s string) (Graph, int) {
+
+	graphLexer := lexer.Must(ebnf.New(`
+    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
+    Ident = (digit| alpha | "_") { Punct |  "_" | alpha | digit } .
+    String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
+    Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
+    Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
+    Paranthesis = "(" | ")"  | "," .
+    Whitespace = " " | "\t" | "\n" | "\r" .
+    alpha = "a"…"z" | "A"…"Z" .
+    digit = "0"…"9" .
+    any = "\u0000"…"\uffff" .
+    WidthPromise = "⭐️" .
+    `))
+
+	var parser = participle.MustBuild(&NiceGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+		participle.Elide("Comment", "Whitespace"))
+	var output Graph
+	var edges []Edge
+	pgraph := NiceGraph{}
+	err := parser.ParseString(s, &pgraph)
+	if err != nil {
+		fmt.Println("Couldn't parse input: ")
+		panic(err)
+	}
+	encoding := make(map[int]string)
+	encode = 1 // initialize to 1
+
+	pgraph.Encoding = make(map[string]int)
+	//fix first numbers for edge names
+	for _, e := range pgraph.Edges {
+		_, ok := pgraph.Encoding[e.Name]
+		if ok {
+			log.Panicln("Edge names not unique, not a vald hypergraph!")
+		}
+
+		pgraph.Encoding[e.Name] = encode
+		encoding[encode] = e.Name
+		encode++
+	}
+	for _, e := range pgraph.Edges {
+		var outputEdges []int
+		for _, n := range e.Vertices {
+			i, ok := pgraph.Encoding[n]
+			if ok {
+				outputEdges = append(outputEdges, i)
+			} else {
+				pgraph.Encoding[n] = encode
+				encoding[encode] = n
+				outputEdges = append(outputEdges, encode)
+				encode++
+			}
+		}
+		edges = append(edges, Edge{Name: pgraph.Encoding[e.Name], Vertices: outputEdges})
+	}
+	output.Edges = NewEdges(edges)
+	m = encoding
+	return output, pgraph.Width
+}
+
 func (p *ParseGraph) GetEdge(input string) Edge {
 
 	graphLexer := lexer.Must(ebnf.New(`

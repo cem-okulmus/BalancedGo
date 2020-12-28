@@ -78,7 +78,7 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 		j := gen.Combination
 
 		sep := GetSubset(*s.Edges, j)
-		if gen.BalSep || pred.Check(s.H, &sep, s.BalFactor) {
+		if pred.Check(s.H, &sep, s.BalFactor) {
 			gen.BalSep = true // cache result
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
@@ -156,7 +156,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 		return false
 	}
 
-	vertCompLow := append(comp_low.Vertices())
+	vertCompLow := comp_low.Vertices()
 	childχ := Inter(p.Child, vertCompLow)
 
 	if !Subset(Inter(vertCompLow, p.Conn), sep.Vertices()) {

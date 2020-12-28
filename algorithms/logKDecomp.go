@@ -11,11 +11,9 @@ import (
 )
 
 type LogKDecomp struct {
-	Graph Graph
-	K     int
-	cache Cache
-	// cache     map[uint32]*CompCache
-	// cacheMux  sync.RWMutex
+	Graph     Graph
+	K         int
+	cache     Cache
 	BalFactor int
 }
 
@@ -87,7 +85,7 @@ func (l LogKDecomp) baseCase(H Graph, lenAE int) Decomp {
 func attachingSubtrees(subtreeAbove Node, subtreeBelow Node, connecting Edges) Node {
 	// log.Println("Two Nodes enter: ", subtreeAbove, subtreeBelow)
 	// log.Println("Connecting: ", PrintVertices(connecting.Vertices))
-	// up = Inter(up, parent.Vertices())
+
 	//finding connecting leaf in parent
 	leaf := subtreeAbove.CombineNodes(subtreeBelow, connecting)
 
@@ -98,10 +96,6 @@ func attachingSubtrees(subtreeAbove Node, subtreeBelow Node, connecting Edges) N
 		log.Panicln("subtreeAbove doesn't contain connecting node!")
 	}
 
-	// //attaching subtree to parent
-	// leaf.Children = []Node{subtree}
-	// log.Println("Leaf ", leaf)
-	// log.Println("One Node leaves: ", leaf)
 	return *leaf
 }
 
@@ -169,7 +163,7 @@ CHILD:
 					continue CHILD
 				}
 
-				// log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
+				log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
 				subtrees = append(subtrees, decomp.Root)
 			}
 
@@ -193,62 +187,62 @@ CHILD:
 
 			comps_p, _, isolatedEdges := H.GetComponents(parentλ)
 
-			if !predPar.Check(&H, &parentλ, l.BalFactor) {
+			// if !predPar.Check(&H, &parentλ, l.BalFactor) {
 
-				fmt.Println("Current SubGraph, ", H)
-				fmt.Println("Conn ", PrintVertices(Conn))
+			// 	fmt.Println("Current SubGraph, ", H)
+			// 	fmt.Println("Conn ", PrintVertices(Conn))
 
-				log.Printf("Current Allowed Edges: %v\n", allowed)
-				log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+			// 	log.Printf("Current Allowed Edges: %v\n", allowed)
+			// 	log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
-				fmt.Println("Child ", childλ, " V(childλ) ", PrintVertices(childλ.Vertices()))
-				fmt.Println("Comps of child ", comps_c)
-				fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
+			// 	fmt.Println("Child ", childλ, " V(childλ) ", PrintVertices(childλ.Vertices()))
+			// 	fmt.Println("Comps of child ", comps_c)
+			// 	fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
 
-				fmt.Println("Comps of p", comps_p)
+			// 	fmt.Println("Comps of p", comps_p)
 
-				fmt.Println("Search Exhausted: ", parentalSearch.ExhaustedSearch)
+			// 	fmt.Println("Search Exhausted: ", parentalSearch.ExhaustedSearch)
 
-				// var comp_low_index int
-				var comp_low Graph
-				// var compSp_low []Special
+			// 	// var comp_low_index int
+			// 	var comp_low Graph
+			// 	// var compSp_low []Special
 
-				// log.Printf("Components of sep %+v\n", comps)
+			// 	// log.Printf("Components of sep %+v\n", comps)
 
-				balancednessLimit := (((H.Len()) * (l.BalFactor - 1)) / l.BalFactor)
+			// 	balancednessLimit := (((H.Len()) * (l.BalFactor - 1)) / l.BalFactor)
 
-				for i := range comps_p {
-					if comps_p[i].Len() > balancednessLimit {
-						// comp_low_index = i //keep track of the index for composing comp_up later
-						comp_low = comps_p[i]
-						// compSp_low = compSps[i]
-					}
-				}
+			// 	for i := range comps_p {
+			// 		if comps_p[i].Len() > balancednessLimit {
+			// 			// comp_low_index = i //keep track of the index for composing comp_up later
+			// 			comp_low = comps_p[i]
+			// 			// compSp_low = compSps[i]
+			// 		}
+			// 	}
 
-				vertCompLow := comp_low.Vertices()
-				childχ := Inter(childλ.Vertices(), vertCompLow)
+			// 	vertCompLow := comp_low.Vertices()
+			// 	childχ := Inter(childλ.Vertices(), vertCompLow)
 
-				if !Subset(Inter(vertCompLow, Conn), parentλ.Vertices()) {
-					fmt.Println("Conn not covered by parent")
+			// 	if !Subset(Inter(vertCompLow, Conn), parentλ.Vertices()) {
+			// 		fmt.Println("Conn not covered by parent")
 
-					// log.Println("Conn: ", PrintVertices(Conn))
-					fmt.Println("V(parentλ) \\cap Conn", PrintVertices(Inter(parentλ.Vertices(), Conn)))
-					fmt.Println("V(Comp_low) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
+			// 		// log.Println("Conn: ", PrintVertices(Conn))
+			// 		fmt.Println("V(parentλ) \\cap Conn", PrintVertices(Inter(parentλ.Vertices(), Conn)))
+			// 		fmt.Println("V(Comp_low) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
 
-				}
+			// 	}
 
-				// Connectivity check
-				if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
-					fmt.Println("Child not connected to parent!")
-					// log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
-					// log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
+			// 	// Connectivity check
+			// 	if !Subset(Inter(vertCompLow, parentλ.Vertices()), childχ) {
+			// 		fmt.Println("Child not connected to parent!")
+			// 		// log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
+			// 		// log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
 
-					// log.Println("Child", childλ)
+			// 		// log.Println("Child", childλ)
 
-				}
+			// 	}
 
-				log.Panicln("search aint doing its job")
-			}
+			// 	log.Panicln("search aint doing its job")
+			// }
 
 			log.Println("Parent components ", comps_p)
 
@@ -267,6 +261,9 @@ CHILD:
 			if !foundLow {
 				fmt.Println("Current SubGraph, ", H)
 				fmt.Println("Conn ", PrintVertices(Conn))
+
+				log.Printf("Current Allowed Edges: %v\n", allowed)
+				log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 				fmt.Println("Child ", childλ)
 				fmt.Println("Comps of child ", comps_c)
@@ -406,6 +403,9 @@ CHILD:
 					if !Subset(Conn, decompUpChan.Root.Bag) {
 						fmt.Println("Current SubGraph, ", H)
 						fmt.Println("Conn ", PrintVertices(Conn))
+
+						log.Printf("Current Allowed Edges: %v\n", allowed)
+						log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 						fmt.Println("Child ", childλ, "  ", PrintVertices(childχ))
 						fmt.Println("Comps of child ", comps_c)

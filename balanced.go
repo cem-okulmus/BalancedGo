@@ -112,17 +112,21 @@ func main() {
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	logK := flagSet.Bool("logk", false, "Use LogKDecomp algoritm")
+	logKHybrid := flagSet.Int("logkHybrid", 0, "Use DetK - LogK Hybrid algoritm. Choose which predicate to use")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "Used in combination with \"det\": turns on local subedge handling")
 	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
-	seqBalDetTest := flagSet.Int("seqBalDet", 0, "Use the sequential Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
+	seqBalDetTest := flagSet.Int("seqBalDet", 0,
+		"Use the sequential Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
-	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
+	pace := flagSet.Bool("pace", false,
+		"Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
 	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
 	decomp := flagSet.String("decomp", "", "A decomposition to be used as a starting point, needs to have certain nodes marked (those which need to be updated).")
 	cache := flagSet.String("cache", "", "A binary representation of the internal cache, to be used during updating.")
 	exportCache := flagSet.Bool("exportCache", false, "Export the internal Cache after algoritm has run.")
+	nice := flagSet.Bool("nice", false, "Expects nice hypergraphs as input, which already specificy their resp. width.")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -149,7 +153,7 @@ func main() {
 	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
-	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
+	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && !*nice && *approx == 0) {
 		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/",
 			Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
@@ -189,8 +193,10 @@ func main() {
 	var parsedGraph Graph
 	var parseGraph ParseGraph
 
-	if !*pace {
+	if !*pace && !*nice {
 		parsedGraph, parseGraph = GetGraph(string(dat))
+	} else if *nice {
+		parsedGraph, *width = GetNiceGraph(string(dat))
 	} else {
 		parsedGraph = GetGraphPACE(string(dat))
 	}
@@ -440,6 +446,32 @@ func main() {
 	if *logK {
 		logK := &LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
 		solver = logK
+		chosen++
+	}
+
+	if *logKHybrid > 0 {
+		logKHyb := &LogKHybrid{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+
+		var pred HybridPredicate
+
+		switch *logKHybrid {
+		case 1:
+			pred = logKHyb.NumberEdgesPred
+			logKHyb.Size = 20
+		case 2:
+			pred = logKHyb.SumEdgesPred
+			logKHyb.Size = 100
+		case 3:
+			pred = logKHyb.ETimesKDivAvgEdgePred
+			logKHyb.Size = 160
+		case 4:
+			pred = logKHyb.OneRoundPred
+
+		}
+
+		logKHyb.Predicate = pred // set the predicate to use
+
+		solver = logKHyb
 		chosen++
 	}
 

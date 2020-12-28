@@ -142,8 +142,6 @@ func (b BalDetKDecomp) findDecompBalSep(currentDepth int, H Graph) Decomp {
 					go func(i int, comps []Graph, SepSpecial Edges) {
 
 						// Base case handling
-						comps[i].Special = append(comps[i].Special, SepSpecial)
-
 						//stop if there are at most two special edges left
 						if comps[i].Len() <= 2 {
 							ch <- baseCaseSmart(b.Graph, comps[i])
@@ -169,11 +167,12 @@ func (b BalDetKDecomp) findDecompBalSep(currentDepth int, H Graph) Decomp {
 						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
 						} else {
-							// res2 := b.findDecompBalSep(K, 1000, comps[i], append(compsSp[i], SepSpecial))
+							// comps[i].Special = append(comps[i].Special, SepSpecial)
+							// res2 := b.findDecompBalSep(1000, comps[i])
 							// if !reflect.DeepEqual(res2, Decomp{}) {
-							//  fmt.Println("Result, ", res2)
-							//  fmt.Println("H: ", comps[i], "Sp ", compsSp, "balsep ", balsep)
-							//  log.Panicln("Something is rotten in the state of this program")
+							// 	fmt.Println("Result, ", res2)
+							// 	fmt.Println("H: ", comps[i], "balsep ", balsep)
+							// 	log.Panicln("Something is rotten in the state of this program")
 
 							// }
 						}

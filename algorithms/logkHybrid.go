@@ -26,13 +26,23 @@ type LogKHybrid struct {
 
 // will match the behaviour of BalDetK, with Depth 1
 func (l *LogKHybrid) OneRoundPred(H Graph, K int) bool {
+
+	// log.Println("One Round Predicate")
+
 	return true
 }
 
 // checks the number of edges of the subgraph
 func (l *LogKHybrid) NumberEdgesPred(H Graph, K int) bool {
 
-	return H.Edges.Len() < l.Size
+	output := H.Edges.Len() < l.Size
+
+	if output {
+		// log.Println("Predicate NumberEdgesPred")
+		// log.Println("Current Graph: ", H.Edges.Len(), " Edges / ", l.Size)
+	}
+
+	return output
 }
 
 // checks the sum over all edges of the subgraph
@@ -43,7 +53,15 @@ func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
 		count = count + len(H.Edges.Slice()[i].Vertices)
 	}
 
-	return count < l.Size
+	output := count < l.Size
+
+	if output {
+		// log.Println("Predicate SumEdgesPred")
+		// log.Println("Current Graph: ", count, " Sum of Edges / ", l.Size)
+	}
+
+	return output
+
 }
 
 // checks a complex formula over the subgraph and used K
@@ -57,7 +75,14 @@ func (l *LogKHybrid) ETimesKDivAvgEdgePred(H Graph, K int) bool {
 
 	avgEdgeSize := count / H.Edges.Len()
 
-	return ((H.Edges.Len() * l.K) / avgEdgeSize) < l.Size
+	output := ((H.Edges.Len() * l.K) / avgEdgeSize) < l.Size
+
+	if output {
+		// log.Println("Predicate ETimesKDivAvgEdgePred")
+		// log.Println("Current Graph: ", ((H.Edges.Len() * l.K) / avgEdgeSize), "  / ", l.Size)
+	}
+
+	return output
 
 }
 
@@ -137,12 +162,15 @@ func (l LogKHybrid) baseCase(H Graph, lenAE int) Decomp {
 	return output
 }
 
-// a parallel version of logK, using goroutines and channels to run various parts concurrently
 func (l LogKHybrid) findHD(H Graph, Conn []int, allowedFull Edges) Decomp {
 
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	// log.Printf("Current Allowed Edges: %v\n", allowedFull)
 	// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+
+	if !Subset(Conn, H.Vertices()) {
+		log.Panicln("You done fucked up. ")
+	}
 
 	// Base Case
 	if l.baseCaseCheck(H.Edges.Len(), len(H.Special), allowedFull.Len()) {
@@ -166,11 +194,8 @@ func (l LogKHybrid) findHD(H Graph, Conn []int, allowedFull Edges) Decomp {
 	// Set up iterator for child
 
 	genChild := SplitCombin(allowed.Len(), l.K, runtime.GOMAXPROCS(-1), false)
-
 	parallelSearch := Search{H: &H, Edges: &allowed, BalFactor: l.BalFactor, Generators: genChild}
-
 	pred := BalancedCheck{}
-
 	parallelSearch.FindNext(pred) // initial Search
 
 	// checks all possibles nodes in H, together with PARENT loops, it covers all parent-child pairings
@@ -178,7 +203,6 @@ CHILD:
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
 
 		childλ := GetSubset(allowed, parallelSearch.Result)
-
 		comps_c, _, _ := H.GetComponents(childλ)
 
 		// log.Println("Balanced Child found, ", childλ)
@@ -196,25 +220,6 @@ CHILD:
 				// log.Println("Skipping a child sep", childχ)
 				continue CHILD
 			}
-
-			// l.cacheMux.RLock()
-			// _, ok := l.cache[IntHash(childχ)]
-			// l.cacheMux.RUnlock()
-			// if !ok {
-			// 	var newCache CompCache
-			// 	l.cacheMux.Lock()
-			// 	l.cache[IntHash(childχ)] = &newCache
-			// 	l.cacheMux.Unlock()
-
-			// } else {
-			// 	for j := range comps_c {
-			// 		if l.checkNegative(childχ, comps_c[j], Sp) { //TODO: Add positive check and cutNodes
-			// 			// log.Println("Skipping a child sep", childχ)
-			// 			continue CHILD
-			// 		}
-
-			// 	}
-			// }
 
 			var subtrees []Node
 			for y := range comps_c {
@@ -241,13 +246,10 @@ CHILD:
 
 		allowedParent := FilterVertices(allowed, append(Conn, childλ.Vertices()...))
 		genParent := SplitCombin(allowedParent.Len(), l.K, runtime.GOMAXPROCS(-1), false)
-
 		parentalSearch := Search{H: &H, Edges: &allowedParent, BalFactor: l.BalFactor, Generators: genParent}
-
 		predPar := ParentCheck{Conn: Conn, Child: childλ.Vertices()}
-
 		parentalSearch.FindNext(predPar)
-
+		parentFound := false
 	PARENT:
 		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
 
@@ -256,6 +258,8 @@ CHILD:
 			// log.Println("Looking at parent ", parentλ)
 
 			comps_p, _, isolatedEdges := H.GetComponents(parentλ)
+
+			// log.Println("Parent components ", comps_p)
 
 			foundLow := false
 			var comp_low_index int
@@ -270,7 +274,23 @@ CHILD:
 				}
 			}
 			if !foundLow {
-				continue PARENT
+				fmt.Println("Current SubGraph, ", H)
+				fmt.Println("Conn ", PrintVertices(Conn))
+
+				log.Printf("Current Allowed Edges: %v\n", allowed)
+				log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+
+				fmt.Println("Child ", childλ)
+				fmt.Println("Comps of child ", comps_c)
+				fmt.Println("parent ", parentλ)
+
+				fmt.Println("Comps of p: ")
+				for i := range comps_p {
+					fmt.Println("Component: ", comps_p[i], " Len: ", comps_p[i].Len())
+
+				}
+
+				log.Panicln("the parallel search didn't actually find a valid parent")
 			}
 
 			vertCompLow := comp_low.Vertices()
@@ -289,48 +309,20 @@ CHILD:
 				continue PARENT
 			}
 
-			// l.cacheMux.RLock()
-			// _, ok := l.cache[IntHash(childχ)]
-			// l.cacheMux.RUnlock()
-			// if !ok {
-			// 	var newCache CompCache
-			// 	l.cacheMux.Lock()
-			// 	l.cache[IntHash(childχ)] = &newCache
-			// 	l.cacheMux.Unlock()
-
-			// } else {
-			// 	for j := range comps_c {
-			// 		if l.checkNegative(childχ, comps_c[j], Sp) { //TODO: Add positive check and cutNodes
-			// 			// log.Println("Skipping a child sep", childχ)
-			// 			continue PARENT
-			// 		}
-			// 	}
-			// }
-
-			// log.Printf("Parent Found: %v (%s) \n", Graph{Edges: parentλ}, PrintVertices(parentλ.Vertices()))
-
-			// log.Printf("Child chosen: %v (%s) \n", Graph{Edges: childλ}, PrintVertices(childχ))
+			// log.Printf("Parent Found: %v (%s) \n", parentλ, PrintVertices(parentλ.Vertices()))
+			parentFound = true
+			// log.Println("Comp low: ", comp_low, "Vertices of comp_low", PrintVertices(vertCompLow))
+			// log.Printf("Child chosen: %v (%s) for H %v \n", childλ, PrintVertices(childχ), H)
 			// log.Printf("Comps of Child: %v\n", comps_c)
 
 			//Computing subcomponents of Child
 
-			var subtrees []Node
-			for x := range comps_c {
-				Conn_x := Inter(comps_c[x].Vertices(), childχ)
+			// 1. CREATE GOROUTINES
+			// ---------------------
 
-				decomp := recCall(comps_c[x], Conn_x, allowedFull)
-				if reflect.DeepEqual(decomp, Decomp{}) {
-					l.cache.AddNegative(childλ, comps_c[x])
-					// log.Println("Rejecting child")
-					continue PARENT
-				}
+			//Computing upper component in parallel
 
-				// log.Printf("Produced Decomp: %+v\n", decomp)
-				subtrees = append(subtrees, decomp.Root)
-
-			}
-
-			//Computing upper component
+			ch_up := make(chan Decomp)
 
 			var comp_up Graph
 			var decompUp Decomp
@@ -346,56 +338,113 @@ CHILD:
 				}
 			}
 
+			// specialChild = NewEdges([]Edge{Edge{Vertices: Inter(childχ, comp_up.Vertices())}})
+			specialChild = NewEdges([]Edge{Edge{Vertices: childχ}})
+
 			// if no comps_p, other than comp_low, just use parent as is
 			if len(comps_p) == 1 {
 				comp_up.Edges = parentλ
 
 				// adding new Special Edge to connect Child to comp_up
-				specialChild = NewEdges(childλ.Slice())
+				comp_up.Special = append(comp_up.Special, specialChild)
 
-				decompUp = Decomp{Graph: comp_up, Root: Node{Bag: Inter(parentλ.Vertices(), Vertices_H),
+				decompTemp := Decomp{Graph: comp_up, Root: Node{Bag: Inter(parentλ.Vertices(), Vertices_H),
 					Cover: parentλ, Children: []Node{Node{Bag: childχ, Cover: childλ}}}}
 
-				if !Subset(Conn, parentλ.Vertices()) {
-
-					fmt.Println("Current SubGraph, ", H)
-
-					fmt.Println("Child ", childχ)
-
-					fmt.Println("Comps of child ", comps_c)
-
-					fmt.Println("parent ", parentλ)
-					fmt.Println("Conn ", Conn)
-					fmt.Println("Comps of p", comps_p)
-
-					log.Panicln("Conn not covered in parent, Wait, what?")
-				}
+				go func(decomp Decomp) {
+					ch_up <- decomp
+				}(decompTemp)
 
 			} else if len(tempEdgeSlice) > 0 { // otherwise compute decomp for comp_up
 
 				comp_up.Edges = NewEdges(tempEdgeSlice)
 				comp_up.Special = tempSpecialSlice
 
+				// adding new Special Edge to connect Child to comp_up
+				comp_up.Special = append(comp_up.Special, specialChild)
+
 				// log.Println("Upper component:", comp_up)
 
 				//Reducing the allowed edges
 				allowedReduced := allowedFull.Diff(comp_low.Edges)
 
-				// adding new Special Edge to connect Child to comp_up
-				specialChild = NewEdges(childλ.Slice())
-				comp_up.Special = append(comp_up.Special, specialChild)
+				go func(comp_up Graph, Conn []int, allowedReduced Edges) {
+					ch_up <- recCall(comp_up, Conn, allowedReduced)
+				}(comp_up, Conn, allowedReduced)
 
-				decompUp = recCall(comp_up, Conn, allowedReduced)
+			}
 
-				if reflect.DeepEqual(decompUp, Decomp{}) {
+			// Parallel Recursive Calls:
 
-					// l.addNegative(childχ, comp_up, Sp)
-					// log.Println("Rejecting comp_up")
+			ch := make(chan Decomp)
+			var subtrees []Node
 
-					continue PARENT
+			for x := range comps_c {
+				Conn_x := Inter(comps_c[x].Vertices(), childχ)
+
+				go func(x int, comps_c []Graph, Conn_x []int, allowedFull Edges) {
+					ch <- recCall(comps_c[x], Conn_x, allowedFull)
+				}(x, comps_c, Conn_x, allowedFull)
+
+			}
+
+			// 2. WAIT ON GOROUTINES TO FINISH
+			// ---------------------
+
+			for i := 0; i < len(comps_c)+1; i++ {
+				select {
+				case decomp := <-ch:
+
+					if reflect.DeepEqual(decomp, Decomp{}) {
+
+						// l.cache.AddNegative(childλ, comps_c[x])
+						// log.Println("Rejecting child")
+						continue PARENT
+					}
+
+					// log.Printf("Produced Decomp: %+v\n", decomp)
+					subtrees = append(subtrees, decomp.Root)
+
+				case decompUpChan := <-ch_up:
+
+					if reflect.DeepEqual(decompUpChan, Decomp{}) {
+
+						// l.addNegative(childχ, comp_up, Sp)
+						// log.Println("Rejecting comp_up ", comp_up, " of H ", H)
+
+						continue PARENT
+					}
+
+					if !Subset(Conn, decompUpChan.Root.Bag) {
+						fmt.Println("Current SubGraph, ", H)
+						fmt.Println("Conn ", PrintVertices(Conn))
+
+						log.Printf("Current Allowed Edges: %v\n", allowed)
+						log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+
+						fmt.Println("Child ", childλ, "  ", PrintVertices(childχ))
+						fmt.Println("Comps of child ", comps_c)
+						fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
+
+						fmt.Println("comp_up ", comp_up, " V(comp_up) ", PrintVertices(comp_up.Vertices()))
+
+						fmt.Println("Decomp up:  ", decompUpChan)
+
+						fmt.Println("Comps of p", comps_p)
+
+						fmt.Println("Compare against PredSearch: ")
+
+						log.Panicln("Conn not covered in parent, Wait, what?")
+					}
+
+					decompUp = decompUpChan
+
 				}
 
 			}
+
+			// 3. POST-PROCESSING (sequentially)
+			// ---------------------
 
 			// rearrange subtrees to form one that covers total of H
 			rootChild := Node{Bag: childχ, Cover: childλ, Children: subtrees}
@@ -411,7 +460,12 @@ CHILD:
 			return Decomp{Graph: H, Root: finalRoot}
 
 		}
-		// log.Println("ran out of parents", parentalSearch.ExhaustedSearch, "\n\n")
+		if parentFound {
+			// log.Println("Rejecting child ", childλ, " for H ", H)
+			// log.Printf("\nCurrent SubGraph: %v\n", H)
+			// log.Printf("Current Allowed Edges: %v\n", allowed)
+			// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+		}
 	}
 
 	// exhausted search space

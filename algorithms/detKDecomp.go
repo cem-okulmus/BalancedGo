@@ -50,7 +50,7 @@ func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes map[uint32]SceneV
 	// d.Cache.Init()
 	d.Cache = savedCache // use provided cache
 
-	fmt.Println("Cache Size at start:", d.Cache.Len())
+	// fmt.Println("Cache Size at start:", d.Cache.Len())
 
 	if log.Flags() == 0 {
 		counterMap = make(map[string]int)
