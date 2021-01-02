@@ -110,7 +110,8 @@ func (l LogKHybrid) DetKWrapper(H Graph, Conn []int, allwowed Edges) Decomp {
 	det := DetKDecomp{K: l.K, Graph: Graph{Edges: allwowed}, BalFactor: l.BalFactor, SubEdge: false}
 
 	// TODO: reuse the same cache as for Logk?
-	det.Cache.Init()
+	// det.Cache.Init()
+	det.Cache = l.cache
 
 	return det.findDecomp(H, Conn)
 
@@ -376,14 +377,17 @@ CHILD:
 
 			// Parallel Recursive Calls:
 
-			ch := make(chan Decomp)
+			ch := make(chan DecompInt)
 			var subtrees []Node
 
 			for x := range comps_c {
 				Conn_x := Inter(comps_c[x].Vertices(), childχ)
 
 				go func(x int, comps_c []Graph, Conn_x []int, allowedFull Edges) {
-					ch <- recCall(comps_c[x], Conn_x, allowedFull)
+					var out DecompInt
+					out.Decomp = recCall(comps_c[x], Conn_x, allowedFull)
+					out.Int = x
+					ch <- out
 				}(x, comps_c, Conn_x, allowedFull)
 
 			}
@@ -393,9 +397,9 @@ CHILD:
 
 			for i := 0; i < len(comps_c)+1; i++ {
 				select {
-				case decomp := <-ch:
+				case decompInt := <-ch:
 
-					if reflect.DeepEqual(decomp, Decomp{}) {
+					if reflect.DeepEqual(decompInt.Decomp, Decomp{}) {
 
 						// l.cache.AddNegative(childλ, comps_c[x])
 						// log.Println("Rejecting child")
@@ -403,7 +407,7 @@ CHILD:
 					}
 
 					// log.Printf("Produced Decomp: %+v\n", decomp)
-					subtrees = append(subtrees, decomp.Root)
+					subtrees = append(subtrees, decompInt.Decomp.Root)
 
 				case decompUpChan := <-ch_up:
 

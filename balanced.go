@@ -196,10 +196,12 @@ func main() {
 	if !*pace && !*nice {
 		parsedGraph, parseGraph = GetGraph(string(dat))
 	} else if *nice {
-		parsedGraph, *width = GetNiceGraph(string(dat))
+		parsedGraph, parseGraph, *width = GetNiceGraph(string(dat))
 	} else {
 		parsedGraph = GetGraphPACE(string(dat))
 	}
+
+	originalGraph := parsedGraph
 	log.Println("BIP: ", parsedGraph.GetBIP())
 	var reducedGraph Graph
 
@@ -578,7 +580,10 @@ func main() {
 			}
 		}
 
-		outputStanza(solver.Name(), decomp, times, parsedGraph, *gml, *width, false)
+		if !reflect.DeepEqual(decomp, Decomp{}) {
+			decomp.Graph = originalGraph
+		}
+		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *width, false)
 
 		if *exportCache { // export cache
 

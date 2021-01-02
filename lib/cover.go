@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"sort"
@@ -76,7 +74,7 @@ func NewCover(K int, vertices []int, bound Edges, compVertices []int) Cover {
 func (c *Cover) NextSubset() int {
 	if !c.first {
 		if !c.backtrack() {
-			log.Println("No more covers possible.")
+			// log.Println("No more covers possible.")
 			return -1 // no more backtracking possible
 		}
 		c.pos++
@@ -109,7 +107,7 @@ func (c *Cover) NextSubset() int {
 		// fmt.Println("weight ", weight)
 		if (weight < c.Uncovered) || (weight == 0) {
 			if !c.backtrack() {
-				log.Println("No more covers available.")
+				// log.Println("No more covers available.")
 				return -1 // no more backtracking possible
 			}
 			continue
@@ -201,28 +199,28 @@ func (c *Cover) backtrack() bool {
 
 }
 
-func testCover() {
+// func testCover() {
 
-	e1 := Edge{Vertices: []int{1, 2, 3, 4}}
-	e2 := Edge{Vertices: []int{5, 6, 7, 8}}
-	e3 := Edge{Vertices: []int{4, 9, 10}}
-	e4 := Edge{Vertices: []int{5, 11, 12}}
+// 	e1 := Edge{Vertices: []int{1, 2, 3, 4}}
+// 	e2 := Edge{Vertices: []int{5, 6, 7, 8}}
+// 	e3 := Edge{Vertices: []int{4, 9, 10}}
+// 	e4 := Edge{Vertices: []int{5, 11, 12}}
 
-	edges := Edges{slice: []Edge{e1, e2, e3, e4}}
+// 	edges := Edges{slice: []Edge{e1, e2, e3, e4}}
 
-	//comp := Edges{Slice: []Edge{e3, e4}}
-	//  sep := Edges{Slice: []Edge{e1, e2}}
+// 	//comp := Edges{Slice: []Edge{e3, e4}}
+// 	//  sep := Edges{Slice: []Edge{e1, e2}}
 
-	c := NewCover(3, []int{3, 4, 5, 6}, edges, edges.Vertices())
+// 	c := NewCover(3, []int{3, 4, 5, 6}, edges, edges.Vertices())
 
-	for c.HasNext {
-		out := c.NextSubset()
-		if out > 0 {
-			fmt.Println("Subset: ", GetSubset(edges, c.Subset))
-		}
-	}
+// 	for c.HasNext {
+// 		out := c.NextSubset()
+// 		if out > 0 {
+// 			fmt.Println("Subset: ", GetSubset(edges, c.Subset))
+// 		}
+// 	}
 
-}
+// }
 
 func shuffle(input Edges) Edges {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -237,43 +235,43 @@ func shuffle(input Edges) Edges {
 	return NewEdges(a)
 }
 
-func test2Cover() {
-	dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_goodorder.hg")
-	//dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_badorder.hg")
-	parsedGraph, parsedParseGraph := GetGraph(string(dat))
-	e25 := parsedParseGraph.GetEdge("E25 ( xL75J, xL23J, xL24J )")
-	e26 := parsedParseGraph.GetEdge("E26 ( xL24J, xL76J, xL77J )")
-	e27 := parsedParseGraph.GetEdge("E27 ( xL25J, xL76J, xL77J )")
-	e28 := parsedParseGraph.GetEdge("E28 ( xL25J, xL26J, xL75J )")
+// func test2Cover() {
+// 	dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_goodorder.hg")
+// 	//dat, _ := ioutil.ReadFile("/home/cem/Dubois-026.xml_badorder.hg")
+// 	parsedGraph, parsedParseGraph := GetGraph(string(dat))
+// 	e25 := parsedParseGraph.GetEdge("E25 ( xL75J, xL23J, xL24J )")
+// 	e26 := parsedParseGraph.GetEdge("E26 ( xL24J, xL76J, xL77J )")
+// 	e27 := parsedParseGraph.GetEdge("E27 ( xL25J, xL76J, xL77J )")
+// 	e28 := parsedParseGraph.GetEdge("E28 ( xL25J, xL26J, xL75J )")
 
-	fmt.Println("Graph ")
-	for _, e := range parsedGraph.Edges.Slice() {
-		fmt.Println(e.FullString())
-	}
+// 	fmt.Println("Graph ")
+// 	for _, e := range parsedGraph.Edges.Slice() {
+// 		fmt.Println(e.FullString())
+// 	}
 
-	fmt.Println("\n\n", e25.FullString())
-	fmt.Println(e28.FullString())
+// 	fmt.Println("\n\n", e25.FullString())
+// 	fmt.Println(e28.FullString())
 
-	oldSep := NewEdges([]Edge{e25, e28})
-	largerGraph := NewEdges(append(parsedGraph.Edges.Slice(), []Edge{e26, e27, e25, e28}...))
+// 	oldSep := NewEdges([]Edge{e25, e28})
+// 	largerGraph := NewEdges(append(parsedGraph.Edges.Slice(), []Edge{e26, e27, e25, e28}...))
 
-	conn := Inter(oldSep.Vertices(), parsedGraph.Vertices())
-	bound := FilterVertices(largerGraph, oldSep.Vertices())
+// 	conn := Inter(oldSep.Vertices(), parsedGraph.Vertices())
+// 	bound := FilterVertices(largerGraph, oldSep.Vertices())
 
-	fmt.Println("larger graph ", largerGraph)
-	fmt.Println("bound, ", bound)
-	fmt.Println("Conn, ", Edge{Vertices: conn})
+// 	fmt.Println("larger graph ", largerGraph)
+// 	fmt.Println("bound, ", bound)
+// 	fmt.Println("Conn, ", Edge{Vertices: conn})
 
-	gen := NewCover(2, conn, bound, parsedGraph.Edges.Vertices())
+// 	gen := NewCover(2, conn, bound, parsedGraph.Edges.Vertices())
 
-	for gen.HasNext {
-		gen.NextSubset()
-		if len(gen.Subset) == 0 {
-			break
-		}
-		cover := GetSubset(bound, gen.Subset)
-		fmt.Println("\033[33m Selection: ", cover, "\033[0m")
+// 	for gen.HasNext {
+// 		gen.NextSubset()
+// 		if len(gen.Subset) == 0 {
+// 			break
+// 		}
+// 		cover := GetSubset(bound, gen.Subset)
+// 		fmt.Println("\033[33m Selection: ", cover, "\033[0m")
 
-	}
+// 	}
 
-}
+// }

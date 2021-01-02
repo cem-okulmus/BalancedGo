@@ -22,7 +22,6 @@ func (d *DetKDecomp) SetWidth(K int) {
 
 func (d *DetKDecomp) FindHD(currentGraph Graph) Decomp {
 
-	// d.Cache = make(map[uint64]*CompCache)
 	d.Cache.Init()
 	return d.findDecomp(currentGraph, []int{})
 }

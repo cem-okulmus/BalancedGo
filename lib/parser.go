@@ -99,7 +99,7 @@ type NiceGraph struct {
 	Encoding map[string]int
 }
 
-func GetNiceGraph(s string) (Graph, int) {
+func GetNiceGraph(s string) (Graph, ParseGraph, int) {
 
 	graphLexer := lexer.Must(ebnf.New(`
     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
@@ -157,7 +157,8 @@ func GetNiceGraph(s string) (Graph, int) {
 	}
 	output.Edges = NewEdges(edges)
 	m = encoding
-	return output, pgraph.Width
+
+	return output, ParseGraph{Edges: pgraph.Edges, Encoding: pgraph.Encoding}, pgraph.Width
 }
 
 func (p *ParseGraph) GetEdge(input string) Edge {
