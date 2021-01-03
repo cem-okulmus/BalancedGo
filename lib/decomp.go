@@ -248,13 +248,10 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, []int) {
 		coveredBelow = append(coveredBelow, coveredChild...)
 	}
 
-	// if n.belowMarked(root) {
-	//
-	// }
 	coveredSlice := []Edge{}
 	var coveredEdges Edges
 
-	if !n.Star { // skip if
+	if !n.containsMarked() { // skip if
 
 		for i := range edges {
 			if Subset(edges[i].Vertices, n.Bag) {
@@ -267,7 +264,7 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, []int) {
 	}
 	coveredVertices = RemoveDuplicates(append(coveredEdges.Vertices(), coveredBelow...))
 
-	if !n.Star {
+	if !n.containsMarked() {
 
 		sep := n.Cover.IntersectWith(n.Bag)
 

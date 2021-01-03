@@ -320,7 +320,6 @@ func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uin
 	// log.Printf("\n\nDU Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	// log.Printf("DU Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
 	// log.Printf("DU Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	// log.Printf("D Current Special Edges: %v\n\n", Sp)
 	// log.Println("DU Hedges ", H)
 	// log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
 
@@ -338,7 +337,7 @@ OUTER:
 		hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
 		val, ok := savedScenes[hash]
 
-		if !val.Perm { // delete one-time cached scene from map
+		if ok && !val.Perm { // delete one-time cached scene from map
 			delete(savedScenes, hash)
 		}
 		if !Subset(conn, val.Sep.Vertices()) {
@@ -434,6 +433,8 @@ OUTER:
 							continue OUTER
 						}
 					}
+
+					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
 					var subtrees []Node
 					bag := Inter(sepActual.Vertices(), verticesExtended)
