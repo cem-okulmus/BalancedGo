@@ -44,7 +44,7 @@ func (d *DetKDecomp) FindDecompGraph(G Graph) Decomp {
 
 var counterMap map[string]int
 
-func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes map[uint32]SceneValue, savedCache Cache) Decomp {
+func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes map[uint64]SceneValue, savedCache Cache) Decomp {
 	// d.Cache = make(map[uint64]*CompCache)
 	// d.Cache.Init()
 	d.Cache = savedCache // use provided cache
@@ -298,7 +298,7 @@ OUTER:
 	return Decomp{} // Reject if no separator could be found
 }
 
-func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uint32]SceneValue) Decomp {
+func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uint64]SceneValue) Decomp {
 	//Check current scenario for saved scene
 	// usingScene := false
 	// usingSep := Edges{}
@@ -320,7 +320,6 @@ func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uin
 	// log.Printf("\n\nDU Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	// log.Printf("DU Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
 	// log.Printf("DU Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	// log.Println("DU Hedges ", H)
 	// log.Println("DU Comp Vertices: ", PrintVertices(compVertices))
 
 	// Base case if H <= K
@@ -334,7 +333,8 @@ func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uin
 OUTER:
 	for gen.HasNext {
 
-		hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
+		// hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
+		hash := H.Edges.Hash()
 		val, ok := savedScenes[hash]
 
 		if ok && !val.Perm { // delete one-time cached scene from map

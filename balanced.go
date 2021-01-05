@@ -53,7 +53,7 @@ func (l labelTime) String() string {
 	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
-func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, K int, skipCheck bool) {
+func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, json string, K int, skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -89,6 +89,14 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 		f.WriteString(decomp.ToGML())
 		f.Sync()
 	}
+	if correct && len(json) > 0 {
+		f, err := os.Create(json)
+		check(err)
+
+		defer f.Close()
+		f.Write(WriteDecomp(decomp))
+		f.Sync()
+	}
 }
 
 func main() {
@@ -119,6 +127,7 @@ func main() {
 	seqBalDetTest := flagSet.Int("seqBalDet", 0,
 		"Use the sequential Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
+	jsonFlag := flagSet.String("json", "", "Output the produced decomposition into the specified json file ")
 	pace := flagSet.Bool("pace", false,
 		"Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
@@ -250,7 +259,7 @@ func main() {
 		if checkCorrectness {
 			fmt.Println(" Parsed Decomposition already correct, skipping update computation.")
 
-			outputStanza(solverUpdate.Name(), parsedDecomp, times, parsedGraph, *gml, *width, true)
+			outputStanza(solverUpdate.Name(), parsedDecomp, times, parsedGraph, *gml, *jsonFlag, *width, true)
 
 			return
 		}
@@ -400,7 +409,7 @@ func main() {
 				}
 			}
 
-			outputStanza(solverUpdate.Name(), decomp, times, parsedGraph, *gml, *width, false)
+			outputStanza(solverUpdate.Name(), decomp, times, parsedGraph, *gml, *jsonFlag, *width, false)
 
 			if len(*gml) > 0 { // export cache if gml is set too
 				f, err := os.Create(*gml + ".cache")
@@ -583,7 +592,7 @@ func main() {
 		if !reflect.DeepEqual(decomp, Decomp{}) {
 			decomp.Graph = originalGraph
 		}
-		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *width, false)
+		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *jsonFlag, *width, false)
 
 		if *exportCache { // export cache
 

@@ -141,6 +141,7 @@ func (n Node) containsMarked() bool {
 
 func (n Node) bagSubsets() bool {
 	if !Subset(n.Bag, n.Cover.Vertices()) {
+		// log.Println("Bag:", PrintVertices(n.Bag), "Cover: ", n.Cover)
 		return false
 	}
 

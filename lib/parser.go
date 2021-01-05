@@ -393,7 +393,17 @@ func GetDecomp(input []byte, graph Graph, encoding map[string]int) Decomp {
 	}
 
 	return jason.IntoDecomp(graph, encoding)
+}
 
+func WriteDecomp(input Decomp) []byte {
+	out, err := json.Marshal(input.IntoJson())
+
+	if err != nil {
+		fmt.Println("error:", err)
+		log.Panicln("decomp couldn't be marshalled")
+	}
+
+	return out
 }
 
 type Arc struct {
