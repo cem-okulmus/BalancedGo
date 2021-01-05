@@ -113,7 +113,6 @@ func (d *DetKDecomp) findDecomp(H Graph, oldSep []int) Decomp {
 	// log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	// log.Printf("D Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
 	// log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	// log.Printf("D Current Special Edges: %v\n\n", Sp)
 	// log.Println("D Hedges ", H)
 	// log.Println("D Comp Vertices: ", PrintVertices(compVertices))
 
@@ -190,6 +189,7 @@ OUTER:
 
 					//check chache for previous encounters
 					if d.Cache.CheckNegative(sepActual, comps) {
+						// log.Println("Skipping sep", sepActual, "due to cache.")
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -230,11 +230,10 @@ OUTER:
 						if reflect.DeepEqual(decomp, Decomp{}) {
 
 							d.Cache.AddNegative(sepActual, comps[i])
-							// log.Printf("detK REJECTING %v: couldn't decompose %v with SP %v \n",
-							// Graph{Edges: sepActual}, comps[i], compsSp[i])
+							// log.Printf("detK REJECTING %v: couldn't decompose %v  \n",
+							// 	Graph{Edges: sepActual}, comps[i])
 							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
 							// log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
-							// log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
 								if sepSub == nil {
@@ -258,8 +257,7 @@ OUTER:
 											nextBalsepFound = true
 										}
 									} else {
-										// log.Printf("No SubSep found for %v with Sp %v  \n",
-										//  Graph{Edges: sepActualOrigin}, Sp)
+										// log.Printf("No SubSep found for %v  \n", Graph{Edges: sepActualOrigin})
 										if addEdges {
 											i_add++
 											continue addingEdges
@@ -268,8 +266,8 @@ OUTER:
 										}
 									}
 								}
-								// log.Printf("Sub Sep chosen: %vof %v , %v \n", Graph{Edges: sepActual},
-								//    Graph{Edges: sepActualOrigin}, Sp)
+								// log.Printf("Sub Sep chosen: %vof %v \n", Graph{Edges: sepActual},
+								// 	Graph{Edges: sepActualOrigin})
 								continue subEdges
 							}
 
@@ -363,13 +361,13 @@ OUTER:
 				addEdges = true
 			}
 
-			if !Subset(conn, sep.Vertices()) {
-				log.Panicln("Cover messed up! 137")
-			}
+			// if !Subset(conn, sep.Vertices()) {
+			// 	log.Panicln("Cover messed up! 137")
+			// }
 
 		} else {
 			sep = val.Sep
-			// log.Println("Using scene: ", val)
+			log.Println("Using scene: ", val)
 
 			if log.Flags() == 0 {
 				if counter, ok := counterMap[val.String()]; ok {
@@ -414,7 +412,7 @@ OUTER:
 			subEdges:
 				for true {
 
-					// log.Println("Sep chosen ", sepActual)
+					log.Println("Sep chosen ", sepActual)
 
 					// if usingScene {
 					//  sep := NewEdges([]Edge{Edge{Vertices: usingBag}})
@@ -425,7 +423,8 @@ OUTER:
 					comps, _, _ := H.GetComponents(sepActual)
 
 					//check chache for previous encounters
-					if d.Cache.CheckNegative(sep, comps) {
+					if d.Cache.CheckNegative(sepActual, comps) {
+						// log.Println("Skipping sep", sepActual, "due to cache.")
 						if addEdges {
 							i_add++
 							continue addingEdges
@@ -446,10 +445,9 @@ OUTER:
 
 							d.Cache.AddNegative(sepActual, comps[i])
 							// log.Printf("DU detK REJECTING %v: couldn't decompose %v  \n",
-							//        Graph{Edges: sepActual}, comps[i])
+							// 	Graph{Edges: sepActual}, comps[i])
 							// log.Printf("\n\nDU Current oldSep: %v\n", PrintVertices(oldSep))
 							// log.Printf("DU Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
-							// log.Printf("Current Special Edges: %v\n\n", Sp)
 
 							if d.SubEdge {
 								if sepSub == nil {

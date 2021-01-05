@@ -106,7 +106,7 @@ func BenchmarkSeparator(b *testing.B) {
 
 		sep := GetSubset(parsedGraph.Edges, edges)
 
-		pred.Check(&parsedGraph, []Special{}, &sep, 1)
+		pred.Check(&parsedGraph, &sep, 1)
 	}
 }
 
@@ -309,25 +309,32 @@ func TestEdgesHash(t *testing.T) {
 
 }
 
-func TestEdgesExtendedHash(t *testing.T) {
+func TestGraphHash(t *testing.T) {
 
-	var Sp []Special
+	var Sp []Edges
 
 	lengthSpeciale := rand.Intn(20) + 1
 
+	lengthK := rand.Intn(5) + 1
+
 	for c := 0; c < lengthSpeciale; c++ {
 
-		arity := rand.Intn(100) + 1
+		var slice []Edge
 
-		var vertices []int
+		for o := 0; o < lengthK; o++ {
 
-		for i := 0; i < arity; i++ {
-			vertices = append(vertices, rand.Intn(1000)+i)
+			arity := rand.Intn(100) + 1
+
+			var vertices []int
+
+			for i := 0; i < arity; i++ {
+				vertices = append(vertices, rand.Intn(1000)+i)
+			}
+
+			slice = append(slice, Edge{Vertices: vertices})
 		}
 
-		special := Special{Vertices: vertices}
-
-		Sp = append(Sp, special)
+		Sp = append(Sp, NewEdges(slice))
 
 	}
 
@@ -359,21 +366,25 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 		edges := NewEdges(temp)
 
-		hash1 := edges.HashExtended(Sp)
+		graph := Graph{Edges: edges, Special: Sp}
+
+		hash1 := graph.Hash()
 
 		r.Shuffle(len(temp), func(i, j int) { temp[i], temp[j] = temp[j], temp[i] })
 
 		edges = NewEdges(temp)
+		graph2 := Graph{Edges: edges, Special: Sp}
 
-		hash2 := edges.HashExtended(Sp)
+		hash2 := graph2.Hash()
 
 		index := r.Intn(len(temp))
 		index2 := r.Intn(len(temp[index].Vertices))
 		temp[index].Vertices[index2] = temp[index].Vertices[index2] + 1
 
 		edges = NewEdges(temp)
+		graph3 := Graph{Edges: edges, Special: Sp}
 
-		hash3 := edges.HashExtended(Sp)
+		hash3 := graph3.Hash()
 
 		if hash1 != hash2 {
 			t.Errorf("hash not stable under permutation")
@@ -429,11 +440,13 @@ func TestEdgesExtendedHash(t *testing.T) {
 
 		edges := NewEdges(temp)
 
+		graph4 := Graph{Edges: edges, Special: Sp}
 		edges2 := NewEdges(temp2)
+		graph5 := Graph{Edges: edges2, Special: Sp}
 
-		hash1 := edges.HashExtended(Sp)
+		hash1 := graph4.Hash()
 
-		hash2 := edges2.HashExtended(Sp)
+		hash2 := graph5.Hash()
 
 		if hash1 == hash2 {
 			fmt.Println("Collission", temp, temp2)

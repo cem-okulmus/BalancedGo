@@ -362,7 +362,7 @@ func (e Edges) IntersectWith(set []int) Edges {
 func (e Edges) Both(other Edges) []Edge {
 	var output []Edge
 
-	table := make(map[uint32]int)
+	table := make(map[uint64]int)
 
 	for i := range e.Slice() {
 		table[e.Slice()[i].Hash()]++
@@ -381,7 +381,7 @@ func (e Edges) Both(other Edges) []Edge {
 //TODO: This assumes both edges are free of duplicates
 func (e Edges) Mem(other Edge) bool {
 
-	table := make(map[uint32]int)
+	table := make(map[uint64]int)
 
 	for i := range e.Slice() {
 		table[e.Slice()[i].Hash()]++

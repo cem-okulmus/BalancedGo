@@ -27,17 +27,17 @@ func IntHash(vertices []int) uint32 {
 
 }
 
-func (e Edge) Hash() uint32 {
-	var output uint32
+func (e Edge) Hash() uint64 {
+	var output uint64
 	// arrBytes := []byte{}
 	//  sort.Ints(e.Vertices)
 	for _, item := range append(e.Vertices, len(e.Vertices)) {
-		h := fnv.New32a()
+		h := fnv.New64a()
 		bs := make([]byte, 4)
 		binary.PutVarint(bs, int64(item))
 		// arrBytes = append(arrBytes, bs...)
 		h.Write(bs)
-		output = output ^ h.Sum32()
+		output = output ^ h.Sum64()
 	}
 
 	// h.Write(arrBytes)

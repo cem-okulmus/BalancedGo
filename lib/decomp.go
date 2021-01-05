@@ -176,14 +176,14 @@ func (s SceneValue) String() string {
 
 func (n Node) woundingDown(input Graph) []Scene {
 
-	fmt.Println("\n\n\nCurrent subhypergraph: ", input)
-	fmt.Println("Current node:\n Bag: ", PrintVertices(n.Bag), "\n Cover:", n.Cover)
+	// fmt.Println("\n\n\nCurrent subhypergraph: ", input)
+	// fmt.Println("Current node:\n Bag: ", PrintVertices(n.Bag), "\n Cover:", n.Cover)
 
 	var output []Scene
 
 	if !Subset(n.Bag, n.Cover.Vertices()) {
 		// start wounding up procedure
-		fmt.Println("cover wrong at this node, starging wouding up")
+		// fmt.Println("cover wrong at this node, starging wouding up")
 		outputChild, _ := n.woundingUp(input.Edges.Slice())
 
 		output = append(output, outputChild...)
