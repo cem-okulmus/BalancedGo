@@ -70,6 +70,14 @@ func (e *Edges) Hash() uint64 {
 			h.Write(bs)
 			output = output ^ h.Sum64()
 		}
+		// Add length as well
+
+		h := fnv.New64a()
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(len(e.Slice())))
+		h.Write(bs)
+		output = output ^ h.Sum64()
+
 		// h := fnv.New32a()
 		// h.Write(arrBytes)
 		// result := h.Sum32()

@@ -267,7 +267,15 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, Edges) {
 
 		sep := n.Cover.IntersectWith(n.Bag)
 
-		output = append(output, Scene{Sub: coveredEdges.Hash(), Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
+		comps, _, _ := Graph{Edges: coveredEdges}.GetComponents(sep)
+
+		if len(n.Children) == len(comps) {
+
+			// fmt.Println("Wounding Up: For Sub ", coveredEdges, " with hash:", coveredEdges.Hash(), " adding sep ", sep)
+
+			output = append(output, Scene{Sub: coveredEdges.Hash(), Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
+		}
+
 	}
 
 	return output, coveredEdges

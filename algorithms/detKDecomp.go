@@ -367,7 +367,7 @@ OUTER:
 
 		} else {
 			sep = val.Sep
-			log.Println("Using scene: ", val)
+			// log.Println("Using scene: ", val)
 
 			if log.Flags() == 0 {
 				if counter, ok := counterMap[val.String()]; ok {
@@ -412,7 +412,7 @@ OUTER:
 			subEdges:
 				for true {
 
-					log.Println("Sep chosen ", sepActual)
+					// log.Println("Sep chosen ", sepActual)
 
 					// if usingScene {
 					//  sep := NewEdges([]Edge{Edge{Vertices: usingBag}})
