@@ -81,15 +81,6 @@ func (h *HashMap) Check(Sub Edges) (SceneValue, bool) {
 		return SceneValue{}, false
 	}
 
-	if len(val) == 1 {
-
-		if !val[0].Val.Perm { // delete one-time cached scene from map
-			delete(h.internalMap, hash)
-		}
-
-		return val[0].Val, true
-	}
-
 	for i := range val {
 		if equalEdges(val[i].Sub, Sub) {
 
