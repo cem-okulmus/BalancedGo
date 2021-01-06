@@ -154,26 +154,6 @@ func (d *Decomp) Blowup() Decomp {
 	return output
 }
 
-type SceneValue struct {
-	Sep        Edges
-	Perm       bool // one-time cached if false
-	WoundingUp bool // created during wounding up
-}
-
-type Scene struct {
-	Sub uint64
-	Val SceneValue
-}
-
-func (s SceneValue) String() string {
-	var added string
-	if s.WoundingUp {
-		added = fmt.Sprint("WoundingUp")
-
-	}
-	return fmt.Sprint("Sep ", s.Sep, "Perm: ", s.Perm) + added
-}
-
 func (n Node) woundingDown(input Graph) []Scene {
 
 	// fmt.Println("\n\n\nCurrent subhypergraph: ", input)
@@ -204,7 +184,7 @@ func (n Node) woundingDown(input Graph) []Scene {
 
 	// fmt.Println("\nSep from decomp: ", PrintVertices(sep.Vertices()))
 
-	output = append(output, Scene{Sub: input.Edges.Hash(), Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
+	output = append(output, Scene{Sub: input.Edges, Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
 
 	// fmt.Println("\nCurrent components: ")
 	// for i, c := range comps {
@@ -273,7 +253,7 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, Edges) {
 
 			// fmt.Println("Wounding Up: For Sub ", coveredEdges, " with hash:", coveredEdges.Hash(), " adding sep ", sep)
 
-			output = append(output, Scene{Sub: coveredEdges.Hash(), Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
+			output = append(output, Scene{Sub: coveredEdges, Val: SceneValue{Sep: sep, Perm: true, WoundingUp: true}})
 		}
 
 	}
@@ -282,10 +262,13 @@ func (n Node) woundingUp(edges []Edge) ([]Scene, Edges) {
 
 }
 
-func (d Decomp) SceneCreation(input Graph) map[uint64]SceneValue {
+func (d Decomp) SceneCreation(input Graph) HashMap {
 
-	var output map[uint64]SceneValue
-	output = make(map[uint64]SceneValue)
+	// var output map[uint64]SceneValue
+	// output = make(map[uint64]SceneValue)
+
+	var output HashMap
+	output.Init()
 
 	// start_wd := time.Now()
 
@@ -302,8 +285,11 @@ func (d Decomp) SceneCreation(input Graph) map[uint64]SceneValue {
 	// fmt.Println("Wounding Up", msec_wu, " ms")
 
 	// fmt.Println("Found scenes, ", len(scenes))
-	for _, s := range scenes {
-		output[s.Sub] = s.Val
+	for i := range scenes {
+		Sub := scenes[i].Sub
+		Val := scenes[i].Val
+
+		output.Add(Sub, Val)
 	}
 
 	return output
