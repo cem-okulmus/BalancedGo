@@ -66,10 +66,11 @@ func (e Edge) String() string {
 
 // A slice of Edge, defined for the use of the sort interface
 type Edges struct {
-	slice    []Edge
-	vertices []int
-	hash     *uint64
-	hashMux  sync.Mutex
+	slice         []Edge
+	vertices      []int
+	hash          *uint64
+	hashMux       sync.Mutex
+	duplicateFree bool
 }
 
 func NewEdges(slice []Edge) Edges {
@@ -77,8 +78,12 @@ func NewEdges(slice []Edge) Edges {
 }
 
 func (e *Edges) RemoveDuplicates() {
+	if e.duplicateFree {
+		return
+	}
 	output := removeDuplicateEdges(e.slice)
 	e.slice = output.slice
+	e.duplicateFree = true
 }
 
 func (e *Edges) Clear() {
@@ -118,6 +123,10 @@ func (e Edges) String() string {
 }
 
 func equalEdges(this, other Edges) bool {
+
+	this.RemoveDuplicates()
+	other.RemoveDuplicates()
+
 	return reflect.DeepEqual(this.slice, other.slice)
 }
 

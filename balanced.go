@@ -381,7 +381,7 @@ func main() {
 		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_sc, label: "Scene Creation"})
 
-		fmt.Println("Extracted scenes: ", len(scenes))
+		fmt.Println("Extracted scenes: ", scenes.Len())
 
 		if solverUpdate != nil {
 			var decomp Decomp

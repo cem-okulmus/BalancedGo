@@ -44,7 +44,7 @@ func (d *DetKDecomp) FindDecompGraph(G Graph) Decomp {
 
 var counterMap map[string]int
 
-func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes map[uint64]SceneValue, savedCache Cache) Decomp {
+func (d *DetKDecomp) FindDecompUpdate(graph Graph, savedScenes HashMap, savedCache Cache) Decomp {
 	// d.Cache = make(map[uint64]*CompCache)
 	// d.Cache.Init()
 	d.Cache = savedCache // use provided cache
@@ -296,7 +296,7 @@ OUTER:
 	return Decomp{} // Reject if no separator could be found
 }
 
-func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes map[uint64]SceneValue) Decomp {
+func (d *DetKDecomp) findDecompUpdate(H Graph, oldSep []int, savedScenes HashMap) Decomp {
 	//Check current scenario for saved scene
 	// usingScene := false
 	// usingSep := Edges{}
@@ -332,12 +332,13 @@ OUTER:
 	for gen.HasNext {
 
 		// hash := IntHash(verticesCurrent) // save hash to avoid recomputing it below
-		hash := H.Edges.Hash()
-		val, ok := savedScenes[hash]
+		// hash := H.Edges.Hash()
+		// val, ok := savedScenes[hash]
+		val, ok := savedScenes.Check(H.Edges)
 
-		if ok && !val.Perm { // delete one-time cached scene from map
-			delete(savedScenes, hash)
-		}
+		// if ok && !val.Perm { // delete one-time cached scene from map
+		// 	delete(savedScenes, hash)
+		// }
 		if !Subset(conn, val.Sep.Vertices()) {
 			ok = false // ignore this choice of separator if it breaks connectedness
 		}
