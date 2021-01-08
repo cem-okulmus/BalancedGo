@@ -209,6 +209,13 @@ OUTER:
 			continue OUTER
 		}
 
+		if n.Star {
+			outputChild, _ := n.woundingUp(input.Edges.Slice())
+
+			output = append(output, outputChild...)
+			return output
+		}
+
 		log.Panicln("\nCouldn't find matching subgraph!")
 
 	}
