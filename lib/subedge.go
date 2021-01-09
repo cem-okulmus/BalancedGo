@@ -120,12 +120,9 @@ func (s *SubEdges) hasNextCombination() bool {
 }
 
 func (s SubEdges) existsSubset(b []int) bool {
-	hashOfB := IntHash(b)
-	if _, ok := s.cache[hashOfB]; ok {
-		return true
-	}
+	_, ok := s.cache[IntHash(b)]
 
-	return false
+	return ok
 }
 
 func (s *SubEdges) hasNext() bool {
@@ -136,7 +133,7 @@ func (s *SubEdges) hasNext() bool {
 			// fmt.Println("current:", GetSubset(s.source, s.Combination))
 			edges := GetSubset(s.source, s.combination)
 			vertices := edges.Vertices()
-			if len(vertices) == 0 || s.existsSubset(vertices) {
+			if len(vertices) == 0 || len(vertices) == s.source.Len() || s.existsSubset(vertices) {
 				continue //skip
 			} else {
 				//s.cache = append(s.cache, vertices)
@@ -157,11 +154,8 @@ func (s *SubEdges) hasNext() bool {
 	}
 
 	s.current = s.currentSubset.getCurrent()
-	if len(s.current.Vertices) == s.source.Len() {
-		return s.hasNext()
-	} else {
-		s.cache[IntHash(s.current.Vertices)] = Empty // add used combination to cache
-	}
+
+	s.cache[IntHash(s.current.Vertices)] = Empty // add used combination to cache
 
 	return true
 }
@@ -180,15 +174,39 @@ func (s SubEdges) getCurrent() Edge {
 type SepSub struct {
 	Edges []SubEdges
 
-	cache map[uint32]struct{}
+	// cache map[uint32]struct{}
 }
 
 func GetSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
-	output.cache = make(map[uint32]struct{})
+	// output.cache = make(map[uint32]struct{})
 
-	for _, e := range sep.Slice() {
-		output.Edges = append(output.Edges, getSubEdgeIterator(edges, e, k))
+	encountered := make(map[int]struct{})
+	var Empty struct{}
+
+	var sepIntersectFree []Edge
+
+	for i := range sep.Slice() {
+		tmpEdge := make([]int, 0, len(sep.Slice()[i].Vertices))
+
+		for _, j := range sep.Slice()[i].Vertices {
+
+			if _, ok := encountered[j]; !ok {
+
+				encountered[j] = Empty
+				tmpEdge = append(tmpEdge, j)
+
+			}
+		}
+
+		sepIntersectFree = append(sepIntersectFree, Edge{Name: sep.Slice()[i].Name, Vertices: tmpEdge})
+
+	}
+
+	newSep := NewEdges(sepIntersectFree)
+
+	for i := range newSep.Slice() {
+		output.Edges = append(output.Edges, getSubEdgeIterator(edges, newSep.Slice()[i], k))
 	}
 
 	return &output
@@ -215,18 +233,6 @@ func (sep *SepSub) HasNext() bool {
 	return false
 }
 
-func (sep *SepSub) alreadyChecked() bool {
-	currentEdges := sep.GetCurrent()
-	currentVertices := currentEdges.Vertices()
-	hashOfV := IntHash(currentVertices)
-	if _, ok := sep.cache[hashOfV]; ok {
-		return true
-	}
-	sep.cache[hashOfV] = Empty // add new vertex set to cache
-	return false
-
-}
-
 func (sep SepSub) GetCurrent() Edges {
 	var output []Edge
 
@@ -236,76 +242,3 @@ func (sep SepSub) GetCurrent() Edges {
 
 	return NewEdges(output)
 }
-
-// TEST
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-
-}
-
-// func test() {
-// 	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/rand_q0037.hg")
-// 	check(err)
-
-// 	parsedGraph, parse := GetGraph(string(dat))
-
-// 	e1 := parse.GetEdge("54020(1,2,5,6,7,8,9,10,12,14,17,18,19,22,23,25)")
-// 	fmt.Print(e1.FullString(), "\n\n\n")
-
-// 	for _, e := range parsedGraph.Edges.Slice() {
-// 		fmt.Println(e.FullString())
-// 	}
-
-// 	test := GetSepSub(parsedGraph.Edges, NewEdges([]Edge{e1}), 2)
-// 	count := 1
-// 	fmt.Println(test.GetCurrent())
-// 	for test.HasNext() {
-// 		// fmt.Println(test.GetCurrent())
-// 		count++
-// 	}
-
-// 	fmt.Println("\n\n Tested ", count, " many subedges")
-// 	return
-
-// 	// fmt.Println("Subset test: ")
-// 	// fmt.Println("========================================")
-
-// 	// test := getSubsetIterator([]Edge{Edge{Vertices: []int{1, 2, 3, 4}}})
-
-// 	// for test.HasNext() {
-// 	//  fmt.Println(test.getCurrent())
-// 	// }
-
-// 	// fmt.Println("Subegde test: ")
-// 	// fmt.Println("========================================")
-
-// 	// test2 := getSubEdgeIterator([]Edge{Edge{Vertices: []int{1, 2, 3, 4}}, Edge{Vertices: []int{1, 2, 5, 6}}},
-// 	//            Edge{Vertices: []int{5, 8, 2, 9}}, 2)
-
-// 	// fmt.Println("begin", test2.getCurrent())
-// 	// for test2.HasNext() {
-// 	//  fmt.Println("now", test2.getCurrent())
-// 	// }
-// 	// test2.reset()
-// 	// fmt.Println("begin", test2.getCurrent())
-// 	// for test2.HasNext() {
-// 	//  fmt.Println("now", test2.getCurrent())
-// 	// }
-
-// 	// fmt.Println("SepSub test: ")
-// 	// fmt.Println("========================================")
-
-// 	// test3 := GetSepSub([]Edge{Edge{Vertices: []int{5, 8, 2, 9}}, Edge{Vertices: []int{1, 2, 3, 4}},
-// 	//            Edge{Vertices: []int{1, 2, 5, 6}}, Edge{Vertices: []int{9, 12, 15, 16}},
-// 	//            Edge{Vertices: []int{16, 112, 115, 116}}}, []Edge{Edge{Vertices: []int{5, 8, 2, 9}},
-// 	//            Edge{Vertices: []int{9, 12, 15, 16}}}, 2)
-
-// 	// fmt.Println("begin", test3.GetCurrent())
-// 	// for test3.HasNext() {
-// 	//  fmt.Println("now", test3.GetCurrent())
-// 	// }
-
-// }
