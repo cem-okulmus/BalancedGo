@@ -184,7 +184,14 @@ func (n Node) woundingDown(input Graph) []Scene {
 
 	// fmt.Println("\nSep from decomp: ", PrintVertices(sep.Vertices()))
 
-	output = append(output, Scene{Sub: input.Edges, Val: SceneValue{Sep: sep, Perm: !n.containsMarked()}})
+	var perm bool
+	if len(comps) > 1 && (comps[0].Edges.Len() != input.Edges.Len()) {
+		perm = !n.containsMarked()
+	} else {
+		perm = false
+	}
+
+	output = append(output, Scene{Sub: input.Edges, Val: SceneValue{Sep: sep, Perm: perm}})
 
 	// fmt.Println("\nCurrent components: ")
 	// for i, c := range comps {
@@ -199,7 +206,7 @@ OUTER:
 
 	INNER:
 		for _, c := range comps {
-			if len(Inter(Diff(c.Vertices(), sep.Vertices()), u.Bag)) == 0 { //check if node belongs to this subgraph
+			if len(Inter(Diff(c.Vertices(), n.Bag), u.Bag)) == 0 { //check if node belongs to this subgraph
 				continue INNER
 			}
 

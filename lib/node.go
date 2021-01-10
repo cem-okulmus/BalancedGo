@@ -92,7 +92,7 @@ func (n Node) stringIdent(i int) string {
 	}
 	buffer.WriteString("}\n")
 	if len(n.Children) > 0 {
-		buffer.WriteString(indent(i) + "Children:\n" + indent(i) + "[")
+		buffer.WriteString(indent(i) + "Children: " + strconv.Itoa(len(n.Children)) + "\n" + indent(i) + "[")
 		for _, c := range n.Children {
 			buffer.WriteString(c.stringIdent(i + 1))
 		}
