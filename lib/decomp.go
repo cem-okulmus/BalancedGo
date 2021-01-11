@@ -216,7 +216,7 @@ OUTER:
 			continue OUTER
 		}
 
-		if n.Star {
+		if !perm {
 			outputChild, _ := n.woundingUp(input.Edges.Slice())
 
 			output = append(output, outputChild...)
