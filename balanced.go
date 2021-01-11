@@ -251,7 +251,7 @@ func main() {
 		start_check := time.Now()
 
 		// Check if this decomp is already correct
-		checkCorrectness := parsedDecomp.Correct(parsedGraph)
+		checkCorrectness := parsedDecomp.Correct(originalGraph)
 
 		msec_check := time.Now().Sub(start_check).Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec_check, label: "Correctness Check"})
