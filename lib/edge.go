@@ -124,8 +124,9 @@ func (e Edges) String() string {
 
 func equalEdges(this, other Edges) bool {
 
-	this.RemoveDuplicates()
-	other.RemoveDuplicates()
+	if this.Hash() != other.Hash() {
+		return false
+	}
 
 	return reflect.DeepEqual(this.slice, other.slice)
 }
