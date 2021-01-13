@@ -136,6 +136,7 @@ func main() {
 	cache := flagSet.String("cache", "", "A binary representation of the internal cache, to be used during updating.")
 	exportCache := flagSet.Bool("exportCache", false, "Export the internal Cache after algoritm has run.")
 	nice := flagSet.Bool("nice", false, "Expects nice hypergraphs as input, which already specificy their resp. width.")
+	ensemble := flagSet.Bool("ensemble", false, "Run ensemble of detk and localbip for update. Only used for that.")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -217,6 +218,7 @@ func main() {
 	var times []labelTime
 
 	var solverUpdate UpdateAlgorithm
+	var solverEnsemble Algorithm
 	var parsedDecomp Decomp
 	var parsedCache Cache
 
@@ -227,6 +229,11 @@ func main() {
 
 		if *detKTest {
 			det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
+
+			if *ensemble {
+				solverEnsemble = det
+			}
+
 			solverUpdate = det
 		}
 
@@ -387,7 +394,21 @@ func main() {
 			var decomp Decomp
 			start := time.Now()
 
-			decomp = solverUpdate.FindDecompUpdate(parsedGraph, scenes, parsedCache)
+			if *ensemble {
+
+				wait := make(chan Decomp)
+				go func() {
+					wait <- solverUpdate.FindDecompUpdate(parsedGraph, scenes, parsedCache)
+				}()
+
+				go func() {
+					wait <- solverEnsemble.FindDecomp()
+				}()
+
+				decomp = <-wait
+			} else {
+				decomp = solverUpdate.FindDecompUpdate(parsedGraph, scenes, parsedCache)
+			}
 
 			d := time.Now().Sub(start)
 			msec := d.Seconds() * float64(time.Second/time.Millisecond)
