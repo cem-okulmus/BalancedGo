@@ -137,6 +137,7 @@ func main() {
 	exportCache := flagSet.Bool("exportCache", false, "Export the internal Cache after algoritm has run.")
 	nice := flagSet.Bool("nice", false, "Expects nice hypergraphs as input, which already specificy their resp. width.")
 	ensemble := flagSet.Bool("ensemble", false, "Run ensemble of detk and localbip for update. Only used for that.")
+	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -483,19 +484,17 @@ func main() {
 
 	if *logKHybrid > 0 {
 		logKHyb := &LogKHybrid{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		logKHyb.Size = *meta
 
 		var pred HybridPredicate
 
 		switch *logKHybrid {
 		case 1:
 			pred = logKHyb.NumberEdgesPred
-			logKHyb.Size = 20
 		case 2:
 			pred = logKHyb.SumEdgesPred
-			logKHyb.Size = 100
 		case 3:
 			pred = logKHyb.ETimesKDivAvgEdgePred
-			logKHyb.Size = 160
 		case 4:
 			pred = logKHyb.OneRoundPred
 

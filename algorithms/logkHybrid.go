@@ -278,12 +278,12 @@ CHILD:
 				fmt.Println("Current SubGraph, ", H)
 				fmt.Println("Conn ", PrintVertices(Conn))
 
-				log.Printf("Current Allowed Edges: %v\n", allowed)
-				log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+				fmt.Printf("Current Allowed Edges: %v\n", allowed)
+				fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
-				fmt.Println("Child ", childλ)
+				fmt.Println("Child ", childλ, "  ", PrintVertices(childλ.Vertices()))
 				fmt.Println("Comps of child ", comps_c)
-				fmt.Println("parent ", parentλ)
+				fmt.Println("parent ", parentλ, "( ", parentalSearch.Result, " ) from the set: ", allowedParent)
 
 				fmt.Println("Comps of p: ")
 				for i := range comps_p {
@@ -426,17 +426,16 @@ CHILD:
 						log.Printf("Current Allowed Edges: %v\n", allowed)
 						log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
-						fmt.Println("Child ", childλ, "  ", PrintVertices(childχ))
+						fmt.Println("Child ", childλ, "  ", PrintVertices(childλ.Vertices()))
 						fmt.Println("Comps of child ", comps_c)
-						fmt.Println("parent ", parentλ, "Vertices(parent) ", PrintVertices(parentλ.Vertices()))
-
+						fmt.Println("parent ", parentλ, "( ", parentalSearch.Result, " ) from the set: ", allowedParent)
 						fmt.Println("comp_up ", comp_up, " V(comp_up) ", PrintVertices(comp_up.Vertices()))
 
 						fmt.Println("Decomp up:  ", decompUpChan)
 
 						fmt.Println("Comps of p", comps_p)
 
-						fmt.Println("Compare against PredSearch: ")
+						fmt.Println("Compare against PredSearch: ", predPar.Check(&H, &parentλ, l.BalFactor))
 
 						log.Panicln("Conn not covered in parent, Wait, what?")
 					}
