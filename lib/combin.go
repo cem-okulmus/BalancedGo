@@ -51,6 +51,7 @@ func ExtendedBinom(n int, k int) int {
 type CombinationIterator struct {
 	n           int
 	k           int
+	oldK        int // needed to compute current progress
 	Combination []int
 	empty       bool
 	stepSize    int
@@ -63,14 +64,14 @@ func GetCombin(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
-	return CombinationIterator{n: n, k: k, stepSize: 1, extended: true, confirmed: true}
+	return CombinationIterator{n: n, oldK: k, k: k, stepSize: 1, extended: true, confirmed: true}
 }
 
 func GetCombinUnextend(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
-	return CombinationIterator{n: n, k: k, stepSize: 1, extended: false, confirmed: true}
+	return CombinationIterator{n: n, oldK: k, k: k, stepSize: 1, extended: false, confirmed: true}
 }
 
 // nextCombination generates the combination after s, overwriting s
@@ -176,6 +177,47 @@ func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 	}
 
 	return output
+}
+
+func CombinatorialOrder(combination []int) int {
+	var output int
+
+	for i := range combination {
+		output = output + Binomial(combination[i], i+1)
+	}
+
+	return output
+}
+
+// get the current progress as a percentage, with 100% representing that all combinations have been visited
+func (c CombinationIterator) GetPercentage() float32 {
+
+	if !c.HasNext() {
+		return 1.0
+	}
+
+	progressPresent := CombinatorialOrder(c.Combination) * 1.0
+
+	if !c.extended {
+
+		return float32(progressPresent) / float32(Binomial(c.n, c.k))
+	} else {
+
+		allCombinatistions := 0
+		progressPast := 0
+		k := c.oldK
+
+		for k >= 1 {
+			allCombinatistions = allCombinatistions + Binomial(c.n, k)
+			k = k - 1
+
+			if k > c.k {
+				progressPast = progressPast + Binomial(c.n, k)
+			}
+		}
+
+		return (float32(progressPresent) + float32(progressPast)) / float32(allCombinatistions)
+	}
 }
 
 // func allCombinations(index int, c *CombinationIterator) int {
