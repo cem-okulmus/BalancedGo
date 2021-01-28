@@ -19,6 +19,7 @@ type Search struct {
 
 type Predicate interface {
 	Check(H *Graph, sep *Edges, balancedFactor int) bool
+	IsParent() bool
 }
 
 func (s *Search) FindNext(pred Predicate) {
@@ -53,6 +54,7 @@ func (s *Search) FindNext(pred Predicate) {
 	select {
 	case s.Result = <-found:
 		close(found) //to terminate other workers waiting on found
+		wg.Wait()
 	case <-wait:
 		s.ExhaustedSearch = true
 	}
@@ -75,6 +77,8 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 			// log.Printf("Worker %d told to quit", workernum)
 			return
 		}
+		// j := make([]int, len(gen.Combination))
+		// copy(gen.Combination, j)
 		j := gen.Combination
 
 		sep := GetSubset(*s.Edges, j)
@@ -83,6 +87,12 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
 			gen.Confirm()
+
+			// if !pred.IsParent() {
+			// 	fmt.Println("Worker ", workernum, ": found balsep of combin", j, "( ", GetSubset(*s.Edges, j), ") from the set: ", *s.Edges)
+
+			// }
+
 			*finished = true
 			return
 		}
@@ -119,7 +129,13 @@ func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 		}
 	}
 
+	// fmt.Println("\nBALANECDCHECK:   I found the balsep ", sep, "for the hypergraph ", H, "\n\n")
+
 	return true
+}
+
+func (b BalancedCheck) IsParent() bool {
+	return false
 }
 
 type ParentCheck struct {
@@ -179,5 +195,11 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 		return false
 	}
 
+	// fmt.Println("\nPARENTCHECK: I found the parent ", sep, " relative to child ", PrintVertices(p.Child), "for the hypergraph ", H, "\n\n")
+
+	return true
+}
+
+func (p ParentCheck) IsParent() bool {
 	return true
 }
