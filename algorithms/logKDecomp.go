@@ -168,7 +168,7 @@ CHILD:
 					continue CHILD
 				}
 
-				log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
+				// log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
 				subtrees = append(subtrees, decomp.Root)
 			}
 
