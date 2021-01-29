@@ -46,6 +46,7 @@ func (c *Cache) AddPositive(sep Edges, comp Graph) {
 func (c *Cache) AddNegative(sep Edges, comp Graph) {
 
 	c.cacheMux.Lock()
+	defer c.cacheMux.Unlock()
 
 	_, ok := c.cache[sep.Hash()]
 
@@ -56,7 +57,7 @@ func (c *Cache) AddNegative(sep Edges, comp Graph) {
 	// fmt.Println("Addding negative, current length of cache", len(c.cache))
 
 	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
-	c.cacheMux.Unlock()
+
 }
 
 // func (c *Cache) CheckNegative(sep Edges, comp Graph) bool {
@@ -73,7 +74,7 @@ func (c *Cache) AddNegative(sep Edges, comp Graph) {
 // 	return false
 // }
 
-func (c Cache) CheckNegative(sep Edges, comps []Graph) bool {
+func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
@@ -101,7 +102,7 @@ func (c Cache) CheckNegative(sep Edges, comps []Graph) bool {
 	return false
 }
 
-func (c Cache) CheckPositive(sep Edges, comp Graph) bool {
+func (c *Cache) CheckPositive(sep Edges, comp Graph) bool {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
