@@ -31,7 +31,7 @@ func (e Edge) Hash() uint64 {
 	var output uint64
 	// arrBytes := []byte{}
 	//  sort.Ints(e.Vertices)
-	for _, item := range append(e.Vertices, len(e.Vertices)) {
+	for _, item := range e.Vertices {
 		h := fnv.New64a()
 		bs := make([]byte, 4)
 		binary.PutVarint(bs, int64(item))
@@ -39,6 +39,13 @@ func (e Edge) Hash() uint64 {
 		h.Write(bs)
 		output = output ^ h.Sum64()
 	}
+
+	h := fnv.New64a()
+	bs := make([]byte, 4)
+	binary.PutVarint(bs, int64(len(e.Vertices)))
+	// arrBytes = append(arrBytes, bs...)
+	h.Write(bs)
+	output = output ^ h.Sum64()
 
 	// h.Write(arrBytes)
 	// return h.Sum32()
