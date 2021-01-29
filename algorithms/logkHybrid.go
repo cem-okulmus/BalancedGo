@@ -250,7 +250,7 @@ CHILD:
 		parentalSearch := Search{H: &H, Edges: &allowedParent, BalFactor: l.BalFactor, Generators: genParent}
 		predPar := ParentCheck{Conn: Conn, Child: childλ.Vertices()}
 		parentalSearch.FindNext(predPar)
-		parentFound := false
+		// parentFound := false
 	PARENT:
 		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
 
@@ -311,7 +311,7 @@ CHILD:
 			}
 
 			// log.Printf("Parent Found: %v (%s) \n", parentλ, PrintVertices(parentλ.Vertices()))
-			parentFound = true
+			// parentFound = true
 			// log.Println("Comp low: ", comp_low, "Vertices of comp_low", PrintVertices(vertCompLow))
 			// log.Printf("Child chosen: %v (%s) for H %v \n", childλ, PrintVertices(childχ), H)
 			// log.Printf("Comps of Child: %v\n", comps_c)
@@ -463,12 +463,12 @@ CHILD:
 			return Decomp{Graph: H, Root: finalRoot}
 
 		}
-		if parentFound {
-			// log.Println("Rejecting child ", childλ, " for H ", H)
-			// log.Printf("\nCurrent SubGraph: %v\n", H)
-			// log.Printf("Current Allowed Edges: %v\n", allowed)
-			// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
-		}
+		// if parentFound {
+		// log.Println("Rejecting child ", childλ, " for H ", H)
+		// log.Printf("\nCurrent SubGraph: %v\n", H)
+		// log.Printf("Current Allowed Edges: %v\n", allowed)
+		// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+		// }
 	}
 
 	// exhausted search space
