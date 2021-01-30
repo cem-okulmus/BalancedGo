@@ -11,17 +11,22 @@ type CompCache struct {
 type Cache struct {
 	cache    map[uint64]*CompCache
 	cacheMux *sync.RWMutex
+	once     sync.Once
 }
 
 // needs to be called to initialise the cache
 func (c *Cache) Init() {
-	if c.cache == nil {
+	c.once.Do(c.initFunction)
+}
 
-		c.cacheMux.Lock()
+func (c *Cache) initFunction() {
+	if c.cache == nil {
+		var newMutex sync.RWMutex
+
+		c.cacheMux = &newMutex
 
 		c.cache = make(map[uint64]*CompCache)
 
-		c.cacheMux.Unlock()
 	}
 }
 
