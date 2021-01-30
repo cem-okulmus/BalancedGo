@@ -10,7 +10,7 @@ type CompCache struct {
 
 type Cache struct {
 	cache    map[uint64]*CompCache
-	cacheMux sync.RWMutex
+	cacheMux *sync.RWMutex
 }
 
 // needs to be called to initialise the cache
