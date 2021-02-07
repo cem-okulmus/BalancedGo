@@ -18,38 +18,14 @@ func (d Decomp) String() string {
 }
 
 func (d *Decomp) RestoreSubedges() {
-	newRoot := d.Root.RestoreEdges(d.Graph.Edges)
+	newRoot := d.Root.restoreEdges(d.Graph.Edges)
 
 	d.Root = newRoot
 }
 
-// func (d Decomp) connected(vert int) bool {
-// 	conGraph := d.Root.getConGraph(true)
-// 	var containingNodes = d.Root.allChildrenContaining(vert)
-// 	var edgesContaining = FilterVerticesStrict(conGraph, containingNodes)
-
-// 	// log.Printf("All nodes containing %s\n", m[vert])
-// 	// for _, n := range containingNodes {
-// 	// 	log.Printf("%v ,", m[n])
-// 	// }
-
-// 	// log.Printf("All edges")
-// 	// for _, e := range edgesContaining.Slice() {
-// 	// 	log.Printf("%v ,", e)
-// 	// }
-
-// 	g, _, _ := Graph{Edges: edgesContaining}.GetComponents(Edges{}, []Special{})
-
-// 	// if len(g) > 1 {
-// 	// 	fmt.Printf("Components of Node %s\n", m[vert])
-// 	// 	for _, c := range g {
-// 	// 		fmt.Printf("%v \n\n", c)
-// 	// 	}
-// 	// }
-
-// 	return len(g) == 1
-// }
-
+// Correct checks if a decomp fullfills the properties of a GHD when given a hypergraph g as input.
+// It also checks for the special condition of HDs, though it merely prints a warning if it is not satisfied,
+// the output is not affected by this additional check.
 func (d Decomp) Correct(g Graph) bool {
 
 	//must be a decomp of same graph
@@ -101,6 +77,7 @@ func (d Decomp) Correct(g Graph) bool {
 	return true
 }
 
+// CheckWidth returns the size of the largest bag of any node in a decomp
 func (d Decomp) CheckWidth() int {
 	var output = 0
 
@@ -117,35 +94,6 @@ func (d Decomp) CheckWidth() int {
 			for _, c := range n.Children {
 				children = append(children, c) // build up the next level of the tree
 			}
-		}
-		current = children
-	}
-
-	return output
-}
-
-// Takes the output of balKDecomp and ``blows it up'' to GHD
-func (d *Decomp) Blowup() Decomp {
-	var output Decomp
-	output.Graph = d.Graph
-	output.Root = d.Root
-	current := []Node{output.Root}
-
-	// iterate over decomp in BFS to add union
-	for len(current) > 0 {
-		children := []Node{}
-		for i := range current {
-			lambda := current[i].Cover
-			nchildren := current[i].Children
-			for j := range nchildren {
-				var nuCover []Edge
-				nuCover = append(nchildren[j].Cover.Slice(), lambda.Slice()...) // merge lambda with direct ancestor
-				nchildren[j].Cover = removeDuplicateEdges(nuCover)
-
-				nchildren[j].Bag = nchildren[j].Cover.Vertices() // fix the bag
-				children = append(children, nchildren[j])        // build up the next level of the tree
-			}
-			current[i].Children = nchildren
 		}
 		current = children
 	}

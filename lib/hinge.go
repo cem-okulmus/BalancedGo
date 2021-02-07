@@ -1,7 +1,7 @@
-// functions to compute a hinge-tree decomposition of a hypergraph, and methods to use it to speed up the computation
-// of a GHD
-
 package lib
+
+// hinge.go provides functions to compute a hinge-tree decomposition of a hypergraph,
+// and methods to use it to speed up the computation of a GHD
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ type hingeEdge struct {
 	e Edge
 }
 
+// Algorithm_h is strict generalisation on the Algorithm interface.
 type Algorithm_h interface {
 	Name() string
 	FindDecomp() Decomp
@@ -21,27 +22,14 @@ type Algorithm_h interface {
 	SetWidth(K int)
 }
 
+// A Hingetree is a tree with each node representing a subgraph
+// and its respective decomposition and connected by exactly one edge,
+// which is the sole intersection between the two graphs of its connecting nodes
 type Hingetree struct {
 	hinge    Graph
 	decomp   Decomp
 	minimal  bool
 	children []hingeEdge
-}
-
-func (h Hingetree) GetLargestGraph() Graph {
-	maxEdges := h.hinge.Edges.Len()
-	maxGraph := h.hinge
-
-	for _, c := range h.children {
-		tmpGraph := c.h.GetLargestGraph()
-
-		if tmpGraph.Edges.Len() > maxEdges {
-			maxEdges = tmpGraph.Edges.Len()
-			maxGraph = tmpGraph
-		}
-	}
-
-	return maxGraph
 }
 
 func (h Hingetree) stringIdent(i int) string {
@@ -69,6 +57,7 @@ func (h Hingetree) String() string {
 	return h.stringIdent(0)
 }
 
+// GetHingeTree produces a hingetree for a given graph
 func GetHingeTree(g Graph) Hingetree {
 
 	initialTree := Hingetree{hinge: g}
@@ -90,7 +79,7 @@ func GetHingeTree(g Graph) Hingetree {
 	return output
 }
 
-// Following Gyssens et alii, 1994
+// expandHingeTree computes a hintegree, following an algorithm from Gyssens et alii, 1994
 func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 
 	// keep expanding the current node until no more new children can be generated
@@ -157,19 +146,6 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 			h = htrees[0]
 		} else {
 			h = htrees[gamma[parentE]]
-
-			// found := false
-
-			// for _, e := range h.hinge.Edges.Slice() {
-			//  if e.Name == parentE {
-			//      found = true
-			//  }
-			// }
-
-			// if !found {
-			//  log.Panic(m[parentE], "does not occur in", htrees[gamma[parentE]].hinge)
-			// }
-
 		}
 
 		for i := range htrees {
@@ -179,15 +155,9 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 			h.children = append(h.children, hingeEdge{e: *e, h: htrees[i]})
 		}
 
-		//fmt.Println("Current Hingetree \n")
-		//fmt.Println(h.String())
-
 	}
 
-	//fmt.Println("going over children")
-
 	// recursively repeat procedure over all children of h
-
 	for i := range h.children {
 		h.children[i].h = h.children[i].h.expandHingeTree(isUsed, h.children[i].e.Name)
 	}
@@ -224,7 +194,7 @@ func (n Node) parentSubset(subset []int) Node {
 	return n
 }
 
-// reroot G at node covering edge, producing an isomorphic graph
+// RerootEdge reroots G at node covering edge, producing an isomorphic graph
 func (n Node) RerootEdge(edge []int) Node {
 
 	if !n.containsSubset(edge) {
@@ -257,8 +227,9 @@ func (n Node) RerootEdge(edge []int) Node {
 	return child
 }
 
+// DecompHinge computes a decomposition of the original input graph,
+// using the hingetree to speed up the computation
 func (h Hingetree) DecompHinge(alg Algorithm_h, g Graph) Decomp {
-
 	h.decomp = alg.FindDecompGraph(h.hinge)
 
 	if reflect.DeepEqual(h.decomp, Decomp{}) {

@@ -1,20 +1,23 @@
-// implements a cache for hypergraph decomposition algorithms
 package lib
+
+// cache.go implements a cache for hypergraph decomposition algorithms, loosely based on Samer and Gottlob 2009
 
 import "sync"
 
-type CompCache struct {
+// compCache stores the hashes of subgraphs for which a separator is known to have failed or suceeded
+type compCache struct {
 	Succ []uint64
 	Fail []uint64
 }
 
+// Cache implements a caching mechanism for generic hypergraph decomposition algorithms
 type Cache struct {
-	cache    map[uint64]*CompCache
+	cache    map[uint64]*compCache
 	cacheMux *sync.RWMutex
 	once     sync.Once
 }
 
-// needs to be called to initialise the cache
+// Init needs to be called to initialise the cache
 func (c *Cache) Init() {
 	c.once.Do(c.initFunction)
 }
@@ -25,11 +28,12 @@ func (c *Cache) initFunction() {
 
 		c.cacheMux = &newMutex
 
-		c.cache = make(map[uint64]*CompCache)
+		c.cache = make(map[uint64]*compCache)
 
 	}
 }
 
+// Len returns the number of bindings in the cache
 func (c *Cache) Len() int {
 	c.cacheMux.Lock()
 	defer c.cacheMux.Unlock()
@@ -37,13 +41,15 @@ func (c *Cache) Len() int {
 	return len(c.cache)
 }
 
+// AddPositive adds a seperator sep and subgraph comp as a known successor case
+// TODO: not really used and tested
 func (c *Cache) AddPositive(sep Edges, comp Graph) {
 	c.cacheMux.Lock()
 
 	_, ok := c.cache[sep.Hash()]
 
 	if !ok {
-		var newCache CompCache
+		var newCache compCache
 		c.cache[sep.Hash()] = &newCache
 	}
 
@@ -51,39 +57,24 @@ func (c *Cache) AddPositive(sep Edges, comp Graph) {
 	c.cacheMux.Unlock()
 }
 
+// AddNegative adds a seperator sep and subgraph comp as a known failure case
 func (c *Cache) AddNegative(sep Edges, comp Graph) {
-
 	c.cacheMux.Lock()
 	defer c.cacheMux.Unlock()
 
 	_, ok := c.cache[sep.Hash()]
 
 	if !ok {
-		var newCache CompCache
+		var newCache compCache
 		c.cache[sep.Hash()] = &newCache
 	}
 	// fmt.Println("Addding negative, current length of cache", len(c.cache))
 
 	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
-
 }
 
-// func (c *Cache) CheckNegative(sep Edges, comp Graph) bool {
-
-// 	compCachePrev, _ := c.cache[sep.Hash()]
-// 	for i := range compCachePrev.Fail {
-// 		if comp.Edges.Hash() == compCachePrev.Fail[i] {
-// 			//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
-// 			return true
-// 		}
-
-// 	}
-
-// 	return false
-// }
-
+// CheckNegative checks for a separator sep and a subgraph whether it is a known failure case
 func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
-
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
@@ -91,25 +82,27 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 
 	compCachePrev, ok := c.cache[sep.Hash()]
 
-	if !ok {
+	if !ok { // sep not encountered befoer
 		return false
-	} else {
-		for j := range comps {
-			for i := range compCachePrev.Fail {
-				if comps[j].Hash() == compCachePrev.Fail[i] {
-					//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
+	}
 
-					return true
-				}
+	for j := range comps {
+		for i := range compCachePrev.Fail {
+			if comps[j].Hash() == compCachePrev.Fail[i] {
+				//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
 
+				return true
 			}
 
 		}
+
 	}
 
 	return false
 }
 
+// CheckNegative checks for a separator sep and a subgraph whether it is a known successor case
+// TODO: not really used and tested
 func (c *Cache) CheckPositive(sep Edges, comp Graph) bool {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()

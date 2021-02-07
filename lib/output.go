@@ -1,5 +1,6 @@
-// transforms a Decomp into a .gml file
 package lib
+
+// decomp.go transforms a Decomp into a .gml file
 
 import (
 	"bytes"
@@ -8,7 +9,8 @@ import (
 	"strings"
 )
 
-func (g Graph) ToPACE() string {
+// toPACE exports the graph as a string, in the PACE 2019 format
+func (g Graph) toPACE() string {
 	var buffer bytes.Buffer
 
 	initialLine := "p htd " + fmt.Sprint(len(g.Edges.Vertices())) + fmt.Sprint(" ", g.Edges.Len()) + "\n"
@@ -27,6 +29,30 @@ func (g Graph) ToPACE() string {
 	}
 
 	return buffer.String()
+}
+
+// ToGML exports the decomp as a string, in GML format
+func (d Decomp) ToGML() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("graph [\n\n  directed 0\n\n")
+
+	edges := d.Root.getConGraph(false).Slice()
+
+	buffer.WriteString(d.Root.toGML())
+
+	for i := range edges {
+		buffer.WriteString(edges[i].toGML())
+	}
+
+	buffer.WriteString("\n]\n")
+
+	result := buffer.String()
+
+	//simple fix to match DetK GML output exactly
+	result = strings.ReplaceAll(result, "(", "{")
+	result = strings.ReplaceAll(result, ")", "}")
+	return result
 }
 
 func (n Node) toGML() string {
@@ -52,27 +78,4 @@ func (e Edge) toGML() string {
 	}
 	return "  edge [\n    source " + fmt.Sprint(e.Vertices[0]) +
 		"\n    target " + fmt.Sprint(e.Vertices[1]) + "\n  ]\n\n"
-}
-
-func (d Decomp) ToGML() string {
-	var buffer bytes.Buffer
-
-	buffer.WriteString("graph [\n\n  directed 0\n\n")
-
-	edges := d.Root.getConGraph(false).Slice()
-
-	buffer.WriteString(d.Root.toGML())
-
-	for i := range edges {
-		buffer.WriteString(edges[i].toGML())
-	}
-
-	buffer.WriteString("\n]\n")
-
-	result := buffer.String()
-
-	//simple fix to match DetK GML output exactly
-	result = strings.ReplaceAll(result, "(", "{")
-	result = strings.ReplaceAll(result, ")", "}")
-	return result
 }

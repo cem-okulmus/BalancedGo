@@ -15,6 +15,7 @@ type Edge struct {
 	Vertices []int // use integers for vertices
 }
 
+// FullString always prints the list of vertices of an edge, even if the edge is named
 func (e Edge) FullString() string {
 	var buffer bytes.Buffer
 	mutex.RLock()
@@ -63,7 +64,8 @@ func (e Edge) String() string {
 	return buffer.String()
 }
 
-// A slice of Edge, defined for the use of the sort interface
+// Edges struct is a slice of Edge, defined for the use of the sort interface,
+// as well as various other optimisations which are only possible on the slice level
 type Edges struct {
 	slice         []Edge
 	vertices      []int
@@ -72,12 +74,14 @@ type Edges struct {
 	duplicateFree bool
 }
 
+// NewEdges is a constructor for Edges
 func NewEdges(slice []Edge) Edges {
 	var hashMux sync.Mutex
 
 	return Edges{slice: slice, hashMux: &hashMux}
 }
 
+// RemoveDuplicates removes duplicate edges from an Edges struct
 func (e *Edges) RemoveDuplicates() {
 	if e.duplicateFree {
 		return
@@ -87,10 +91,7 @@ func (e *Edges) RemoveDuplicates() {
 	e.duplicateFree = true
 }
 
-func (e *Edges) Clear() {
-	e.vertices = e.vertices[:0]
-}
-
+// FullString always prints the list of vertices of an edge, even if named
 func (e Edges) FullString() string {
 
 	var buffer bytes.Buffer
@@ -132,27 +133,31 @@ func equalEdges(this, other Edges) bool {
 	return reflect.DeepEqual(this.slice, other.slice)
 }
 
+// Slice returns the internal slice of an Edges struct
 func (e Edges) Slice() []Edge {
 	return e.slice
 }
 
-func (s Edges) Len() int {
-	return len(s.slice)
+// Len returns the length of the internal slice
+func (e Edges) Len() int {
+	return len(e.slice)
 }
-func (s Edges) Swap(i, j int) {
-	s.slice[i], s.slice[j] = s.slice[j], s.slice[i]
+
+// Swap as used for the sort interface
+func (e Edges) Swap(i, j int) {
+	e.slice[i], e.slice[j] = e.slice[j], e.slice[i]
 }
 
 //lexicographic order on each edge
-func (s Edges) Less(i, j int) bool {
-	if len(s.slice[i].Vertices) < len(s.slice[j].Vertices) {
+func (e Edges) Less(i, j int) bool {
+	if len(e.slice[i].Vertices) < len(e.slice[j].Vertices) {
 		return true
-	} else if len(s.slice[i].Vertices) > len(s.slice[j].Vertices) {
+	} else if len(e.slice[i].Vertices) > len(e.slice[j].Vertices) {
 		return false
 	} else {
-		for k := 0; k < len(s.slice[i].Vertices); k++ {
-			k_i := s.slice[i].Vertices[k]
-			k_j := s.slice[j].Vertices[k]
+		for k := 0; k < len(e.slice[i].Vertices); k++ {
+			k_i := e.slice[i].Vertices[k]
+			k_j := e.slice[j].Vertices[k]
 
 			if k_i != k_j {
 				return k_i < k_j
@@ -161,21 +166,6 @@ func (s Edges) Less(i, j int) bool {
 	}
 	return false //edges at i and j identical
 }
-
-// func (s *Edges) Append(es ...Edge) {
-
-//  // mux.Lock() // ensure that hash is computed only on one gorutine at a time
-//  // defer mux.Unlock()
-//  for _, e := range es {
-//      s.slice = append(s.slice, e)
-//  }
-//  if len(s.vertices) > 0 {
-//      s.vertices = s.vertices[:0] // do this to preserve allocated memory
-//  }
-//  if s.hash != nil {
-//      s.hash = nil
-//  }
-// }
 
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elementsSlice []Edge) Edges {
@@ -199,7 +189,8 @@ func removeDuplicateEdges(elementsSlice []Edge) Edges {
 	return NewEdges(elements.slice[:j+1])
 }
 
-// Unnessarily adds empty edge
+// subedges computes all subdges for an Edges slice.
+// TODO: Unnessarily adds empty edge
 func (e Edge) subedges() []Edge {
 	var output []Edge
 
@@ -220,58 +211,17 @@ func (e Edge) subedges() []Edge {
 	return output
 }
 
+// getDegree returns the degree of a given node in the Edges slice
 func getDegree(edges Edges, node int) int {
 	var output int
 
 	for _, e := range edges.Slice() {
-		if Mem(e.Vertices, node) {
+		if mem(e.Vertices, node) {
 			output++
 		}
 	}
 
 	return output
-}
-
-func (e Edge) intersect(l []Edge) Edge {
-	var output Edge
-
-OUTER:
-	for _, n := range e.Vertices {
-		for _, o := range l { // skip all vertices n that are not conained in ALL edges of l
-			if !o.contains(n) {
-				continue OUTER
-			}
-		}
-		output.Vertices = append(output.Vertices, n)
-	}
-
-	return output
-}
-
-// checks if vertex i is contained in a slice of edges
-
-func (l Edges) Contains(v int) bool {
-
-	for _, e := range l.Slice() {
-		for _, a := range e.Vertices {
-			if a == v {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func Contains(l []Edge, v int) bool {
-
-	for _, e := range l {
-		for _, a := range e.Vertices {
-			if a == v {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (e Edge) contains(v int) bool {
@@ -301,18 +251,6 @@ func (e Edge) areNeighbours(o Edge) bool {
 	return false
 }
 
-func (e Edge) numIndicent(l []Edge) int {
-	output := 0
-
-	for i := range l {
-		if e.areNeighbours(l[i]) {
-			output++
-		}
-	}
-
-	return output
-}
-
 func (e Edge) numNeighboursOrder(l Edges, remaining []bool) int {
 	output := 0
 
@@ -325,88 +263,7 @@ func (e Edge) numNeighboursOrder(l Edges, remaining []bool) int {
 	return output
 }
 
-func (e Edge) areSNeighbours(o Edge, sep []int) bool {
-	if reflect.DeepEqual(e, o) {
-		return true
-	}
-
-OUTER:
-	for _, a := range o.Vertices {
-		for _, s := range sep { // don't consider sep vertices for neighbouring edges
-			if s == a {
-				continue OUTER
-			}
-		}
-		if e.contains(a) {
-			return true
-		}
-	}
-	return false
-}
-
-func (e Edges) Intersect(set []int) []Edge {
-	var output []Edge
-
-	for i := range e.Slice() {
-		if len(Inter(e.Slice()[i].Vertices, set)) > 0 {
-			output = append(output, e.Slice()[i])
-		}
-	}
-
-	return output
-}
-
-func (e Edges) IntersectWith(set []int) Edges {
-	var output []Edge
-
-	for i := range e.Slice() {
-		subE := Inter(e.Slice()[i].Vertices, set)
-		if len(subE) > 0 {
-			output = append(output, Edge{Vertices: subE})
-		}
-	}
-
-	return NewEdges(output)
-}
-
-//TODO: This assumes both edges are free of duplicates
-func (e Edges) Both(other Edges) []Edge {
-	var output []Edge
-
-	table := make(map[uint64]int)
-
-	for i := range e.Slice() {
-		table[e.Slice()[i].Hash()]++
-	}
-
-	for i := range other.Slice() {
-		table[other.Slice()[i].Hash()]++
-		if table[other.Slice()[i].Hash()] == 2 {
-			output = append(output, other.Slice()[i])
-		}
-	}
-
-	return output
-}
-
-//TODO: This assumes both edges are free of duplicates
-func (e Edges) Mem(other Edge) bool {
-
-	table := make(map[uint64]int)
-
-	for i := range e.Slice() {
-		table[e.Slice()[i].Hash()]++
-	}
-
-	table[other.Hash()]++
-	if table[other.Hash()] == 2 {
-		return true
-	}
-
-	return false
-}
-
-// produces the union of all vertices from a slice of Edge
+// Vertices produces the union of all vertices from a slice of Edge
 func (e *Edges) Vertices() []int {
 
 	if len(e.vertices) == 0 {
@@ -420,8 +277,7 @@ func (e *Edges) Vertices() []int {
 	return e.vertices
 }
 
-//difference of edges based on names
-
+//Diff computes the set difference of edges based on names
 func (e *Edges) Diff(other Edges) Edges {
 	var output []Edge
 
@@ -438,5 +294,4 @@ func (e *Edges) Diff(other Edges) Edges {
 	}
 
 	return NewEdges(output)
-
 }

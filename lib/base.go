@@ -5,29 +5,10 @@ import (
 	"sort"
 )
 
+// Empty used for maps of type struct{}
 var Empty struct{}
 
-// func RemoveDuplicates(elements []int) []int {
-//  // Use map to record duplicates as we find them.
-//  encountered := make(map[int]struct{})
-//  result := []int{}
-
-//  for v := range elements {
-//      if _, ok := encountered[elements[v]]; ok {
-//          // Do not add duplicate.
-//      } else {
-//          // Record this element as an encountered element.
-//          var Empty struct{}
-//          encountered[elements[v]] = Empty
-//          // Append to result slice.
-//          result = append(result, elements[v])
-//      }
-//  }
-//  // Return the new slice.
-//  return result
-// }
-
-//using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
+//RemoveDuplicates is using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func RemoveDuplicates(elements []int) []int {
 	if len(elements) == 0 {
 		return elements
@@ -48,28 +29,8 @@ func RemoveDuplicates(elements []int) []int {
 	return elements[:j+1]
 }
 
-// func Diff(as, bs []int) []int {
-//  encountered_b := map[int]bool{}
-
-//  for _, b := range bs {
-//      encountered_b[b] = true
-//  }
-
-//  var output []int
-
-//  for _, a := range as {
-//      if _, ok := encountered_b[a]; !ok {
-//          output = append(output, a)
-//      }
-//  }
-//  // if !reflect.DeepEqual(output, diff2(as, bs)) {
-//  //  log.Panicf("What the hell?", output, diff2(as, bs))
-//  // }
-//  return output
-
-// }
-
-func Mem(as []int, b int) bool {
+// mem checks if an integer b occurs inside a slice as
+func mem(as []int, b int) bool {
 	for _, a := range as {
 		if a == b {
 			return true
@@ -78,6 +39,7 @@ func Mem(as []int, b int) bool {
 	return false
 }
 
+// Diff computes the set difference between two slices a b
 func Diff(a, b []int) []int {
 	//var output []int
 	output := make([]int, 0, len(a))
@@ -96,40 +58,8 @@ OUTER:
 
 }
 
-// func Diff(a, b []int) []int {
-//  var output []int
-
-//  // a = RemoveDuplicates(a)
-//  // b = RemoveDuplicates(b)
-
-//  sort.Ints(a)
-//  sort.Ints(b)
-
-//  i, j := 0, 0
-
-//  for i < len(a) && j < len(b) {
-//      if b[j] > a[i] {
-//          output = append(output, a[i])
-//          i++
-//      } else if b[j] < a[i] {
-//          j++
-//      } else {
-//          i++
-//      }
-
-//  }
-
-//  for i < len(a) {
-//      output = append(output, a[i])
-//      i++
-
-//  }
-
-//  return output
-
-// }
-
-func Mem64(as []uint64, b uint64) bool {
+// mem64 is the same as Mem, but for uint64
+func mem64(as []uint64, b uint64) bool {
 	for _, a := range as {
 		if a == b {
 			return true
@@ -138,7 +68,8 @@ func Mem64(as []uint64, b uint64) bool {
 	return false
 }
 
-func DiffEdges(a Edges, e ...Edge) Edges {
+// diffEdges computes the set difference between a and e
+func diffEdges(a Edges, e ...Edge) Edges {
 	var output []Edge
 	/// log.Println("Edges ", a, "Other ", e)
 
@@ -148,7 +79,7 @@ func DiffEdges(a Edges, e ...Edge) Edges {
 	}
 
 	for i := range a.Slice() {
-		if !Mem64(hashes, a.Slice()[i].Hash()) {
+		if !mem64(hashes, a.Slice()[i].Hash()) {
 			output = append(output, a.Slice()[i])
 		}
 	}
@@ -159,40 +90,7 @@ func DiffEdges(a Edges, e ...Edge) Edges {
 
 }
 
-// func DiffSpecial(a, b []Special) []Special {
-// 	var output []Special
-// OUTER:
-// 	for _, n := range a {
-// 		for _, k := range b {
-// 			if reflect.DeepEqual(n, k) {
-// 				continue OUTER
-// 			}
-// 		}
-// 		output = append(output, n)
-// 	}
-
-// 	return output
-
-// }
-
-// func Inter(as, bs []int) []int {
-//  encountered_b := make(map[int]struct{})
-//  for _, b := range bs {
-//      encountered_b[b] = Empty
-//  }
-
-//  var output []int
-
-//  for _, a := range as {
-//      if _, ok := encountered_b[a]; ok {
-//          output = append(output, a)
-//      }
-//  }
-
-//  return output
-
-// }
-
+// Inter is the set intersection between slices as and bs
 func Inter(as, bs []int) []int {
 	var output []int
 OUTER:
@@ -209,6 +107,7 @@ OUTER:
 	return output
 }
 
+// Subset returns true if as subset of bs, false otherwise
 func Subset(as []int, bs []int) bool {
 	if len(as) == 0 {
 		return true
@@ -228,115 +127,61 @@ func Subset(as []int, bs []int) bool {
 	return true
 }
 
-func Equiv(as []int, bs []int) bool {
-	if len(as) == 0 {
-		return true
-	}
-	encountered_b := make(map[int]struct{})
-	encountered_a := make(map[int]struct{})
-	var Empty struct{}
-	for _, b := range bs {
-		encountered_b[b] = Empty
-	}
-
-	for _, a := range as {
-		if _, ok := encountered_b[a]; !ok {
-			return false
-		}
-		encountered_a[a] = Empty
-	}
-
-	return true && len(encountered_a) == len(encountered_b)
+type twoSlicesEdge struct {
+	mainSlice  []Edge
+	otherSlice []int
 }
 
-// func Subset(a []int, b []int) bool {
-
-// OUTER:
-//  for _, n := range a {
-//      for _, k := range b {
-//          if k == n {
-//              continue OUTER
-//          }
-//      }
-//      return false
-//  }
-//  return true
-// }
-
-type TwoSlicesEdge struct {
-	main_slice  []Edge
-	other_slice []int
+type twoSlicesBool struct {
+	mainSlice  []bool
+	otherSlice []int
 }
 
-type TwoSlicesBool struct {
-	main_slice  []bool
-	other_slice []int
+type sortByOtherEdge twoSlicesEdge
+
+func (sbo sortByOtherEdge) Len() int {
+	return len(sbo.mainSlice)
 }
 
-// type TwoSlicesInt struct {
-// 	main_slice  []int
-// 	other_slice []int
-// }
-
-type SortByOtherEdge TwoSlicesEdge
-
-func (sbo SortByOtherEdge) Len() int {
-	return len(sbo.main_slice)
+func (sbo sortByOtherEdge) Swap(i, j int) {
+	sbo.mainSlice[i], sbo.mainSlice[j] = sbo.mainSlice[j], sbo.mainSlice[i]
+	sbo.otherSlice[i], sbo.otherSlice[j] = sbo.otherSlice[j], sbo.otherSlice[i]
 }
 
-func (sbo SortByOtherEdge) Swap(i, j int) {
-	sbo.main_slice[i], sbo.main_slice[j] = sbo.main_slice[j], sbo.main_slice[i]
-	sbo.other_slice[i], sbo.other_slice[j] = sbo.other_slice[j], sbo.other_slice[i]
+func (sbo sortByOtherEdge) Less(i, j int) bool {
+	return sbo.otherSlice[i] > sbo.otherSlice[j]
 }
 
-func (sbo SortByOtherEdge) Less(i, j int) bool {
-	return sbo.other_slice[i] > sbo.other_slice[j]
+type sortByOtherBool twoSlicesBool
+
+func (sbo sortByOtherBool) Len() int {
+	return len(sbo.mainSlice)
 }
 
-type SortByOtherBool TwoSlicesBool
-
-func (sbo SortByOtherBool) Len() int {
-	return len(sbo.main_slice)
+func (sbo sortByOtherBool) Swap(i, j int) {
+	sbo.mainSlice[i], sbo.mainSlice[j] = sbo.mainSlice[j], sbo.mainSlice[i]
+	sbo.otherSlice[i], sbo.otherSlice[j] = sbo.otherSlice[j], sbo.otherSlice[i]
 }
 
-func (sbo SortByOtherBool) Swap(i, j int) {
-	sbo.main_slice[i], sbo.main_slice[j] = sbo.main_slice[j], sbo.main_slice[i]
-	sbo.other_slice[i], sbo.other_slice[j] = sbo.other_slice[j], sbo.other_slice[i]
+func (sbo sortByOtherBool) Less(i, j int) bool {
+	return sbo.otherSlice[i] > sbo.otherSlice[j]
 }
-
-func (sbo SortByOtherBool) Less(i, j int) bool {
-	return sbo.other_slice[i] > sbo.other_slice[j]
-}
-
-// type SortByOtherInt TwoSlicesInt
-
-// func (sbo SortByOtherInt) Len() int {
-// 	return len(sbo.main_slice)
-// }
-
-// func (sbo SortByOtherInt) Swap(i, j int) {
-// 	sbo.main_slice[i], sbo.main_slice[j] = sbo.main_slice[j], sbo.main_slice[i]
-// 	sbo.other_slice[i], sbo.other_slice[j] = sbo.other_slice[j], sbo.other_slice[i]
-// }
-
-// func (sbo SortByOtherInt) Less(i, j int) bool {
-// 	return sbo.other_slice[i] > sbo.other_slice[j]
-// }
 
 func sortBySliceEdge(a []Edge, b []int) {
 	tmp := make([]int, len(b))
 	copy(tmp, b)
-	two := TwoSlicesEdge{main_slice: a, other_slice: tmp}
-	sort.Sort(SortByOtherEdge(two))
+	two := twoSlicesEdge{mainSlice: a, otherSlice: tmp}
+	sort.Sort(sortByOtherEdge(two))
 }
 
 func sortBySliceBool(a []bool, b []int) {
 	tmp := make([]int, len(b))
 	copy(tmp, b)
-	two := TwoSlicesBool{main_slice: a, other_slice: tmp}
-	sort.Sort(SortByOtherBool(two))
+	two := twoSlicesBool{mainSlice: a, otherSlice: tmp}
+	sort.Sort(sortByOtherBool(two))
 }
 
+// PrintVertices will pretty print an int slice using the encodings in the m map
 func PrintVertices(vertices []int) string {
 	mutex.RLock()
 	defer mutex.RUnlock()
@@ -355,7 +200,8 @@ func PrintVertices(vertices []int) string {
 	return buffer.String()
 }
 
-func Max(a, b int) int {
+// max returns the larger of two integers a and b
+func max(a, b int) int {
 	if a > b {
 		return a
 	}

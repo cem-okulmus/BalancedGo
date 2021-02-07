@@ -1,15 +1,15 @@
-// implements a parallel search over a set of edges with a given predicate to look for
-
 package lib
+
+// search.go implements a parallel search over a set of edges with a given predicate to look for
 
 import (
 	"runtime"
 	"sync"
 )
 
+// A Search implements a parallel search for separators fullfilling some given predicate
 type Search struct {
-	H *Graph
-	// Sp              []Special
+	H               *Graph
 	Edges           *Edges
 	BalFactor       int
 	Result          []int
@@ -17,11 +17,13 @@ type Search struct {
 	ExhaustedSearch bool
 }
 
+// A Predicate checks if for some subgraph and a separator, some condition holds
 type Predicate interface {
 	Check(H *Graph, sep *Edges, balancedFactor int) bool
-	IsParent() bool
 }
 
+// FindNext starts the search and stops if some separator which satisfies the predicate
+// is found, or if the entire search space has been exhausted
 func (s *Search) FindNext(pred Predicate) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -43,7 +45,7 @@ func (s *Search) FindNext(pred Predicate) {
 	wait := make(chan bool)
 	//start workers
 	for i := 0; i < numProc; i++ {
-		go s.Worker(i, found, &wg, &finished, pred)
+		go s.worker(i, found, &wg, &finished, pred)
 	}
 
 	go func() {
@@ -61,7 +63,8 @@ func (s *Search) FindNext(pred Predicate) {
 
 }
 
-func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, finished *bool, pred Predicate) {
+// a worker that actually runs the search within a single goroutine
+func (s Search) worker(workernum int, found chan []int, wg *sync.WaitGroup, finished *bool, pred Predicate) {
 	defer func() {
 		if r := recover(); r != nil {
 			// log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
@@ -72,21 +75,21 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 
 	gen := s.Generators[workernum]
 
-	for gen.HasNext() {
+	for gen.hasNext() {
 		if *finished {
 			// log.Printf("Worker %d told to quit", workernum)
 			return
 		}
 		// j := make([]int, len(gen.Combination))
 		// copy(gen.Combination, j)
-		j := gen.Combination
+		j := gen.combination
 
 		sep := GetSubset(*s.Edges, j)
 		if pred.Check(s.H, &sep, s.BalFactor) {
-			gen.BalSep = true // cache result
+			gen.balSep = true // cache result
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
-			gen.Confirm()
+			gen.confirm()
 
 			// if !pred.IsParent() {
 			// 	fmt.Println("Worker ", workernum, ": found balsep of combin", j, "( ", GetSubset(*s.Edges, j), ") from the set: ", *s.Edges)
@@ -96,13 +99,14 @@ func (s Search) Worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 			*finished = true
 			return
 		}
-		gen.Confirm()
+		gen.confirm()
 	}
 }
 
-type BalancedCheck struct {
-}
+// BalancedCheck looks for Balanced Separators
+type BalancedCheck struct{}
 
+// Check performs the needed computation to ensure whether sep is a Balanced Separator
 func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
@@ -134,15 +138,14 @@ func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	return true
 }
 
-func (b BalancedCheck) IsParent() bool {
-	return false
-}
-
+// ParentCheck looks a separator that could function as the direct ancestor (or "parent")
+// of some child node in the GHD, where the connecting vertices "Conn" are explicitely provided
 type ParentCheck struct {
 	Conn  []int
 	Child []int
 }
 
+// Check performs the needed computation to ensure whether sep is a good parent
 func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	// log.Printf("Current considered sep %+v\n", sep)
 	// log.Printf("Current present SP %+v\n", sp)
@@ -151,9 +154,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	comps, _, _ := H.GetComponents(*sep)
 
 	foundCompLow := false
-	// var comp_low_index int
 	var comp_low Graph
-	// var compSp_low []Special
 
 	// log.Printf("Components of sep %+v\n", comps)
 
@@ -169,7 +170,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	}
 
 	if !foundCompLow {
-		return false
+		return false // a bad parent :(
 	}
 
 	vertCompLow := comp_low.Vertices()
@@ -177,11 +178,11 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 
 	if !Subset(Inter(vertCompLow, p.Conn), sep.Vertices()) {
 		// log.Println("Conn not covered by parent")
-
 		// log.Println("Conn: ", PrintVertices(Conn))
 		// log.Println("V(parentλ) \\cap Conn", PrintVertices(Inter(parentλ.Vertices(), Conn)))
-		// log.Println("V(Comp_low) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
-		return false
+		// log.Println("V(Comp_lo w) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
+
+		return false // also a bad parent :(
 	}
 
 	// Connectivity check
@@ -189,17 +190,12 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 		// log.Println("Child not connected to parent!")
 		// log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
 		// log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
-
 		// log.Println("Child", childλ)
 
-		return false
+		return false // again a bad parent :( Calling child services ...
 	}
 
 	// fmt.Println("\nPARENTCHECK: I found the parent ", sep, " relative to child ", PrintVertices(p.Child), "for the hypergraph ", H, "\n\n")
 
-	return true
-}
-
-func (p ParentCheck) IsParent() bool {
-	return true
+	return true // found a good parent :)
 }

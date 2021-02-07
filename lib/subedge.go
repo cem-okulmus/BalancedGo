@@ -12,13 +12,12 @@ type subSet struct {
 func getSubsetIterator(vertices []int) *subSet {
 	var output subSet
 
-	//fmt.Println("Vertices", Edge{Vertices: vertices})
-	output = subSet{source: vertices, current: GetCombin(len(vertices), len(vertices))}
+	output = subSet{source: vertices, current: getCombin(len(vertices), len(vertices))}
 	return &output
 }
 
 func (s *subSet) hasNext() bool {
-	return s.current.HasNext()
+	return s.current.hasNext()
 }
 
 func getEdge(vertices []int, s []int) Edge {
@@ -32,16 +31,12 @@ func getEdge(vertices []int, s []int) Edge {
 }
 
 func (s *subSet) getCurrent() Edge {
-	s.current.Confirm()
+	s.current.confirm()
 
-	return getEdge(s.source, s.current.Combination)
+	return getEdge(s.source, s.current.combination)
 }
 
-//   ----------------------------------------------------------------------------
-//   ----------------------------------------------------------------------------
-//   ----------------------------------------------------------------------------
-
-type SubEdges struct {
+type subEdges struct {
 	k             int
 	initial       Edge
 	source        Edges
@@ -53,7 +48,7 @@ type SubEdges struct {
 	emptyReturned bool
 }
 
-func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
+func getSubEdgeIterator(edges Edges, e Edge, k int) subEdges {
 	var h_edges []Edge
 
 	for j := range edges.Slice() {
@@ -63,42 +58,30 @@ func getSubEdgeIterator(edges Edges, e Edge, k int) SubEdges {
 		}
 	}
 
-	// fmt.Println("Neighbourhood: ")
-	// for i := range h_edges {
-	//  fmt.Println(h_edges[i].FullString())
-	// }
-	// fmt.Println("\n")
-
-	// TODO: Sort h_edges by size
-
 	source := removeDuplicateEdges(h_edges)
 
 	sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
-	//fmt.Println("h_edges", h_edges)
-	var output SubEdges
+	var output subEdges
 	output.cache = make(map[uint32]struct{})
 
-	//sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
 	output.source = source
 	if k > output.source.Len() {
 		k = output.source.Len()
 	}
-	// fmt.Println("k", k)
-	tmp := GetCombinUnextend(output.source.Len(), k)
+	tmp := getCombinUnextend(output.source.Len(), k)
 	output.gen = &tmp
 	output.current = e
 	output.initial = e
 	output.k = k
 	output.combination = make([]int, k)
 	output.cache[IntHash(edges.Vertices())] = Empty // initial cache
-	//output.cache = append(output.cache, Vertices(edges))
 
 	return output
 }
 
-func (s *SubEdges) reset() {
+func (s *subEdges) reset() {
 	// fmt.Println("Reset")
-	tmp := GetCombinUnextend(s.source.Len(), s.k)
+	tmp := getCombinUnextend(s.source.Len(), s.k)
 	s.gen = &tmp
 
 	s.currentSubset = nil
@@ -108,24 +91,24 @@ func (s *SubEdges) reset() {
 
 // This checks whether the current edge has a more tuples to intersect with,
 // and create a new vertex set
-func (s *SubEdges) hasNextCombination() bool {
+func (s *subEdges) hasNextCombination() bool {
 
-	if !s.gen.HasNext() {
+	if !s.gen.hasNext() {
 		return false
 	}
-	s.gen.Confirm()
-	copy(s.combination, s.gen.Combination)
+	s.gen.confirm()
+	copy(s.combination, s.gen.combination)
 
 	return true
 }
 
-func (s SubEdges) existsSubset(b []int) bool {
+func (s subEdges) existsSubset(b []int) bool {
 	_, ok := s.cache[IntHash(b)]
 
 	return ok
 }
 
-func (s *SubEdges) hasNext() bool {
+func (s *subEdges) hasNext() bool {
 	newSelected := false
 	if s.currentSubset == nil || !s.currentSubset.hasNext() {
 		for s.hasNextCombination() {
@@ -160,83 +143,63 @@ func (s *SubEdges) hasNext() bool {
 	return true
 }
 
-func (s SubEdges) getCurrent() Edge {
+func (s subEdges) getCurrent() Edge {
 	if s.emptyReturned {
 		return Edge{Vertices: []int{}}
 	}
 	return s.current
 }
 
-//   ----------------------------------------------------------------------------
-//   ----------------------------------------------------------------------------
-//   ----------------------------------------------------------------------------
-
+// SepSub is used to iterate over all subedge variants of a separator
 type SepSub struct {
-	Edges []SubEdges
-
-	// cache map[uint32]struct{}
+	edges []subEdges
 }
 
+// GetSepSub is a constructor for SepSub
 func GetSepSub(edges Edges, sep Edges, k int) *SepSub {
 	var output SepSub
-	// output.cache = make(map[uint32]struct{})
-
 	encountered := make(map[int]struct{})
 	var Empty struct{}
-
 	var sepIntersectFree []Edge
 
 	for i := range sep.Slice() {
 		tmpEdge := make([]int, 0, len(sep.Slice()[i].Vertices))
 
 		for _, j := range sep.Slice()[i].Vertices {
-
 			if _, ok := encountered[j]; !ok {
-
 				encountered[j] = Empty
 				tmpEdge = append(tmpEdge, j)
-
 			}
 		}
 
 		sepIntersectFree = append(sepIntersectFree, Edge{Name: sep.Slice()[i].Name, Vertices: tmpEdge})
-
 	}
 
 	newSep := NewEdges(sepIntersectFree)
-
 	for i := range newSep.Slice() {
-		output.Edges = append(output.Edges, getSubEdgeIterator(edges, newSep.Slice()[i], k))
+		output.edges = append(output.edges, getSubEdgeIterator(edges, newSep.Slice()[i], k))
 	}
 
 	return &output
 }
 
+// HasNext checks if SepSub has more subedge variants to produce
 func (sep *SepSub) HasNext() bool {
-	i := 0
-
-	// fmt.Println("len", len(sep.Edges))
-	for i < len(sep.Edges) {
-		if sep.Edges[i].hasNext() {
-			// if sep.alreadyChecked() {
-			//  return sep.HasNext()
-			// }
+	for i := 0; i < len(sep.edges); i++ {
+		if sep.edges[i].hasNext() {
 			return true
-		} else {
-			sep.Edges[i].reset()
-			i++
 		}
-
-		// fmt.Println("i", i)
+		sep.edges[i].reset()
 	}
 
 	return false
 }
 
+// GetCurrent is used to extract the current subedge variant
 func (sep SepSub) GetCurrent() Edges {
 	var output []Edge
 
-	for _, s := range sep.Edges {
+	for _, s := range sep.edges {
 		output = append(output, s.getCurrent())
 	}
 

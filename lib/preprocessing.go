@@ -1,7 +1,8 @@
-// Functions that simplify graphs, and transform decompositions of the simplified graph back to
-// decomposition of original graph
-
 package lib
+
+// processing.go contains functions that simplify graphs,
+// and transform decompositions of the simplified graph back to
+// decomposition of original graph
 
 import (
 	"fmt"
@@ -97,6 +98,7 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 	return Graph{Edges: NewEdges(edges)}, ops
 }
 
+// GYÖReduct performs the GYÖ reduction on the graph
 func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 	var ops []GYÖReduct
 
@@ -217,6 +219,7 @@ func (n Node) restoreVertex(v vertOp) (Node, bool) {
 	return n, false
 }
 
+// RestoreGYÖ can restore any performed reductions on the graph, given a slice of reducts
 func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
 
 	output := n
@@ -251,13 +254,16 @@ func (g Graph) getType(vertex int) *big.Int {
 	output := new(big.Int)
 
 	for i := range g.Edges.Slice() {
-		if Mem(g.Edges.Slice()[i].Vertices, vertex) {
+		if mem(g.Edges.Slice()[i].Vertices, vertex) {
 			output.SetBit(output, i, 1)
 		}
 	}
 	return output
 }
 
+// TypeCollapse performs type collapse on the graph, the mapping that's also output can be used 
+// to restore the original hypergraph.
+//
 // Possible optimization: When computing the distances, use the matrix to speed up type detection
 func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 	count := 0
@@ -302,7 +308,7 @@ func (e Edges) addVertex(target int, oldVertices []int) Edges {
 	edges := e.Slice()
 
 	for i := range edges {
-		if Mem(edges[i].Vertices, target) {
+		if mem(edges[i].Vertices, target) {
 
 			newLambda := make([]int, len(edges[i].Vertices))
 
@@ -320,7 +326,7 @@ func (e Edges) addVertex(target int, oldVertices []int) Edges {
 
 func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
 	found := false
-	if Mem(n.Bag, target) {
+	if mem(n.Bag, target) {
 		n.Bag = append(n.Bag, oldVertices...)
 		n.Cover = n.Cover.addVertex(target, oldVertices)
 		found = true
@@ -342,6 +348,7 @@ func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
 
 }
 
+// RestoreTypes can restore any performed Type reductions given a mapping of the reductions
 func (n Node) RestoreTypes(restoreMap map[int][]int) (Node, bool) {
 
 	output := n

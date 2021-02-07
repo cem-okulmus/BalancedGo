@@ -1,14 +1,13 @@
 package lib
 
+// hash.go implements hashes for basic types (used for hash table implementations)
+
 import (
 	"encoding/binary"
 	"hash/fnv"
-	"sync"
 )
 
-// implements hashes for basic types (used for hash table implementations)
-var hashMux sync.Mutex
-
+// IntHash computes a hash for slices of integers
 func IntHash(vertices []int) uint32 {
 	var output uint32
 	// arrBytes := []byte{}
@@ -27,6 +26,7 @@ func IntHash(vertices []int) uint32 {
 
 }
 
+// Hash computes a (non-cryptographic) hash. This hash is the same for all permutations of this edge
 func (e Edge) Hash() uint64 {
 	var output uint64
 	// arrBytes := []byte{}
@@ -53,6 +53,7 @@ func (e Edge) Hash() uint64 {
 
 }
 
+// Hash computes a (non-cryptographic) hash. This hash is the same for all permutations of edges
 func (e *Edges) Hash() uint64 {
 	if e.hash != nil {
 		return *e.hash
@@ -95,14 +96,8 @@ func (e *Edges) Hash() uint64 {
 	return *e.hash
 }
 
+// Hash computes a (non-cryptographic) hash. This hash is the same for all permutations of edges
 func (g *Graph) Hash() uint64 {
-
-	// var specialEdges []Edge
-
-	// for i := range Sp {
-	// 	specialEdges = append(specialEdges, Edge{Name: 0, Vertices: Sp[i].Vertices})
-	// }
-
 	output := g.Edges.Hash() // start with hash on Edges itself
 
 	for i := range g.Special {
@@ -115,32 +110,4 @@ func (g *Graph) Hash() uint64 {
 	}
 
 	return output
-
 }
-
-// func testHash() {
-
-//  e1 := Edge{Vertices: []int{58, 96, 97}}
-//  e2 := Edge{Vertices: []int{65, 66, 67}}
-//  //  e3 := Edge{Vertices: []int{61, 18, 7}}
-
-//  edges := Edges{slice: []Edge{e2, e1}}
-//  fmt.Println("Edges ", edges)
-
-//  fmt.Println("Hash 1", edges.Hash())
-//  sort.Sort(edges)
-//  fmt.Println("Hash 1", edges.Hash())
-//  sort.Sort(edges)
-//  fmt.Println("Hash 1", edges.Hash())
-//  // sort.Sort(edges)
-//  // fmt.Println("Hash 1", edges)
-//  // sort.Sort(edges)
-//  // fmt.Println("Hash 1", edges)
-//  // sort.Sort(edges)
-//  // fmt.Println("Hash 1", edges)
-
-//  // var cache map[uint32][]uint32
-
-//  fmt.Println("Edges ", edges)
-
-// }

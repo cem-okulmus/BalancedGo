@@ -11,41 +11,11 @@ import (
 // and the (edge) cover
 type Node struct {
 	num        int
-	Up         []int
-	Low        []int
 	Bag        []int
 	Cover      Edges
 	Children   []Node
-	Star       bool // used to indicate nodes which need to be updated
 	parPointer *Node
 	vertices   []int
-}
-
-func (n Node) printUp() string {
-	mutex.RLock()
-	defer mutex.RUnlock()
-	var buffer bytes.Buffer
-	for i, v := range n.Up {
-		buffer.WriteString(m[v])
-		if i != len(n.Up)-1 {
-			buffer.WriteString(", ")
-		}
-	}
-
-	return buffer.String()
-}
-func (n Node) printLow() string {
-	mutex.RLock()
-	defer mutex.RUnlock()
-	var buffer bytes.Buffer
-	for i, v := range n.Low {
-		buffer.WriteString(m[v])
-		if i != len(n.Low)-1 {
-			buffer.WriteString(", ")
-		}
-	}
-
-	return buffer.String()
 }
 
 func (n Node) printBag() string {
@@ -77,12 +47,6 @@ func (n Node) stringIdent(i int) string {
 
 	buffer.WriteString("\n" + indent(i) + "Bag: {" + n.printBag() + "}")
 
-	if len(n.Up) > 0 || len(n.Low) > 0 {
-		buffer.WriteString("Up:{ " + n.printUp() + "} Low:{" + n.printLow() + "}")
-	}
-	if n.Star {
-		buffer.WriteString(" 🧙")
-	}
 	buffer.WriteString("\n" + indent(i) + "Cover: {")
 	for i, e := range n.Cover.Slice() {
 		buffer.WriteString(e.String())
@@ -121,24 +85,8 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
-// Check if node contains as c
-func (n Node) containsMarked() bool {
 
-	// every marked node contains itself (reflexivity)
-	if n.Star {
-		return true
-	}
-
-	// Check recursively if children contain marked node
-	for _, child := range n.Children {
-		if child.containsMarked() {
-			return true
-		}
-	}
-
-	return false
-}
-
+// bagSubsets checks if all bags are proper subsets of the union of their covers
 func (n Node) bagSubsets() bool {
 	if !Subset(n.Bag, n.Cover.Vertices()) {
 		// log.Println("Bag:", PrintVertices(n.Bag), "Cover: ", n.Cover)
@@ -154,6 +102,24 @@ func (n Node) bagSubsets() bool {
 	return true
 }
 
+// checks if an edge appears as a subset in some bag in the subtree of n
+func (n Node) coversEdge(e Edge) bool {
+	// edge contained in current node
+	if Subset(e.Vertices, n.Bag) {
+		return true
+	}
+
+	// Check recursively if contained in children
+	for i := range n.Children {
+		if n.Children[i].coversEdge(e) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// getNumber assigns some number to a node
 func (n *Node) getNumber() {
 	if n.num == 0 {
 
@@ -167,7 +133,7 @@ func (n *Node) getNumber() {
 	}
 }
 
-// Think about how to make the contains check faster than linear
+// getConGraph produces a graph corresponding to the graph structure of the subtree which the node forms
 func (n *Node) getConGraph(withLoops bool) Edges {
 	var output []Edge
 
@@ -190,36 +156,7 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 	return NewEdges(output)
 }
 
-// func (n *Node) allChildrenContaining(vert int) []int {
-//  var output []int
-
-//  if Mem(n.Bag, vert) {
-//      output = append(output, n.num)
-//  }
-
-//  for _, c := range n.Children {
-//      output = append(output, c.allChildrenContaining(vert)...)
-//  }
-
-//  return output
-// }
-
-func (n Node) coversEdge(e Edge) bool {
-	// edge contained in current node
-	if Subset(e.Vertices, n.Bag) {
-		return true
-	}
-
-	// Check recursively if contained in children
-	for i := range n.Children {
-		if n.Children[i].coversEdge(e) {
-			return true
-		}
-	}
-
-	return false
-}
-
+// parent returns the parent of of in n, if it doesn't exist, nil is returned
 func (n *Node) parent(o Node) Node {
 	if n.parPointer != nil {
 		return *n.parPointer
@@ -240,7 +177,7 @@ func (n *Node) parent(o Node) Node {
 	return o
 }
 
-// reroot G at child, producing an isomorphic graph
+// Reroot producdes a new, isomorphic subtree, rerooting G at child
 func (n Node) Reroot(child Node) Node {
 
 	if !n.contains(child) {
@@ -266,7 +203,7 @@ func (n Node) Reroot(child Node) Node {
 	return Node{Bag: child.Bag, Cover: child.Cover, Children: newchildren}
 }
 
-// recurisvely collect all vertices from the bag of this node, and the bags of all its children
+// Vertices recurisvely collects all vertices from the bag of this node, and the bags of all its children
 func (n *Node) Vertices() []int {
 	if len(n.vertices) > 0 {
 		return n.vertices
@@ -283,13 +220,13 @@ func (n *Node) Vertices() []int {
 	return n.vertices
 }
 
-//tests special condition violation on one node
+// specialCondition tests special condition violation on one node
 func (n Node) specialCondition() bool {
 	hiddenVertices := Diff(n.Cover.Vertices(), n.Bag)
 	verticesRooted := n.Vertices()
 
 	for _, v := range hiddenVertices {
-		if Mem(verticesRooted, v) {
+		if mem(verticesRooted, v) {
 			mutex.RLock()
 			log.Println("Vertex ", m[v], " violates special condition")
 			mutex.RUnlock()
@@ -300,7 +237,7 @@ func (n Node) specialCondition() bool {
 	return true
 }
 
-//test special condition recursively on entire subtree rooted at node
+// noSCViolation test special condition recursively on entire subtree rooted at node
 func (n Node) noSCViolation() bool {
 	if !n.specialCondition() {
 		return false
@@ -315,7 +252,8 @@ func (n Node) noSCViolation() bool {
 	return true
 }
 
-func (n *Node) RestoreEdges(edges Edges) Node {
+// restoreEdges replaces any ad-hoc subedges with a fitting superedge from a given input set
+func (n *Node) restoreEdges(edges Edges) Node {
 	var nuCover []Edge
 
 OUTER:
@@ -335,13 +273,13 @@ OUTER:
 	var nuChildern []Node
 
 	for i := range n.Children {
-		nuChildern = append(nuChildern, n.Children[i].RestoreEdges(edges))
+		nuChildern = append(nuChildern, n.Children[i].restoreEdges(edges))
 	}
 
 	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
 }
 
-// attach subtree to n, via the connecting special edge
+// CombineNodes attaches subtree to n, via the connecting special edge
 func (n *Node) CombineNodes(subtree Node, connecting Edges) *Node {
 
 	// leaf that covers the connecting vertices
@@ -368,7 +306,7 @@ func (n *Node) CombineNodes(subtree Node, connecting Edges) *Node {
 
 func (n Node) connected(v int, parentContainsV bool) (bool, bool) {
 
-	containsV := Mem(n.Bag, v)
+	containsV := mem(n.Bag, v)
 	subtreeContainsV := containsV
 
 	numNeighboursContainingV := 0

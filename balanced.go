@@ -97,59 +97,50 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 
 func main() {
 
+	// ==============================================
+	// Command-Line Argument Parsing
+
 	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
 	flagSet.SetOutput(ioutil.Discard)
 
-	//Command-Line Argument Parsing
-	cpuprofile := flagSet.String("cpuprofile", "", "write cpu profile to file")
-	logging := flagSet.Bool("log", false, "turn on extensive logs")
-	computeSubedges := flagSet.Bool("sub", false, "turn off subedge computation for global option")
-	width := flagSet.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
+	// input flags
 	graphPath := flagSet.String("graph", "", "input (for format see hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf)")
+	width := flagSet.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
+	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
+	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
+
+	// algorithms  flags
 	localBal := flagSet.Bool("local", false, "Use local BalSep algorithm")
 	globalBal := flagSet.Bool("global", false, "Use global BalSep algorithm")
-	balanceFactorFlag := flagSet.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
-	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Vertex Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
-	gyö := flagSet.Bool("g", false, "perform a GYÖ reduct")
-	typeC := flagSet.Bool("t", false, "perform a Type Collapse")
-	hingeFlag := flagSet.Bool("h", false, "use hingeTree Optimization")
-	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
-	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	logK := flagSet.Bool("logk", false, "Use LogKDecomp algoritm")
 	logKHybrid := flagSet.Int("logkHybrid", 0, "Use DetK - LogK Hybrid algoritm. Choose which predicate to use")
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "Used in combination with \"det\": turns on local subedge handling")
 	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
 	seqBalDetTest := flagSet.Int("seqBalDet", 0, "Use sequential Hybrid BalSep - DetK algorithm.")
+
+	// heuristic flags
+	heur := "1 ... Vertex Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering"
+	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t"+heur)
+	gyö := flagSet.Bool("g", false, "perform a GYÖ reduct")
+	typeC := flagSet.Bool("t", false, "perform a Type Collapse")
+	hingeFlag := flagSet.Bool("h", false, "use hingeTree Optimization")
+
+	//other optional  flags
+	cpuprofile := flagSet.String("cpuprofile", "", "write cpu profile to file")
+	logging := flagSet.Bool("log", false, "turn on extensive logs")
+	computeSubedges := flagSet.Bool("sub", false, "turn off subedge computation for global option")
+	balanceFactorFlag := flagSet.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
+	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
+	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
-	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
-	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
 	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
 		fmt.Print("Parse Error:\n", parseError.Error(), "\n\n")
 	}
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-
-		defer pprof.StopCPUProfile()
-	}
-
-	if *bench { // no logging output when running benchmarks
-		*logging = false
-	}
-	logActive(*logging)
-
-	BalancedFactor := *balanceFactorFlag
-
-	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
 	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
@@ -185,6 +176,28 @@ func main() {
 
 		return
 	}
+
+	// END Command-Line Argument Parsing
+	// ==============================================
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
+
+	if *bench { // no logging output when running benchmarks
+		*logging = false
+	}
+	logActive(*logging)
+
+	BalancedFactor := *balanceFactorFlag
+
+	runtime.GOMAXPROCS(*numCPUs)
 
 	dat, err := ioutil.ReadFile(*graphPath)
 	check(err)

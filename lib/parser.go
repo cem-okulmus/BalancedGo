@@ -23,16 +23,18 @@ var m map[int]string // stores the encoding of vertices for last file parsed (bi
 var mutex = sync.RWMutex{}
 var encode int // stores the encoding of the highest int used
 
-type ParseEdge struct {
-	Name     string   ` @(Number|Ident|String)`
-	Vertices []string `"(" ( @(Number|Ident|String)  ","? )* ")"`
+type parseEdge struct {
+	name     string   ` @(Number|Ident|String)`
+	vertices []string `"(" ( @(Number|Ident|String)  ","? )* ")"`
 }
 
+// ParseGraph contains data used to parse a graph, potentially useful for testing
 type ParseGraph struct {
-	Edges    []ParseEdge `( @@ ","?)* (".")?`
-	Encoding map[string]int
+	edges    []parseEdge `( @@ ","?)* (".")?`
+	encoding map[string]int
 }
 
+// GetGraph parses a string in Hyperbench format into a graph
 func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -61,40 +63,39 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	encoding := make(map[int]string)
 	encode = 1 // initialize to 1
 
-	pgraph.Encoding = make(map[string]int)
+	pgraph.encoding = make(map[string]int)
 	//fix first numbers for edge names
-	for _, e := range pgraph.Edges {
-		_, ok := pgraph.Encoding[e.Name]
+	for _, e := range pgraph.edges {
+		_, ok := pgraph.encoding[e.name]
 		if ok {
 			log.Panicln("Edge names not unique, not a vald hypergraph!")
 		}
 
-		pgraph.Encoding[e.Name] = encode
-		encoding[encode] = e.Name
+		pgraph.encoding[e.name] = encode
+		encoding[encode] = e.name
 		encode++
 	}
-	for _, e := range pgraph.Edges {
+	for _, e := range pgraph.edges {
 		var outputEdges []int
-		for _, n := range e.Vertices {
-			i, ok := pgraph.Encoding[n]
+		for _, n := range e.vertices {
+			i, ok := pgraph.encoding[n]
 			if ok {
 				outputEdges = append(outputEdges, i)
 			} else {
-				pgraph.Encoding[n] = encode
+				pgraph.encoding[n] = encode
 				encoding[encode] = n
 				outputEdges = append(outputEdges, encode)
 				encode++
 			}
 		}
-		edges = append(edges, Edge{Name: pgraph.Encoding[e.Name], Vertices: outputEdges})
+		edges = append(edges, Edge{Name: pgraph.encoding[e.name], Vertices: outputEdges})
 	}
 	output.Edges = NewEdges(edges)
 	m = encoding
 	return output, pgraph
 }
 
-
-
+// GetEdge can be used parse additional hyperedges. Useful for testing purposes
 func (p *ParseGraph) GetEdge(input string) Edge {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -107,45 +108,46 @@ func (p *ParseGraph) GetEdge(input string) Edge {
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .`))
 
-	var parser = participle.MustBuild(&ParseEdge{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+	var parser = participle.MustBuild(&parseEdge{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
 		participle.Elide("Comment", "Whitespace"))
-	pEdge := ParseEdge{}
+	pEdge := parseEdge{}
 	parser.ParseString(input, &pEdge)
 	var vertices []int
-	for _, v := range pEdge.Vertices {
-		val, ok := p.Encoding[v]
+	for _, v := range pEdge.vertices {
+		val, ok := p.encoding[v]
 		if ok {
 			vertices = append(vertices, val)
 		} else {
-			p.Encoding[v] = encode
+			p.encoding[v] = encode
 			m[encode] = v
 			vertices = append(vertices, encode)
 			encode++
 		}
 	}
-	m[encode] = pEdge.Name
+	m[encode] = pEdge.name
 	encode++
 	return Edge{Vertices: vertices, Name: encode - 1}
 }
 
 // Implement PACE 2019 format
 
-type ParseEdgePACE struct {
-	Name     int   ` @Number`
-	Vertices []int ` ( @Number   )* "\n" `
+type parseEdgePACE struct {
+	name     int   ` @Number`
+	vertices []int ` ( @Number   )* "\n" `
 }
 
-type ParseGraphPACEInfo struct {
-	Vertices int `"p htd":Begin @(Number) `
-	Edges    int `@(Number) "\n"`
+type parseGraphPACEInfo struct {
+	vertices int `"p htd":Begin @(Number) `
+	edges    int `@(Number) "\n"`
 }
 
-type ParseGraphPACE struct {
-	Info  ParseGraphPACEInfo `@@`
-	Edges []ParseEdgePACE    `(@@) *`
+type parseGraphPACE struct {
+	info  parseGraphPACEInfo `@@`
+	edges []parseEdgePACE    `(@@) *`
 	m     map[int]int
 }
 
+// GetGraphPACE parses a string in PACE 2019 format into a graph
 func GetGraphPACE(s string) Graph {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -159,11 +161,11 @@ func GetGraphPACE(s string) Graph {
 
     digit = "0"…"9" .`))
 
-	var parser = participle.MustBuild(&ParseGraphPACE{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
+	var parser = participle.MustBuild(&parseGraphPACE{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
 		participle.Elide("Comment", "Whitespace"))
 	var output Graph
 	var edges []Edge
-	pgraph := ParseGraphPACE{}
+	pgraph := parseGraphPACE{}
 	err := parser.ParseString(s, &pgraph)
 	if err != nil {
 		fmt.Println("Couldn't parse input: ")
@@ -174,41 +176,33 @@ func GetGraphPACE(s string) Graph {
 	encoding := make(map[int]string)
 	pgraph.m = make(map[int]int)
 
-	for _, e := range pgraph.Edges {
-		encoding[encode] = "E" + strconv.Itoa(e.Name)
-		pgraph.m[e.Name] = encode
+	for _, e := range pgraph.edges {
+		encoding[encode] = "E" + strconv.Itoa(e.name)
+		pgraph.m[e.name] = encode
 		encode++
 	}
 
-	for _, e := range pgraph.Edges {
+	for _, e := range pgraph.edges {
 		var outputEdges []int
-		for _, n := range e.Vertices {
-			i, ok := pgraph.m[n+pgraph.Info.Edges]
+		for _, n := range e.vertices {
+			i, ok := pgraph.m[n+pgraph.info.edges]
 			if ok {
 				outputEdges = append(outputEdges, i)
 			} else {
-				pgraph.m[n+pgraph.Info.Edges] = encode
+				pgraph.m[n+pgraph.info.edges] = encode
 				encoding[encode] = "V" + strconv.Itoa(n)
 				outputEdges = append(outputEdges, encode)
 				encode++
 
 			}
 		}
-		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
+		edges = append(edges, Edge{Name: pgraph.m[e.name], Vertices: outputEdges})
 	}
 
 	m = encoding
 
 	output.Edges = NewEdges(edges)
 
-	// log.Println("Edges", pgraph.Info.Edges)
-	// log.Println("Vertices", pgraph.Info.Vertices)
-
-	// for _, e := range output.Edges.Slice() {
-	//  log.Println(e.FullString())
-	// }
-
-	// log.Panicln("")
 	return output
 }
 
@@ -244,49 +238,40 @@ func (n Node) attachChild(target int, child Node) Node {
 
 // Implement Decomp parsing  (via JSON format)
 
-type DecompJson struct {
-	Root NodeJson
+type decompJson struct {
+	root nodeJson
 }
 
-type NodeJson struct {
-	Bag      []string
-	Cover    []string
-	Children []NodeJson
-	Star     bool
+type nodeJson struct {
+	bag      []string
+	cover    []string
+	children []nodeJson
 }
 
-
-
-
-
-
-
-
-
-
-type Arc struct {
-	Source int
-	Target int
+type arc struct {
+	source int
+	target int
 }
 
-type ParseGMLValue struct {
-	FlatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
-	List    ParseGMLList `| "[" @@ "]"`
+type parseGMLValue struct {
+	flatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
+	list    parseGMLList `| "[" @@ "]"`
 }
 
-type ParseGMLListEntry struct {
-	Key   string        ` @(Ident|Number) `
-	Value ParseGMLValue ` @@ `
+type parseGMLListEntry struct {
+	key   string        ` @(Ident|Number) `
+	value parseGMLValue ` @@ `
 }
 
-type ParseGMLList struct {
-	Entries []ParseGMLListEntry `( @@ )*`
+type parseGMLList struct {
+	entries []parseGMLListEntry `( @@ )*`
 }
 
-type ParseGML struct {
-	GML ParseGMLList `@@`
+type parseGML struct {
+	gml parseGMLList `@@`
 }
 
+// GetDecompGML can parse an input string in GML format to produce a decomp
 func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -300,8 +285,8 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .`))
 
-	var parser = participle.MustBuild(&ParseGML{}, participle.UseLookahead(1), participle.Lexer(graphLexer), participle.Elide("Comment", "Whitespace"))
-	pDecomp := ParseGML{}
+	var parser = participle.MustBuild(&parseGML{}, participle.UseLookahead(1), participle.Lexer(graphLexer), participle.Elide("Comment", "Whitespace"))
+	pDecomp := parseGML{}
 	err := parser.ParseString(input, &pDecomp)
 	if err != nil {
 		fmt.Println("Couldn't parse input: ")
@@ -309,32 +294,32 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 	}
 
 	// Check if GML file consists of single graph node
-	if len(pDecomp.GML.Entries) != 1 && pDecomp.GML.Entries[0].Key != "graph" {
+	if len(pDecomp.gml.entries) != 1 && pDecomp.gml.entries[0].key != "graph" {
 		log.Panicln("Valid GML file, but does not contain a unique graph element")
 	}
 
-	var graphEntry ParseGMLListEntry
+	var graphEntry parseGMLListEntry
 
-	graphEntry = pDecomp.GML.Entries[0]
+	graphEntry = pDecomp.gml.entries[0]
 
-	var arcs []Arc
+	var arcs []arc
 	var nodes []Node
 
 	IDtoIndex := make(map[int]int)
 
 	edges := graph.Edges.Slice()
 
-	for _, n := range graphEntry.Value.List.Entries {
-		switch n.Key {
+	for _, n := range graphEntry.value.list.entries {
+		switch n.key {
 		case "node":
 			var node Node
 
 			var nodeLabels map[string]string
 			nodeLabels = make(map[string]string)
 
-			for _, e := range n.Value.List.Entries {
-				if e.Value.FlatVal != "" {
-					nodeLabels[e.Key] = e.Value.FlatVal
+			for _, e := range n.value.list.entries {
+				if e.value.flatVal != "" {
+					nodeLabels[e.key] = e.value.flatVal
 				}
 			}
 
@@ -373,26 +358,23 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
 			node.num, _ = strconv.Atoi(nodeLabels["id"])
 
-			encode = Max(node.num, encode) + 1 // ensure encode will never collide with num values in parsed GMl
+			encode = max(node.num, encode) + 1 // ensure encode will never collide with num values in parsed GMl
 
 			node.Bag = bag
 			node.Cover = NewEdges(cover)
-			if v, ok := nodeLabels["magic"]; ok {
-				node.Star, _ = strconv.ParseBool(v)
-			}
 
 			nodes = append(nodes, node)
 
 			IDtoIndex[node.num] = len(nodes) - 1
 		case "edge":
-			var arc Arc
+			var Arc arc
 
 			var arcLabels map[string]string
 			arcLabels = make(map[string]string)
 
-			for _, e := range n.Value.List.Entries {
-				if e.Value.FlatVal != "" {
-					arcLabels[e.Key] = e.Value.FlatVal
+			for _, e := range n.value.list.entries {
+				if e.value.flatVal != "" {
+					arcLabels[e.key] = e.value.flatVal
 				}
 			}
 
@@ -404,16 +386,16 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 				log.Println("Edge without target present in GML file.")
 			}
 
-			arc.Source, _ = strconv.Atoi(arcLabels["source"])
-			arc.Target, _ = strconv.Atoi(arcLabels["target"])
+			Arc.source, _ = strconv.Atoi(arcLabels["source"])
+			Arc.target, _ = strconv.Atoi(arcLabels["target"])
 
-			arcs = append(arcs, arc)
+			arcs = append(arcs, Arc)
 		}
 	}
 
 	var root int
 	if len(arcs) != 0 {
-		root = arcs[0].Source
+		root = arcs[0].source
 	} else {
 		root = nodes[0].num
 	}
@@ -423,196 +405,21 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 	for changed {
 		changed = false
 		for _, arc := range arcs {
-			if arc.Target == root { //determine global ancestor
-				root = arc.Source
+			if arc.target == root { //determine global ancestor
+				root = arc.source
 				changed = true
 			}
 		}
 	}
 
 	for _, arc := range arcs {
-		source := nodes[IDtoIndex[arc.Source]]
-		target := nodes[IDtoIndex[arc.Target]]
+		source := nodes[IDtoIndex[arc.source]]
+		target := nodes[IDtoIndex[arc.target]]
 
-		nodes[IDtoIndex[arc.Source]] = source.attachChild(arc.Source, target)
+		nodes[IDtoIndex[arc.source]] = source.attachChild(arc.source, target)
 
-		IDtoIndex[arc.Target] = IDtoIndex[arc.Source] // update reference to target
+		IDtoIndex[arc.target] = IDtoIndex[arc.source] // update reference to target
 	}
 
 	return Decomp{Graph: graph, Root: nodes[IDtoIndex[root]]}
 }
-
-func GetCache(input []byte) Cache {
-
-	var jason Cache
-
-	err := json.Unmarshal(input, &jason)
-	if err != nil {
-		fmt.Println("error:", err)
-		log.Panicln("Oh noes, can't part JSON")
-	}
-
-	return jason
-
-}
-
-// Updated PACE 2019 format, with initial Special Edges
-
-// type ParseEdgeUpdate struct {
-//  Name     string   ` @(Ident|Number)`
-//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
-// }
-
-// type ParseSpecialEdgeUpdate struct {
-//  Name     string   ` @(Ident|Number)`
-//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
-// }
-
-// type ParseGhostEdgeUpdate struct {
-//  Name     string   ` @(Ident|Number)`
-//  Vertices []string `"(" ( @(Ident|Number)  ","? )* ")"`
-// }
-
-// type ParseGraphUpdate struct {
-//  Edges   []ParseEdgeUpdate        `( @@ ","?)* "."`
-//  Ghost   []ParseSpecialEdgeUpdate `("👻" ( @@ ","?)*)?`
-//  Special []ParseGhostEdgeUpdate   `"✨" ( @@ ","?)*`
-//  m       map[string]int
-// }
-
-// type ParseGraphUpdateInfo struct {
-//  Vertices int `"p htd":Begin @(Number) `
-//  Edges    int `@(Number) "\n"`
-// }
-
-// type ParseGraphUpdate struct {
-//  Info         ParseGraphUpdateInfo     `@@`
-//  Edges        []ParseEdgeUpdate        `(@@) *`
-//  SpecialEdges []ParseSpecialEdgeUpdate `(@@) *`
-//  GhostEdges   []ParseGhostEdgeUpdate   `(@@) *`
-//  m            map[int]int
-// }
-
-// func GetGraphUpdate(s string) (Graph, Graph, []Special) {
-
-//  graphLexer := lexer.Must(ebnf.New(`
-//     Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-//     Ident = (alpha | "_") { "_" | alpha | digit | stuff } .
-//     Number = ("." | digit | "_"){"." | digit | "_"} .
-//     Whitespace = " " | "\t" | "\n" | "\r" .
-//     stuff = ":" | "@" | ";" | "-" .
-//     Punct = "!"…"/"  .
-//     alpha = "a"…"z" | "A"…"Z" .
-//     SpecialSep = "✨" .
-//     GhostSep  = "👻" .
-//     digit = "0"…"9" .`))
-
-//  var parser = participle.MustBuild(&ParseGraphUpdate{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
-//      participle.Elide("Comment", "Whitespace"))
-//  var output Graph
-//  var ghostGraph Graph
-//  var edges []Edge
-//  var ghostEdges []Edge
-//  var special []Special
-
-//  pgraph := ParseGraphUpdate{}
-//  err := parser.ParseString(s, &pgraph)
-//  if err != nil {
-//      fmt.Println("Couldn't parse input: ")
-//      panic(err)
-//  }
-//  encode = 1 // initialize to 1
-
-//  encoding := make(map[int]string)
-//  pgraph.m = make(map[string]int)
-
-//  for _, e := range pgraph.Edges {
-//      _, ok := pgraph.m[e.Name]
-//      if ok {
-//          log.Panicln("Edge names not unique, not a vald hypergraph!")
-//      }
-//      pgraph.m[e.Name] = encode
-//      encoding[encode] = e.Name
-//      encode++
-//  }
-
-//  for _, e := range pgraph.Ghost {
-//      encoding[encode] = "👻" + e.Name
-//      pgraph.m["👻"+e.Name] = encode
-//      encode++
-//  }
-
-//  for _, e := range pgraph.Special {
-//      encoding[encode] = e.Name + " ✨"
-//      pgraph.m[e.Name+" ✨"] = encode
-//      encode++
-//  }
-
-//  for _, e := range pgraph.Edges {
-//      var outputEdge []int
-//      for _, n := range e.Vertices {
-//          i, ok := pgraph.m[n]
-//          if ok {
-//              outputEdge = append(outputEdge, i)
-//          } else {
-//              pgraph.m[n] = encode
-//              encoding[encode] = n
-//              outputEdge = append(outputEdge, encode)
-//              encode++
-//          }
-//      }
-//      edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdge})
-//  }
-
-//  for _, e := range pgraph.Ghost {
-//      var outputEdge []int
-//      for _, n := range e.Vertices {
-//          i, ok := pgraph.m[n]
-//          if ok {
-//              outputEdge = append(outputEdge, i)
-//          } else {
-//              pgraph.m[n] = encode
-//              encoding[encode] = n
-//              outputEdge = append(outputEdge, encode)
-//              encode++
-
-//          }
-//      }
-//      ghostEdges = append(ghostEdges, Edge{Name: pgraph.m["👻"+e.Name], Vertices: outputEdge})
-//  }
-
-//  for _, s := range pgraph.Special {
-//      var outputSpecialEdge []int
-//      for _, n := range s.Vertices {
-//          i, ok := pgraph.m[n]
-//          if ok {
-//              outputSpecialEdge = append(outputSpecialEdge, i)
-//          } else {
-//              pgraph.m[n] = encode
-//              encoding[encode] = n
-//              outputSpecialEdge = append(outputSpecialEdge, encode)
-//              encode++
-//          }
-//      }
-//      dummyEdges := NewEdges([]Edge{Edge{Name: pgraph.m[s.Name+" ✨"], Vertices: outputSpecialEdge}})
-//      special = append(special, Special{Vertices: outputSpecialEdge, Edges: dummyEdges})
-//  }
-
-//  m = encoding
-
-//  output.Edges = NewEdges(edges)
-//  ghostGraph.Edges = NewEdges(append(edges, ghostEdges...))
-
-//  // log.Println("Edges", pgraph.Info.Edges)
-//  // log.Println("Vertices", pgraph.Info.Vertices)
-
-//  // for _, e := range output.Edges.Slice() {
-//  //  log.Println(e.FullString())
-//  // }
-
-//  // for _, e := range special {
-//  //  log.Println(e)
-//  // }
-
-//  return ghostGraph, output, special
-// }

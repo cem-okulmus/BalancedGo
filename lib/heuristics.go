@@ -1,5 +1,8 @@
 package lib
 
+// heuristics.go provides a number of heuristics to order the edges by. The goal is to potentially speed up the
+// computation of hypergraph decompositions
+
 import (
 	"math"
 	"math/rand"
@@ -7,10 +10,9 @@ import (
 	"time"
 )
 
-// Heuristics to order the edges by
-
+// GetMSCOrder produes the Maximal Cardinality Search Ordering.
+// Implementation is based det-k-decomp of Samer and Gottlob '09
 func GetMSCOrder(edges Edges) Edges {
-
 	rand.Seed(time.Now().UTC().UnixNano())
 	if edges.Len() <= 1 {
 		return edges
@@ -47,17 +49,30 @@ func GetMSCOrder(edges Edges) Edges {
 		chosen[nextInOrder] = true
 	}
 
-	// //reverse order of selected
-	// for i, j := 0, len(selected)-1; i < j; i, j = i+1, j-1 {
-	//  selected[i], selected[j] = selected[j], selected[i]
-	// }
-
 	return NewEdges(selected)
 }
 
-//Order the edges by how much  they increase shortest paths within the hypergraph
+// GetMaxSepOrdering orders the edges by how much they increase shortest paths within the hypergraph, using basic Floyd-Warschall (using the primal graph)
+func GetMaxSepOrder(edges Edges) Edges {
+	if edges.Len() <= 1 {
+		return edges
+	}
+	vertices := edges.Vertices()
+	weights := make([]int, edges.Len())
 
-//basic Floyd-Warschall (using the primal graph)
+	initialDiff, order := getMinDistances(vertices, edges)
+
+	for i, e := range edges.Slice() {
+		edgesWihoutE := diffEdges(edges, e)
+		newDiff, _ := getMinDistances(vertices, edgesWihoutE)
+		newDiffPrep := addEdgeDistances(order, newDiff, e)
+		weights[i] = diffDistances(initialDiff, newDiffPrep)
+	}
+
+	sort.Slice(edges.Slice(), func(i, j int) bool { return weights[i] > weights[j] })
+
+	return edges
+}
 
 func order(a, b int) (int, int) {
 	if a < b {
@@ -156,24 +171,14 @@ func diffDistances(old, new [][]int) int {
 	return output
 }
 
-func GetMaxSepOrder(edges Edges) Edges {
+// GetDegreeOrder orders the edges based on the sum of the vertex degrees
+func GetDegreeOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
 	}
-	vertices := edges.Vertices()
-	weights := make([]int, edges.Len())
-
-	initialDiff, order := getMinDistances(vertices, edges)
-
-	for i, e := range edges.Slice() {
-		edgesWihoutE := DiffEdges(edges, e)
-		newDiff, _ := getMinDistances(vertices, edgesWihoutE)
-		newDiffPrep := addEdgeDistances(order, newDiff, e)
-		weights[i] = diffDistances(initialDiff, newDiffPrep)
-	}
-
-	sort.Slice(edges.Slice(), func(i, j int) bool { return weights[i] > weights[j] })
-
+	sort.Slice(edges.Slice(), func(i, j int) bool {
+		return edgeVertexDegree(edges, edges.Slice()[i]) > edgeVertexDegree(edges, edges.Slice()[j])
+	})
 	return edges
 }
 
@@ -187,14 +192,16 @@ func edgeVertexDegree(edges Edges, edge Edge) int {
 	return output - len(edge.Vertices)
 }
 
-func GetDegreeOrder(edges Edges) Edges {
+// GetEdgeDegreeOrder orders the edges based on the sum of the edge degrees
+func GetEdgeDegreeOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
 	}
 	sort.Slice(edges.Slice(), func(i, j int) bool {
-		return edgeVertexDegree(edges, edges.Slice()[i]) > edgeVertexDegree(edges, edges.Slice()[j])
+		return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j])
 	})
 	return edges
+
 }
 
 func edgeDegree(edges Edges, edge Edge) int {
@@ -207,15 +214,4 @@ func edgeDegree(edges Edges, edge Edge) int {
 	}
 
 	return output
-}
-
-func GetEdgeDegreeOrder(edges Edges) Edges {
-	if edges.Len() <= 1 {
-		return edges
-	}
-	sort.Slice(edges.Slice(), func(i, j int) bool {
-		return edgeDegree(edges, edges.Slice()[i]) > edgeDegree(edges, edges.Slice()[j])
-	})
-	return edges
-
 }
