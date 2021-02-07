@@ -30,7 +30,10 @@ func (c *Cache) initFunction() {
 	}
 }
 
-func (c Cache) Len() int {
+func (c *Cache) Len() int {
+	c.cacheMux.Lock()
+	defer c.cacheMux.Unlock()
+
 	return len(c.cache)
 }
 

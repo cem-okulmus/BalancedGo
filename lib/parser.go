@@ -93,73 +93,7 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	return output, pgraph
 }
 
-type NiceGraph struct {
-	Width    int         `"⭐️" @(Number|Ident|String) `
-	Edges    []ParseEdge `( @@ ","?)* (".")?`
-	Encoding map[string]int
-}
 
-func GetNiceGraph(s string) (Graph, ParseGraph, int) {
-
-	graphLexer := lexer.Must(ebnf.New(`
-    Comment = ("%" | "//") { "\u0000"…"\uffff"-"\n" } .
-    Ident = (digit| alpha | "_") { Punct |  "_" | alpha | digit } .
-    String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
-    Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
-    Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
-    Paranthesis = "(" | ")"  | "," .
-    Whitespace = " " | "\t" | "\n" | "\r" .
-    alpha = "a"…"z" | "A"…"Z" .
-    digit = "0"…"9" .
-    any = "\u0000"…"\uffff" .
-    WidthPromise = "⭐️" .
-    `))
-
-	var parser = participle.MustBuild(&NiceGraph{}, participle.UseLookahead(1), participle.Lexer(graphLexer),
-		participle.Elide("Comment", "Whitespace"))
-	var output Graph
-	var edges []Edge
-	pgraph := NiceGraph{}
-	err := parser.ParseString(s, &pgraph)
-	if err != nil {
-		fmt.Println("Couldn't parse input: ")
-		panic(err)
-	}
-	encoding := make(map[int]string)
-	encode = 1 // initialize to 1
-
-	pgraph.Encoding = make(map[string]int)
-	//fix first numbers for edge names
-	for _, e := range pgraph.Edges {
-		_, ok := pgraph.Encoding[e.Name]
-		if ok {
-			log.Panicln("Edge names not unique, not a vald hypergraph!")
-		}
-
-		pgraph.Encoding[e.Name] = encode
-		encoding[encode] = e.Name
-		encode++
-	}
-	for _, e := range pgraph.Edges {
-		var outputEdges []int
-		for _, n := range e.Vertices {
-			i, ok := pgraph.Encoding[n]
-			if ok {
-				outputEdges = append(outputEdges, i)
-			} else {
-				pgraph.Encoding[n] = encode
-				encoding[encode] = n
-				outputEdges = append(outputEdges, encode)
-				encode++
-			}
-		}
-		edges = append(edges, Edge{Name: pgraph.Encoding[e.Name], Vertices: outputEdges})
-	}
-	output.Edges = NewEdges(edges)
-	m = encoding
-
-	return output, ParseGraph{Edges: pgraph.Edges, Encoding: pgraph.Encoding}, pgraph.Width
-}
 
 func (p *ParseGraph) GetEdge(input string) Edge {
 
@@ -321,90 +255,14 @@ type NodeJson struct {
 	Star     bool
 }
 
-func (d Decomp) IntoJson() DecompJson {
-	var output DecompJson
 
-	output.Root = d.Root.IntoJson()
 
-	return output
-}
 
-func (n Node) IntoJson() NodeJson {
-	var output NodeJson
 
-	for _, i := range n.Bag {
-		output.Bag = append(output.Bag, m[i])
-	}
 
-	for i := range n.Cover.Slice() {
-		output.Cover = append(output.Cover, m[n.Cover.Slice()[i].Name])
-	}
 
-	for i := range n.Children {
-		output.Children = append(output.Children, n.Children[i].IntoJson())
-	}
 
-	output.Star = n.Star
 
-	return output
-}
-
-func (d DecompJson) IntoDecomp(graph Graph, encoding map[string]int) Decomp {
-
-	var output Decomp
-
-	output.Graph = graph
-
-	output.Root = d.Root.IntoNode(graph, encoding)
-
-	return output
-}
-
-func (n NodeJson) IntoNode(graph Graph, encoding map[string]int) Node {
-	var output Node
-	var cover []Edge
-
-	for i := range n.Bag {
-		output.Bag = append(output.Bag, encoding[n.Bag[i]])
-	}
-
-	for i := range n.Cover {
-		cover = append(cover, extractEdge(graph.Edges.Slice(), encoding[n.Cover[i]]))
-	}
-	output.Cover = NewEdges(cover)
-
-	output.Star = n.Star
-
-	for i := range n.Children {
-		output.Children = append(output.Children, n.Children[i].IntoNode(graph, encoding))
-	}
-
-	return output
-}
-
-func GetDecomp(input []byte, graph Graph, encoding map[string]int) Decomp {
-
-	var jason DecompJson
-
-	err := json.Unmarshal(input, &jason)
-	if err != nil {
-		fmt.Println("error:", err)
-		log.Panicln("decomp couldn't be parased")
-	}
-
-	return jason.IntoDecomp(graph, encoding)
-}
-
-func WriteDecomp(input Decomp) []byte {
-	out, err := json.Marshal(input.IntoJson())
-
-	if err != nil {
-		fmt.Println("error:", err)
-		log.Panicln("decomp couldn't be marshalled")
-	}
-
-	return out
-}
 
 type Arc struct {
 	Source int

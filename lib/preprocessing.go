@@ -134,7 +134,7 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 
 func (n Node) restoreEdgeOp(e edgeOp) (Node, bool) {
 	if Subset(e.parent.Vertices, n.Bag) {
-		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: Edges{slice: []Edge{e.subedge}}})
+		n.Children = append(n.Children, Node{Bag: e.subedge.Vertices, Cover: NewEdges([]Edge{e.subedge})})
 		return n, true // Won't work without deep copy
 	}
 
