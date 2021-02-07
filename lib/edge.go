@@ -13,7 +13,6 @@ import (
 type Edge struct {
 	Name     int
 	Vertices []int // use integers for vertices
-	hashMux  *sync.Mutex
 }
 
 func (e Edge) FullString() string {
@@ -69,12 +68,14 @@ type Edges struct {
 	slice         []Edge
 	vertices      []int
 	hash          *uint64
-	hashMux       sync.Mutex
+	hashMux       *sync.Mutex
 	duplicateFree bool
 }
 
 func NewEdges(slice []Edge) Edges {
-	return Edges{slice: slice}
+	var hashMux sync.Mutex
+
+	return Edges{slice: slice, hashMux: &hashMux}
 }
 
 func (e *Edges) RemoveDuplicates() {
@@ -195,7 +196,7 @@ func removeDuplicateEdges(elementsSlice []Edge) Edges {
 		elements.slice[j] = elements.slice[i]
 	}
 
-	return Edges{slice: elements.slice[:j+1]}
+	return NewEdges(elements.slice[:j+1])
 }
 
 // Unnessarily adds empty edge

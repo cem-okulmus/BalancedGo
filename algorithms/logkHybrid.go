@@ -55,6 +55,8 @@ func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
 
 	output := count < l.Size
 
+	
+
 	if output {
 		// log.Println("Predicate SumEdgesPred")
 		// log.Println("Current Graph: ", count, " Sum of Edges / ", l.Size)

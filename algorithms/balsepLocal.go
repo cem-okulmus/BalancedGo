@@ -68,7 +68,7 @@ func searchSubEdge(g *BalSepLocal, H *Graph, balsepOrig Edges, sepSub *SepSub) E
 				nextBalsepFound = true
 			}
 		} else {
-			return Edges{}
+			return NewEdges([]Edge{})
 		}
 	}
 	log.Println("Sub Sep chosen: ", balsep)

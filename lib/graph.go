@@ -231,7 +231,7 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 		for i := range slice {
 			edgeToComp[slice[i].Name] = len(outputG)
 		}
-		g := Graph{Edges: Edges{slice: slice}, Special: compsSp[k]}
+		g := Graph{Edges: NewEdges(slice), Special: compsSp[k]}
 		outputG = append(outputG, g)
 		// outputS = append(outputS, compsSp[k])
 
