@@ -15,7 +15,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 
 	. "github.com/cem-okulmus/BalancedGo/algorithms"
-
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
@@ -40,8 +39,13 @@ func check(e error) {
 
 }
 
+//Version indicates the version exported from the Git repository
 var Version string
+
+//Date indicates the build date exported from the Git repository
 var Date string
+
+//Build indicates the exact build when current version was compiled
 var Build string
 
 type labelTime struct {
@@ -53,7 +57,7 @@ func (l labelTime) String() string {
 	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
-func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, json string, K int, skipCheck bool) {
+func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, K int, skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -89,14 +93,6 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 		f.WriteString(decomp.ToGML())
 		f.Sync()
 	}
-	if correct && len(json) > 0 {
-		f, err := os.Create(json)
-		check(err)
-
-		defer f.Close()
-		f.Write(WriteDecomp(decomp))
-		f.Sync()
-	}
 }
 
 func main() {
@@ -109,11 +105,11 @@ func main() {
 	logging := flagSet.Bool("log", false, "turn on extensive logs")
 	computeSubedges := flagSet.Bool("sub", false, "turn off subedge computation for global option")
 	width := flagSet.Int("width", 0, "a positive, non-zero integer indicating the width of the GHD to search for")
-	graphPath := flagSet.String("graph", "", "the file path to a hypergraph \n\t(see http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf, 1.3 for correct format)")
+	graphPath := flagSet.String("graph", "", "input (for format see hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf)")
 	localBal := flagSet.Bool("local", false, "Use local BalSep algorithm")
 	globalBal := flagSet.Bool("global", false, "Use global BalSep algorithm")
 	balanceFactorFlag := flagSet.Int("balfactor", 2, "Changes the factor that balanced separator check uses, default 2")
-	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
+	useHeuristic := flagSet.Int("heuristic", 0, "turn on to activate edge ordering\n\t1 ... Vertex Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering")
 	gyö := flagSet.Bool("g", false, "perform a GYÖ reduct")
 	typeC := flagSet.Bool("t", false, "perform a Type Collapse")
 	hingeFlag := flagSet.Bool("h", false, "use hingeTree Optimization")
@@ -124,19 +120,11 @@ func main() {
 	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "Used in combination with \"det\": turns on local subedge handling")
 	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
-	seqBalDetTest := flagSet.Int("seqBalDet", 0,
-		"Use the sequential Hybrid BalSep - DetK algorithm. Number indicates depth, must be ≥ 1")
+	seqBalDetTest := flagSet.Int("seqBalDet", 0, "Use sequential Hybrid BalSep - DetK algorithm.")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
-	jsonFlag := flagSet.String("json", "", "Output the produced decomposition into the specified json file ")
-	pace := flagSet.Bool("pace", false,
-		"Use PACE 2019 format for graphs\n\t(see https://pacechallenge.org/2019/htd/htd_format/ for correct format)")
+	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
 	exact := flagSet.Bool("exact", false, "Compute exact width (width flag ignored)")
 	approx := flagSet.Int("approx", 0, "Compute approximated width and set a timeout in seconds (width flag ignored)")
-	decomp := flagSet.String("decomp", "", "A decomposition to be used as a starting point, needs to have certain nodes marked (those which need to be updated).")
-	cache := flagSet.String("cache", "", "A binary representation of the internal cache, to be used during updating.")
-	exportCache := flagSet.Bool("exportCache", false, "Export the internal Cache after algoritm has run.")
-	nice := flagSet.Bool("nice", false, "Expects nice hypergraphs as input, which already specificy their resp. width.")
-	ensemble := flagSet.Bool("ensemble", false, "Run ensemble of detk and localbip for update. Only used for that.")
 	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 
 	parseError := flagSet.Parse(os.Args[1:])
@@ -164,7 +152,7 @@ func main() {
 	runtime.GOMAXPROCS(*numCPUs)
 
 	// Outpt usage message if graph and width not specified
-	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && !*nice && *approx == 0) {
+	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
 		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/",
 			Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
@@ -202,12 +190,9 @@ func main() {
 	check(err)
 
 	var parsedGraph Graph
-	var parseGraph ParseGraph
 
-	if !*pace && !*nice {
-		parsedGraph, parseGraph = GetGraph(string(dat))
-	} else if *nice {
-		parsedGraph, parseGraph, *width = GetNiceGraph(string(dat))
+	if !*pace {
+		parsedGraph, _ = GetGraph(string(dat))
 	} else {
 		parsedGraph = GetGraphPACE(string(dat))
 	}
@@ -217,73 +202,6 @@ func main() {
 	var reducedGraph Graph
 
 	var times []labelTime
-
-	var solverUpdate UpdateAlgorithm
-	var solverEnsemble Algorithm
-	var parsedDecomp Decomp
-	var parsedCache Cache
-
-	// Check if shortcut present, before applying heuristics
-	if *decomp != "" {
-
-		// Determine solver
-
-		if *detKTest {
-			det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
-
-			if *ensemble {
-				solverEnsemble = det
-			}
-
-			solverUpdate = det
-		}
-
-		// if *balDetTest > 0 {
-		// 	balDet := &BalDetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
-		// 	solverUpdate = balDet
-		// }
-
-		// read and parse decomposition
-
-		dis, err2 := ioutil.ReadFile(*decomp)
-		check(err2)
-
-		start_pars := time.Now()
-
-		parsedDecomp = GetDecomp(dis, parsedGraph, parseGraph.Encoding)
-		// fmt.Println("parsed Decomp", parsedDecomp)
-
-		msec_pars := time.Now().Sub(start_pars).Seconds() * float64(time.Second/time.Millisecond)
-		times = append(times, labelTime{time: msec_pars, label: "Parsing"})
-
-		start_check := time.Now()
-
-		// Check if this decomp is already correct
-		checkCorrectness := parsedDecomp.Correct(originalGraph)
-
-		msec_check := time.Now().Sub(start_check).Seconds() * float64(time.Second/time.Millisecond)
-		times = append(times, labelTime{time: msec_check, label: "Correctness Check"})
-
-		if checkCorrectness {
-			fmt.Println(" Parsed Decomposition already correct, skipping update computation.")
-
-			outputStanza(solverUpdate.Name(), parsedDecomp, times, parsedGraph, *gml, *jsonFlag, *width, true)
-
-			return
-		}
-
-		// get the cache
-
-		if *cache != "" {
-			dat, err3 := ioutil.ReadFile(*cache)
-			check(err3)
-
-			parsedCache = GetCache(dat)
-		} else {
-			parsedCache.Init()
-		}
-
-	}
 
 	// Sorting Edges to find separators faster
 	if *useHeuristic > 0 {
@@ -377,80 +295,6 @@ func main() {
 			fmt.Println("Produced Hingetree: ")
 			fmt.Println(hinget)
 		}
-	}
-
-	if *decomp != "" {
-
-		start_sc := time.Now()
-
-		scenes := parsedDecomp.SceneCreation(parsedGraph)
-
-		d_sc := time.Now().Sub(start_sc)
-		msec_sc := d_sc.Seconds() * float64(time.Second/time.Millisecond)
-		times = append(times, labelTime{time: msec_sc, label: "Scene Creation"})
-
-		fmt.Println("Extracted scenes: ", scenes.Len())
-
-		if solverUpdate != nil {
-			var decomp Decomp
-			start := time.Now()
-
-			if *ensemble {
-
-				wait := make(chan Decomp)
-				go func() {
-					wait <- solverUpdate.FindDecompUpdate(parsedGraph, scenes, parsedCache)
-				}()
-
-				go func() {
-					wait <- solverEnsemble.FindDecomp()
-				}()
-
-				decomp = <-wait
-			} else {
-				decomp = solverUpdate.FindDecompUpdate(parsedGraph, scenes, parsedCache)
-			}
-
-			d := time.Now().Sub(start)
-			msec := d.Seconds() * float64(time.Second/time.Millisecond)
-			times = append(times, labelTime{time: msec, label: "Decomposition"})
-
-			if !reflect.DeepEqual(decomp, Decomp{}) {
-				var result bool
-				decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
-				if !result {
-					fmt.Println("Partial decomp:", decomp.Root)
-
-					log.Panicln("GYÖ reduction failed")
-				}
-				decomp.Root, result = decomp.Root.RestoreTypes(removalMap)
-				if !result {
-					fmt.Println("Partial decomp:", decomp.Root)
-
-					log.Panicln("Type Collapse reduction failed")
-				}
-			}
-
-			outputStanza(solverUpdate.Name(), decomp, times, parsedGraph, *gml, *jsonFlag, *width, false)
-
-			if len(*gml) > 0 { // export cache if gml is set too
-				f, err := os.Create(*gml + ".cache")
-				check(err)
-
-				defer f.Close()
-				out, err := json.Marshal(solverUpdate.GetCache())
-				check(err)
-
-				f.Write(out)
-				f.Sync()
-			}
-
-			return
-		}
-
-		fmt.Println("No supported update Algorithm chosen.")
-		return
-
 	}
 
 	var solver Algorithm
@@ -612,32 +456,8 @@ func main() {
 		if !reflect.DeepEqual(decomp, Decomp{}) {
 			decomp.Graph = originalGraph
 		}
-		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *jsonFlag, *width, false)
+		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *width, false)
 
-		if *exportCache { // export cache
-
-			if *gml == "" {
-				fmt.Println("Cannot export cache: You need to specify GML output location as well.")
-				return
-			}
-			solverAsUpdate, ok := solver.(UpdateAlgorithm)
-
-			if !ok {
-				fmt.Println("Cannot export cache: Chosen algorithm does not support cache export.")
-				return
-			}
-
-			f, err := os.Create(*gml + ".cache")
-			check(err)
-			defer f.Close()
-			cache := solverAsUpdate.GetCache()
-
-			out, err := json.Marshal(cache)
-			check(err)
-
-			f.Write(out)
-			f.Sync()
-		}
 		return
 	}
 
