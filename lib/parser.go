@@ -24,17 +24,17 @@ var mutex = sync.RWMutex{}
 var encode int // stores the encoding of the highest int used
 
 type parseEdge struct {
-	name     string   ` @(Number|Ident|String)`
-	vertices []string `"(" ( @(Number|Ident|String)  ","? )* ")"`
+	Name     string   ` @(Number|Ident|String)`
+	Vertices []string `"(" ( @(Number|Ident|String)  ","? )* ")"`
 }
 
 // ParseGraph contains data used to parse a graph, potentially useful for testing
 type ParseGraph struct {
-	edges    []parseEdge `( @@ ","?)* (".")?`
-	encoding map[string]int
+	Edges    []parseEdge `( @@ ","?)* (".")?`
+	Encoding map[string]int
 }
 
-// GetGraph parses a string in HyperBench format into a graph
+// GetGraph parses a string in Hyperbench format into a graph
 func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -63,32 +63,32 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	encoding := make(map[int]string)
 	encode = 1 // initialize to 1
 
-	pgraph.encoding = make(map[string]int)
+	pgraph.Encoding = make(map[string]int)
 	//fix first numbers for edge names
-	for _, e := range pgraph.edges {
-		_, ok := pgraph.encoding[e.name]
+	for _, e := range pgraph.Edges {
+		_, ok := pgraph.Encoding[e.Name]
 		if ok {
 			log.Panicln("Edge names not unique, not a vald hypergraph!")
 		}
 
-		pgraph.encoding[e.name] = encode
-		encoding[encode] = e.name
+		pgraph.Encoding[e.Name] = encode
+		encoding[encode] = e.Name
 		encode++
 	}
-	for _, e := range pgraph.edges {
+	for _, e := range pgraph.Edges {
 		var outputEdges []int
-		for _, n := range e.vertices {
-			i, ok := pgraph.encoding[n]
+		for _, n := range e.Vertices {
+			i, ok := pgraph.Encoding[n]
 			if ok {
 				outputEdges = append(outputEdges, i)
 			} else {
-				pgraph.encoding[n] = encode
+				pgraph.Encoding[n] = encode
 				encoding[encode] = n
 				outputEdges = append(outputEdges, encode)
 				encode++
 			}
 		}
-		edges = append(edges, Edge{Name: pgraph.encoding[e.name], Vertices: outputEdges})
+		edges = append(edges, Edge{Name: pgraph.Encoding[e.Name], Vertices: outputEdges})
 	}
 	output.Edges = NewEdges(edges)
 	m = encoding
@@ -113,18 +113,18 @@ func (p *ParseGraph) GetEdge(input string) Edge {
 	pEdge := parseEdge{}
 	parser.ParseString(input, &pEdge)
 	var vertices []int
-	for _, v := range pEdge.vertices {
-		val, ok := p.encoding[v]
+	for _, v := range pEdge.Vertices {
+		val, ok := p.Encoding[v]
 		if ok {
 			vertices = append(vertices, val)
 		} else {
-			p.encoding[v] = encode
+			p.Encoding[v] = encode
 			m[encode] = v
 			vertices = append(vertices, encode)
 			encode++
 		}
 	}
-	m[encode] = pEdge.name
+	m[encode] = pEdge.Name
 	encode++
 	return Edge{Vertices: vertices, Name: encode - 1}
 }
@@ -132,18 +132,18 @@ func (p *ParseGraph) GetEdge(input string) Edge {
 // Implement PACE 2019 format
 
 type parseEdgePACE struct {
-	name     int   ` @Number`
-	vertices []int ` ( @Number   )* "\n" `
+	Name     int   ` @Number`
+	Vertices []int ` ( @Number   )* "\n" `
 }
 
 type parseGraphPACEInfo struct {
-	vertices int `"p htd":Begin @(Number) `
-	edges    int `@(Number) "\n"`
+	Vertices int `"p htd":Begin @(Number) `
+	Edges    int `@(Number) "\n"`
 }
 
 type parseGraphPACE struct {
-	info  parseGraphPACEInfo `@@`
-	edges []parseEdgePACE    `(@@) *`
+	Info  parseGraphPACEInfo `@@`
+	Edges []parseEdgePACE    `(@@) *`
 	m     map[int]int
 }
 
@@ -176,27 +176,27 @@ func GetGraphPACE(s string) Graph {
 	encoding := make(map[int]string)
 	pgraph.m = make(map[int]int)
 
-	for _, e := range pgraph.edges {
-		encoding[encode] = "E" + strconv.Itoa(e.name)
-		pgraph.m[e.name] = encode
+	for _, e := range pgraph.Edges {
+		encoding[encode] = "E" + strconv.Itoa(e.Name)
+		pgraph.m[e.Name] = encode
 		encode++
 	}
 
-	for _, e := range pgraph.edges {
+	for _, e := range pgraph.Edges {
 		var outputEdges []int
-		for _, n := range e.vertices {
-			i, ok := pgraph.m[n+pgraph.info.edges]
+		for _, n := range e.Vertices {
+			i, ok := pgraph.m[n+pgraph.Info.Edges]
 			if ok {
 				outputEdges = append(outputEdges, i)
 			} else {
-				pgraph.m[n+pgraph.info.edges] = encode
+				pgraph.m[n+pgraph.Info.Edges] = encode
 				encoding[encode] = "V" + strconv.Itoa(n)
 				outputEdges = append(outputEdges, encode)
 				encode++
 
 			}
 		}
-		edges = append(edges, Edge{Name: pgraph.m[e.name], Vertices: outputEdges})
+		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
 	}
 
 	m = encoding
@@ -249,26 +249,26 @@ type nodeJSON struct {
 }
 
 type arc struct {
-	source int
-	target int
+	Source int
+	Target int
 }
 
 type parseGMLValue struct {
-	flatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
-	list    parseGMLList `| "[" @@ "]"`
+	FlatVal string       ` @(Ident | Number) | "\"" @(Number | Ident | Punct)* "\""    `
+	List    parseGMLList `| "[" @@ "]"`
 }
 
 type parseGMLListEntry struct {
-	key   string        ` @(Ident|Number) `
-	value parseGMLValue ` @@ `
+	Key   string        ` @(Ident|Number) `
+	Value parseGMLValue ` @@ `
 }
 
 type parseGMLList struct {
-	entries []parseGMLListEntry `( @@ )*`
+	Entries []parseGMLListEntry `( @@ )*`
 }
 
 type parseGML struct {
-	gml parseGMLList `@@`
+	GML parseGMLList `@@`
 }
 
 // GetDecompGML can parse an input string in GML format to produce a decomp
@@ -294,13 +294,13 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 	}
 
 	// Check if GML file consists of single graph node
-	if len(pDecomp.gml.entries) != 1 && pDecomp.gml.entries[0].key != "graph" {
+	if len(pDecomp.GML.Entries) != 1 && pDecomp.GML.Entries[0].Key != "graph" {
 		log.Panicln("Valid GML file, but does not contain a unique graph element")
 	}
 
 	var graphEntry parseGMLListEntry
 
-	graphEntry = pDecomp.gml.entries[0]
+	graphEntry = pDecomp.GML.Entries[0]
 
 	var arcs []arc
 	var nodes []Node
@@ -309,17 +309,17 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
 	edges := graph.Edges.Slice()
 
-	for _, n := range graphEntry.value.list.entries {
-		switch n.key {
+	for _, n := range graphEntry.Value.List.Entries {
+		switch n.Key {
 		case "node":
 			var node Node
 
 			var nodeLabels map[string]string
 			nodeLabels = make(map[string]string)
 
-			for _, e := range n.value.list.entries {
-				if e.value.flatVal != "" {
-					nodeLabels[e.key] = e.value.flatVal
+			for _, e := range n.Value.List.Entries {
+				if e.Value.FlatVal != "" {
+					nodeLabels[e.Key] = e.Value.FlatVal
 				}
 			}
 
@@ -372,9 +372,9 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 			var arcLabels map[string]string
 			arcLabels = make(map[string]string)
 
-			for _, e := range n.value.list.entries {
-				if e.value.flatVal != "" {
-					arcLabels[e.key] = e.value.flatVal
+			for _, e := range n.Value.List.Entries {
+				if e.Value.FlatVal != "" {
+					arcLabels[e.Key] = e.Value.FlatVal
 				}
 			}
 
@@ -386,8 +386,8 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 				log.Println("Edge without target present in GML file.")
 			}
 
-			Arc.source, _ = strconv.Atoi(arcLabels["source"])
-			Arc.target, _ = strconv.Atoi(arcLabels["target"])
+			Arc.Source, _ = strconv.Atoi(arcLabels["source"])
+			Arc.Target, _ = strconv.Atoi(arcLabels["target"])
 
 			arcs = append(arcs, Arc)
 		}
@@ -395,7 +395,7 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
 	var root int
 	if len(arcs) != 0 {
-		root = arcs[0].source
+		root = arcs[0].Source
 	} else {
 		root = nodes[0].num
 	}
@@ -405,20 +405,20 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 	for changed {
 		changed = false
 		for _, arc := range arcs {
-			if arc.target == root { //determine global ancestor
-				root = arc.source
+			if arc.Target == root { //determine global ancestor
+				root = arc.Source
 				changed = true
 			}
 		}
 	}
 
 	for _, arc := range arcs {
-		source := nodes[IDtoIndex[arc.source]]
-		target := nodes[IDtoIndex[arc.target]]
+		source := nodes[IDtoIndex[arc.Source]]
+		target := nodes[IDtoIndex[arc.Target]]
 
-		nodes[IDtoIndex[arc.source]] = source.attachChild(arc.source, target)
+		nodes[IDtoIndex[arc.Source]] = source.attachChild(arc.Source, target)
 
-		IDtoIndex[arc.target] = IDtoIndex[arc.source] // update reference to target
+		IDtoIndex[arc.Target] = IDtoIndex[arc.Source] // update reference to target
 	}
 
 	return Decomp{Graph: graph, Root: nodes[IDtoIndex[root]]}
