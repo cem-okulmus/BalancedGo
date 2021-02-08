@@ -85,7 +85,6 @@ func (n Node) contains(o Node) bool {
 	return false
 }
 
-
 // bagSubsets checks if all bags are proper subsets of the union of their covers
 func (n Node) bagSubsets() bool {
 	if !Subset(n.Bag, n.Cover.Vertices()) {
@@ -138,11 +137,11 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 	var output []Edge
 
 	n.getNumber()
-	if withLoops { // loops needed for connectivty check
+	if withLoops { // loops needed for connectivity check
 		output = append(output, Edge{Vertices: []int{n.num, n.num}})
 	}
 
-	for i, _ := range n.Children {
+	for i := range n.Children {
 		n.Children[i].getNumber()
 		output = append(output, Edge{Vertices: []int{n.num, n.Children[i].num}}) // using breadth-first ordering
 		// to number nodes
@@ -177,7 +176,7 @@ func (n *Node) parent(o Node) Node {
 	return o
 }
 
-// Reroot producdes a new, isomorphic subtree, rerooting G at child
+// Reroot produces a new, isomorphic subtree, rerooting G at child
 func (n Node) Reroot(child Node) Node {
 
 	if !n.contains(child) {
@@ -203,7 +202,7 @@ func (n Node) Reroot(child Node) Node {
 	return Node{Bag: child.Bag, Cover: child.Cover, Children: newchildren}
 }
 
-// Vertices recurisvely collects all vertices from the bag of this node, and the bags of all its children
+// Vertices recursively collects all vertices from the bag of this node, and the bags of all its children
 func (n *Node) Vertices() []int {
 	if len(n.vertices) > 0 {
 		return n.vertices

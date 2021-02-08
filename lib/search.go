@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// A Search implements a parallel search for separators fullfilling some given predicate
+// A Search implements a parallel search for separators fulfilling some given predicate
 type Search struct {
 	H               *Graph
 	Edges           *Edges
@@ -154,7 +154,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	comps, _, _ := H.GetComponents(*sep)
 
 	foundCompLow := false
-	var comp_low Graph
+	var compLow Graph
 
 	// log.Printf("Components of sep %+v\n", comps)
 
@@ -163,9 +163,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	for i := range comps {
 		if comps[i].Len() > balancednessLimit {
 			foundCompLow = true
-			// comp_low_index = i //keep track of the index for composing comp_up later
-			comp_low = comps[i]
-			// compSp_low = compSps[i]
+			compLow = comps[i]
 		}
 	}
 
@@ -173,7 +171,7 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 		return false // a bad parent :(
 	}
 
-	vertCompLow := comp_low.Vertices()
+	vertCompLow := compLow.Vertices()
 	childχ := Inter(p.Child, vertCompLow)
 
 	if !Subset(Inter(vertCompLow, p.Conn), sep.Vertices()) {

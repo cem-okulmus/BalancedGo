@@ -49,18 +49,18 @@ type subEdges struct {
 }
 
 func getSubEdgeIterator(edges Edges, e Edge, k int) subEdges {
-	var h_edges []Edge
+	var HEdges []Edge
 
 	for j := range edges.Slice() {
 		inter := Inter(edges.Slice()[j].Vertices, e.Vertices)
 		if len(inter) > 0 && len(inter) < len(e.Vertices) {
-			h_edges = append(h_edges, Edge{Vertices: inter})
+			HEdges = append(HEdges, Edge{Vertices: inter})
 		}
 	}
 
-	source := removeDuplicateEdges(h_edges)
+	source := removeDuplicateEdges(HEdges)
 
-	sort.Slice(h_edges, func(i, j int) bool { return len(h_edges[i].Vertices) > len(h_edges[j].Vertices) })
+	sort.Slice(HEdges, func(i, j int) bool { return len(HEdges[i].Vertices) > len(HEdges[j].Vertices) })
 	var output subEdges
 	output.cache = make(map[uint32]struct{})
 

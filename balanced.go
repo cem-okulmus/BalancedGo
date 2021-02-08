@@ -112,12 +112,12 @@ func main() {
 	// algorithms  flags
 	localBal := flagSet.Bool("local", false, "Use local BalSep algorithm")
 	globalBal := flagSet.Bool("global", false, "Use global BalSep algorithm")
-	logK := flagSet.Bool("logk", false, "Use LogKDecomp algoritm")
-	logKHybrid := flagSet.Int("logkHybrid", 0, "Use DetK - LogK Hybrid algoritm. Choose which predicate to use")
-	detKTest := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
+	logK := flagSet.Bool("logk", false, "Use LogKDecomp algorithm")
+	logKHybrid := flagSet.Int("logkHybrid", 0, "Use DetK - LogK Hybrid algorithm. Choose which predicate to use")
+	detKFlag := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "Used in combination with \"det\": turns on local subedge handling")
-	balDetTest := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
-	seqBalDetTest := flagSet.Int("seqBalDet", 0, "Use sequential Hybrid BalSep - DetK algorithm.")
+	balDetFlag := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
+	seqBalDetFlag := flagSet.Int("seqBalDet", 0, "Use sequential Hybrid BalSep - DetK algorithm.")
 
 	// heuristic flags
 	heur := "1 ... Vertex Degree Ordering\n\t2 ... Max. Separator Ordering\n\t3 ... MCSO\n\t4 ... Edge Degree Ordering"
@@ -195,7 +195,7 @@ func main() {
 	}
 	logActive(*logging)
 
-	BalancedFactor := *balanceFactorFlag
+	BalFactor := *balanceFactorFlag
 
 	runtime.GOMAXPROCS(*numCPUs)
 
@@ -228,7 +228,7 @@ func main() {
 			break
 		case 2:
 			parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
-			heuristicMessage = "Using max seperator ordering as a heuristic"
+			heuristicMessage = "Using max separator ordering as a heuristic"
 			break
 		case 3:
 			parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
@@ -285,7 +285,7 @@ func main() {
 
 	}
 
-	// Add all subdedges to graph
+	// Add all subedges to graph
 	if *globalBal && !*computeSubedges {
 		parsedGraph = parsedGraph.ComputeSubEdges(*width)
 
@@ -315,32 +315,32 @@ func main() {
 	// Check for multiple flags
 	chosen := 0
 
-	if *balDetTest > 0 {
-		balDet := &BalDetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *balDetTest - 1}
+	if *balDetFlag > 0 {
+		balDet := &BalSepHybrid{K: *width, Graph: parsedGraph, BalFactor: BalFactor, Depth: *balDetFlag - 1}
 		solver = balDet
 		chosen++
 	}
 
-	if *seqBalDetTest > 0 {
-		seqBalDet := &SeqBalDetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, Depth: *seqBalDetTest - 1}
+	if *seqBalDetFlag > 0 {
+		seqBalDet := &SeqBalSepHybrid{K: *width, Graph: parsedGraph, BalFactor: BalFactor, Depth: *seqBalDetFlag - 1}
 		solver = seqBalDet
 		chosen++
 	}
 
-	if *detKTest {
-		det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor, SubEdge: *localBIP}
+	if *detKFlag {
+		det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalFactor, SubEdge: *localBIP}
 		solver = det
 		chosen++
 	}
 
 	if *logK {
-		logK := &LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		logK := &LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalFactor}
 		solver = logK
 		chosen++
 	}
 
 	if *logKHybrid > 0 {
-		logKHyb := &LogKHybrid{Graph: parsedGraph, K: *width, BalFactor: BalancedFactor}
+		logKHyb := &LogKHybrid{Graph: parsedGraph, K: *width, BalFactor: BalFactor}
 		logKHyb.Size = *meta
 
 		var pred HybridPredicate
@@ -364,13 +364,13 @@ func main() {
 	}
 
 	if *globalBal {
-		global := &BalSepGlobal{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor}
+		global := &BalSepGlobal{K: *width, Graph: parsedGraph, BalFactor: BalFactor}
 		solver = global
 		chosen++
 	}
 
 	if *localBal {
-		local := &BalSepLocal{K: *width, Graph: parsedGraph, BalFactor: BalancedFactor}
+		local := &BalSepLocal{K: *width, Graph: parsedGraph, BalFactor: BalFactor}
 		solver = local
 		chosen++
 	}
@@ -475,5 +475,4 @@ func main() {
 	}
 
 	fmt.Println("No algorithm or procedure selected.")
-
 }

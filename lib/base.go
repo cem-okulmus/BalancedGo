@@ -112,14 +112,14 @@ func Subset(as []int, bs []int) bool {
 	if len(as) == 0 {
 		return true
 	}
-	encountered_b := make(map[int]struct{})
+	encounteredB := make(map[int]struct{})
 	var Empty struct{}
 	for _, b := range bs {
-		encountered_b[b] = Empty
+		encounteredB[b] = Empty
 	}
 
 	for _, a := range as {
-		if _, ok := encountered_b[a]; !ok {
+		if _, ok := encounteredB[a]; !ok {
 			return false
 		}
 	}

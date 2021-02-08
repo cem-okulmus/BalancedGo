@@ -52,7 +52,7 @@ func GetMSCOrder(edges Edges) Edges {
 	return NewEdges(selected)
 }
 
-// GetMaxSepOrdering orders the edges by how much they increase shortest paths within the hypergraph, using basic Floyd-Warschall (using the primal graph)
+// GetMaxSepOrder orders the edges by how much they increase shortest paths within the hypergraph, using basic Floyd-Warschall (using the primal graph)
 func GetMaxSepOrder(edges Edges) Edges {
 	if edges.Len() <= 1 {
 		return edges
@@ -89,10 +89,10 @@ func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
 
 	for _, n := range e.Vertices {
 		for _, m := range e.Vertices {
-			n_index, _ := order[n]
-			m_index, _ := order[m]
-			if n_index != m_index {
-				output[n_index][m_index] = 1
+			nIndex, _ := order[n]
+			mIndex, _ := order[m]
+			if nIndex != mIndex {
+				output[nIndex][mIndex] = 1
 			}
 		}
 	}

@@ -66,7 +66,7 @@ func (g Graph) Len() int {
 }
 
 // GetSubset produces a selection of edges from slice of integers s
-// used as indices. This is used to select new potential separatos.
+// used as indices. This is used to select new potential separators.
 // Note that special edges are ignored here, since they should never be
 // considered when choosing a separator
 func GetSubset(edges Edges, s []int) Edges {
@@ -198,7 +198,7 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 	edgeToComp := make(map[int]int)
 
 	// Store the components as graphs
-	for k, _ := range comps {
+	for k := range comps {
 		slice := comps[k]
 		for i := range slice {
 			edgeToComp[slice[i].Name] = len(outputG)
@@ -207,7 +207,7 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 		outputG = append(outputG, g)
 	}
 
-	for k, _ := range compsSp {
+	for k := range compsSp {
 		_, ok := comps[k]
 		if ok {
 			continue
@@ -265,7 +265,7 @@ func CutEdges(edges Edges, vertices []int) Edges {
 			// if len(inter) < len(edges.Slice()[i].Vertices) {
 
 			//  var mux sync.Mutex
-			//  mux.Lock() // ensure that hash is computed only on one gorutine at a time
+			//  mux.Lock() // ensure that hash is computed only on one goroutine at a time
 			//  name = encode
 			//  m[encode] = m[edges.Slice()[i].Name] + "'"
 			//  encode++

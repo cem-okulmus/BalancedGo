@@ -60,7 +60,7 @@ func (e *Edges) Hash() uint64 {
 	}
 	var output uint64
 
-	e.hashMux.Lock() // ensure that hash is computed only on one gorutine at a time
+	e.hashMux.Lock() // ensure that hash is computed only on one goroutine at a time
 	if e.hash == nil {
 		// cpy := make([]Edge, len(e.slice))
 		// copy(cpy, e.slice)

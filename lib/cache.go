@@ -17,6 +17,19 @@ type Cache struct {
 	once     sync.Once
 }
 
+func (c *Cache) CopyRef(other *Cache) {
+	c.cacheMux.RLock()
+	defer c.cacheMux.RUnlock()
+
+	if c.cache == nil { // to be sure only an initialised cache is copied
+		c.Init()
+	}
+
+	other.cache = c.cache
+	other.cacheMux = c.cacheMux
+	other.once.Do(func() {}) // if cache is copied, it's assumed to already be initialised, so once is pre-fired here
+}
+
 // Init needs to be called to initialise the cache
 func (c *Cache) Init() {
 	c.once.Do(c.initFunction)
@@ -41,7 +54,7 @@ func (c *Cache) Len() int {
 	return len(c.cache)
 }
 
-// AddPositive adds a seperator sep and subgraph comp as a known successor case
+// AddPositive adds a separator sep and subgraph comp as a known successor case
 // TODO: not really used and tested
 func (c *Cache) AddPositive(sep Edges, comp Graph) {
 	c.cacheMux.Lock()
@@ -57,7 +70,7 @@ func (c *Cache) AddPositive(sep Edges, comp Graph) {
 	c.cacheMux.Unlock()
 }
 
-// AddNegative adds a seperator sep and subgraph comp as a known failure case
+// AddNegative adds a separator sep and subgraph comp as a known failure case
 func (c *Cache) AddNegative(sep Edges, comp Graph) {
 	c.cacheMux.Lock()
 	defer c.cacheMux.Unlock()
@@ -68,7 +81,7 @@ func (c *Cache) AddNegative(sep Edges, comp Graph) {
 		var newCache compCache
 		c.cache[sep.Hash()] = &newCache
 	}
-	// fmt.Println("Addding negative, current length of cache", len(c.cache))
+	// fmt.Println("Adding negative, current length of cache", len(c.cache))
 
 	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
 }
@@ -78,11 +91,11 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
-	//check chache for previous encounters
+	//check cache for previous encounters
 
 	compCachePrev, ok := c.cache[sep.Hash()]
 
-	if !ok { // sep not encountered befoer
+	if !ok { // sep not encountered before
 		return false
 	}
 
@@ -101,7 +114,7 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 	return false
 }
 
-// CheckNegative checks for a separator sep and a subgraph whether it is a known successor case
+// CheckPositive checks for a separator sep and a subgraph whether it is a known successor case
 // TODO: not really used and tested
 func (c *Cache) CheckPositive(sep Edges, comp Graph) bool {
 	c.cacheMux.RLock()

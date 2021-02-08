@@ -116,7 +116,7 @@ func nextCombinationStep(s []int, n, k, step int) (bool, int) {
 // panic. The value returned by Combination is only changed during calls to Next.
 //
 // Step simply advances the iterator multiple steps at a time
-// Returns the number of steps perfomed
+// Returns the number of steps performed
 func (c *CombinationIterator) advance(step int) (bool, int) {
 	if c.empty {
 		return false, 0
@@ -207,23 +207,20 @@ func (c CombinationIterator) GetPercentage() float32 {
 	progressPresent := combinatorialOrder(c.combination) * 1.0
 
 	if !c.extended {
-
 		return float32(progressPresent) / float32(binomial(c.n, c.k))
-	} else {
-
-		allCombinations := 0
-		progressPast := 0
-		k := c.oldK
-
-		for k >= 1 {
-			allCombinations = allCombinations + binomial(c.n, k)
-			k = k - 1
-
-			if k > c.k {
-				progressPast = progressPast + binomial(c.n, k)
-			}
-		}
-
-		return (float32(progressPresent) + float32(progressPast)) / float32(allCombinations)
 	}
+
+	allCombinations := 0
+	progressPast := 0
+	k := c.oldK
+
+	for k >= 1 {
+		allCombinations = allCombinations + binomial(c.n, k)
+		k = k - 1
+		if k > c.k {
+			progressPast = progressPast + binomial(c.n, k)
+		}
+	}
+
+	return (float32(progressPresent) + float32(progressPast)) / float32(allCombinations)
 }

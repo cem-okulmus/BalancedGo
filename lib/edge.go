@@ -156,11 +156,11 @@ func (e Edges) Less(i, j int) bool {
 		return false
 	} else {
 		for k := 0; k < len(e.slice[i].Vertices); k++ {
-			k_i := e.slice[i].Vertices[k]
-			k_j := e.slice[j].Vertices[k]
+			ki := e.slice[i].Vertices[k]
+			kj := e.slice[j].Vertices[k]
 
-			if k_i != k_j {
-				return k_i < k_j
+			if ki != kj {
+				return ki < kj
 			}
 		}
 	}
@@ -281,14 +281,14 @@ func (e *Edges) Vertices() []int {
 func (e *Edges) Diff(other Edges) Edges {
 	var output []Edge
 
-	encountered_other := make(map[int]struct{})
+	encounteredOther := make(map[int]struct{})
 
 	for i := range other.slice {
-		encountered_other[other.slice[i].Name] = Empty
+		encounteredOther[other.slice[i].Name] = Empty
 	}
 
 	for j := range e.slice {
-		if _, ok := encountered_other[e.slice[j].Name]; !ok {
+		if _, ok := encounteredOther[e.slice[j].Name]; !ok {
 			output = append(output, e.slice[j])
 		}
 	}

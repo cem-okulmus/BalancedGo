@@ -34,7 +34,7 @@ type ParseGraph struct {
 	encoding map[string]int
 }
 
-// GetGraph parses a string in Hyperbench format into a graph
+// GetGraph parses a string in HyperBench format into a graph
 func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`
@@ -238,14 +238,14 @@ func (n Node) attachChild(target int, child Node) Node {
 
 // Implement Decomp parsing  (via JSON format)
 
-type decompJson struct {
-	root nodeJson
+type decompJSON struct {
+	root nodeJSON
 }
 
-type nodeJson struct {
+type nodeJSON struct {
 	bag      []string
 	cover    []string
-	children []nodeJson
+	children []nodeJSON
 }
 
 type arc struct {
@@ -333,22 +333,22 @@ func GetDecompGML(input string, graph Graph, encoding map[string]int) Decomp {
 
 			// extract edge cover and bag from label
 
-			re_cover := regexp.MustCompile(`{(.*)}{.*}`)
-			re_bag := regexp.MustCompile(`{.*}{(.*)}`)
+			reCover := regexp.MustCompile(`{(.*)}{.*}`)
+			reBag := regexp.MustCompile(`{.*}{(.*)}`)
 
-			match_cover := re_cover.FindStringSubmatch(nodeLabels["label"])
-			match_bag := re_bag.FindStringSubmatch(nodeLabels["label"])
-			if match_cover == nil || match_bag == nil {
+			matchCover := reCover.FindStringSubmatch(nodeLabels["label"])
+			matchBag := reBag.FindStringSubmatch(nodeLabels["label"])
+			if matchCover == nil || matchBag == nil {
 				log.Panicln("Label of node ", nodeLabels["id"], " not properly formatted: ", nodeLabels["label"], ".")
 			}
 
 			var bag []int
-			for _, v := range strings.Split(match_bag[1], ",") {
+			for _, v := range strings.Split(matchBag[1], ",") {
 				bag = append(bag, encoding[v])
 			}
 
 			var cover []Edge
-			for _, e := range strings.Split(match_cover[1], ",") {
+			for _, e := range strings.Split(matchCover[1], ",") {
 				out := extractEdge(edges, encoding[e])
 				if reflect.DeepEqual(out, Edge{}) {
 					log.Panicln("Can't find edge ", e)

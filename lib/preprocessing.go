@@ -12,7 +12,7 @@ import (
 // A GYÖReduct (that's short for GYÖ (Graham - Yu - Özsoyoğlu) Reduction )
 // consists of a list of operations that simplify a graph by 1) removing isolated
 // vertices or 2) removing edges fully contained in other edges (and applying
-// these two operations iteratively, until convergance)
+// these two operations iteratively, until convergence)
 type GYÖReduct interface {
 	isGYÖ()
 }
@@ -22,7 +22,7 @@ type edgeOp struct {
 	parent  Edge
 }
 
-func (_ edgeOp) isGYÖ() {}
+func (edgeOp) isGYÖ() {}
 
 func (e edgeOp) String() string {
 	mutex.RLock()
@@ -35,7 +35,7 @@ type vertOp struct {
 	edge   Edge
 }
 
-func (_ vertOp) isGYÖ() {}
+func (vertOp) isGYÖ() {}
 
 func (v vertOp) String() string {
 	mutex.RLock()
@@ -83,14 +83,14 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 			}
 			vertices = append(vertices, v)
 		}
-		nu_e1 := Edge{Name: e1.Name, Vertices: vertices}
+		nuE1 := Edge{Name: e1.Name, Vertices: vertices}
 
 		for _, remV := range remVertices {
-			ops = append(ops, vertOp{vertex: remV, edge: nu_e1})
+			ops = append(ops, vertOp{vertex: remV, edge: nuE1})
 		}
 
 		if len(vertices) > 0 {
-			edges = append(edges, nu_e1)
+			edges = append(edges, nuE1)
 		}
 
 	}
@@ -261,7 +261,7 @@ func (g Graph) getType(vertex int) *big.Int {
 	return output
 }
 
-// TypeCollapse performs type collapse on the graph, the mapping that's also output can be used 
+// TypeCollapse performs type collapse on the graph, the mapping that's also output can be used
 // to restore the original hypergraph.
 //
 // Possible optimization: When computing the distances, use the matrix to speed up type detection
@@ -342,10 +342,8 @@ func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
 
 	if !found {
 		return Node{}, false
-	} else {
-		return n, true
 	}
-
+	return n, true
 }
 
 // RestoreTypes can restore any performed Type reductions given a mapping of the reductions

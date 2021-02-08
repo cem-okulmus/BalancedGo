@@ -17,13 +17,14 @@ func (d Decomp) String() string {
 	return d.Root.String()
 }
 
+// RestoreSubedges replaces any ad-hoc subedge with actual edges occurring in the graph
 func (d *Decomp) RestoreSubedges() {
 	newRoot := d.Root.restoreEdges(d.Graph.Edges)
 
 	d.Root = newRoot
 }
 
-// Correct checks if a decomp fullfills the properties of a GHD when given a hypergraph g as input.
+// Correct checks if a decomp full fills the properties of a GHD when given a hypergraph g as input.
 // It also checks for the special condition of HDs, though it merely prints a warning if it is not satisfied,
 // the output is not affected by this additional check.
 func (d Decomp) Correct(g Graph) bool {

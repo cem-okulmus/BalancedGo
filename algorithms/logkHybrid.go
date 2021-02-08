@@ -1,6 +1,6 @@
-// Hybrid algorithm of log-k-decomp and det-k-decomp.
-
 package algorithms
+
+// Hybrid algorithm of log-k-decomp and det-k-decomp.
 
 import (
 	"fmt"
@@ -11,10 +11,12 @@ import (
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
 
+// HybridPredicate is used to determine when to switch from LogKDecomp to using DetKDecomp
 type HybridPredicate = func(H Graph, K int) bool
 
-type RecursiveCall = func(H Graph, Conn []int, allwowed Edges) Decomp
+type recursiveCall = func(H Graph, Conn []int, allwowed Edges) Decomp
 
+// LogKHybrid implements a hybridised algorithm, using LogKDecomp and DetKDecomp in tandem
 type LogKHybrid struct {
 	Graph     Graph
 	K         int
@@ -24,7 +26,7 @@ type LogKHybrid struct {
 	Size      int
 }
 
-// will match the behaviour of BalDetK, with Depth 1
+// OneRoundPred will match the behaviour of BalDetK, with Depth 1
 func (l *LogKHybrid) OneRoundPred(H Graph, K int) bool {
 
 	// log.Println("One Round Predicate")
@@ -32,7 +34,7 @@ func (l *LogKHybrid) OneRoundPred(H Graph, K int) bool {
 	return true
 }
 
-// checks the number of edges of the subgraph
+// NumberEdgesPred checks the number of edges of the subgraph
 func (l *LogKHybrid) NumberEdgesPred(H Graph, K int) bool {
 
 	output := H.Edges.Len() < l.Size
@@ -45,7 +47,7 @@ func (l *LogKHybrid) NumberEdgesPred(H Graph, K int) bool {
 	return output
 }
 
-// checks the sum over all edges of the subgraph
+// SumEdgesPred checks the sum over all edges of the subgraph
 func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
 	count := 0
 
@@ -54,8 +56,6 @@ func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
 	}
 
 	output := count < l.Size
-
-	
 
 	if output {
 		// log.Println("Predicate SumEdgesPred")
@@ -66,7 +66,7 @@ func (l *LogKHybrid) SumEdgesPred(H Graph, K int) bool {
 
 }
 
-// checks a complex formula over the subgraph and used K
+// ETimesKDivAvgEdgePred checks a complex formula over the subgraph and used K
 func (l *LogKHybrid) ETimesKDivAvgEdgePred(H Graph, K int) bool {
 
 	count := 0
@@ -88,39 +88,42 @@ func (l *LogKHybrid) ETimesKDivAvgEdgePred(H Graph, K int) bool {
 
 }
 
+// SetWidth sets the current width parameter of the algorithm
 func (l *LogKHybrid) SetWidth(K int) {
 	l.K = K
 }
 
-func (l LogKHybrid) Name() string {
+// Name returns the name of the algorithm
+func (l *LogKHybrid) Name() string {
 	return "LogKHybrid"
 }
 
-func (l LogKHybrid) FindDecomp() Decomp {
+// FindDecomp finds a decomp
+func (l *LogKHybrid) FindDecomp() Decomp {
 	// l.cache = make(map[uint32]*CompCache)
 	l.cache.Init()
-	return l.findHD(l.Graph, []int{}, l.Graph.Edges)
+	return l.findDecomp(l.Graph, []int{}, l.Graph.Edges)
 }
 
-func (l LogKHybrid) FindDecompGraph(Graph Graph) Decomp {
+// FindDecompGraph finds a decomp, for an explicit graph
+func (l *LogKHybrid) FindDecompGraph(Graph Graph) Decomp {
 	l.Graph = Graph
 	return l.FindDecomp()
 }
 
-func (l LogKHybrid) DetKWrapper(H Graph, Conn []int, allwowed Edges) Decomp {
+func (l *LogKHybrid) detKWrapper(H Graph, Conn []int, allwowed Edges) Decomp {
 
 	det := DetKDecomp{K: l.K, Graph: Graph{Edges: allwowed}, BalFactor: l.BalFactor, SubEdge: false}
 
 	// TODO: reuse the same cache as for Logk?
 	// det.Cache.Init()
-	det.Cache = l.cache
+	l.cache.CopyRef(&det.cache)
 
 	return det.findDecomp(H, Conn)
-
 }
 
 // determine whether we have reached a (positive or negative) base case
-func (l LogKHybrid) baseCaseCheck(lenE int, lenSp int, lenAE int) bool {
+func (l *LogKHybrid) baseCaseCheck(lenE int, lenSp int, lenAE int) bool {
 	if lenE <= l.K && lenSp == 0 {
 		return true
 	}
@@ -137,7 +140,7 @@ func (l LogKHybrid) baseCaseCheck(lenE int, lenSp int, lenAE int) bool {
 	return false
 }
 
-func (l LogKHybrid) baseCase(H Graph, lenAE int) Decomp {
+func (l *LogKHybrid) baseCase(H Graph, lenAE int) Decomp {
 	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
 	var output Decomp
 
@@ -165,7 +168,7 @@ func (l LogKHybrid) baseCase(H Graph, lenAE int) Decomp {
 	return output
 }
 
-func (l LogKHybrid) findHD(H Graph, Conn []int, allowedFull Edges) Decomp {
+func (l *LogKHybrid) findDecomp(H Graph, Conn []int, allowedFull Edges) Decomp {
 
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	// log.Printf("Current Allowed Edges: %v\n", allowedFull)
@@ -181,18 +184,18 @@ func (l LogKHybrid) findHD(H Graph, Conn []int, allowedFull Edges) Decomp {
 	}
 
 	// Deterime the function to use for the recursive calls
-	var recCall RecursiveCall
+	var recCall recursiveCall
 
 	if l.Predicate(H, l.K) {
-		recCall = l.DetKWrapper
+		recCall = l.detKWrapper
 	} else {
-		recCall = l.findHD
+		recCall = l.findDecomp
 	}
 
 	//all vertices within (H ∪ Sp)
-	Vertices_H := append(H.Vertices())
+	verticesH := append(H.Vertices())
 
-	allowed := FilterVertices(allowedFull, Vertices_H)
+	allowed := FilterVertices(allowedFull, verticesH)
 
 	// Set up iterator for child
 
@@ -216,9 +219,9 @@ CHILD:
 			// log.Printf("Child-Root cover chosen: %v\n", Graph{Edges: childλ})
 			// log.Printf("Comps of Child-Root: %v\n", comps_c)
 
-			childχ := Inter(childλ.Vertices(), Vertices_H)
+			childχ := Inter(childλ.Vertices(), verticesH)
 
-			// check chache for previous encounters
+			// check cache for previous encounters
 			if l.cache.CheckNegative(childλ, comps_c) {
 				// log.Println("Skipping a child sep", childχ)
 				continue CHILD
@@ -265,28 +268,25 @@ CHILD:
 			// log.Println("Parent components ", comps_p)
 
 			foundLow := false
-			var comp_low_index int
-			var comp_low Graph
+			var compLowIndex int
+			var compLow Graph
 
 			// Check if parent is un-balanced
 			for i := range comps_p {
 				if comps_p[i].Len() > H.Len()/2 {
 					foundLow = true
-					comp_low_index = i //keep track of the index for composing comp_up later
-					comp_low = comps_p[i]
+					compLowIndex = i //keep track of the index for composing comp_up later
+					compLow = comps_p[i]
 				}
 			}
 			if !foundLow {
 				fmt.Println("Current SubGraph, ", H)
 				fmt.Println("Conn ", PrintVertices(Conn))
-
 				fmt.Printf("Current Allowed Edges: %v\n", allowed)
 				fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
-
 				fmt.Println("Child ", childλ, "  ", PrintVertices(childλ.Vertices()))
 				fmt.Println("Comps of child ", comps_c)
 				fmt.Println("parent ", parentλ, "( ", parentalSearch.Result, " ) from the set: ", allowedParent)
-
 				fmt.Println("Comps of p: ")
 				for i := range comps_p {
 					fmt.Println("Component: ", comps_p[i], " Len: ", comps_p[i].Len())
@@ -296,17 +296,17 @@ CHILD:
 				log.Panicln("the parallel search didn't actually find a valid parent")
 			}
 
-			vertCompLow := comp_low.Vertices()
+			vertCompLow := compLow.Vertices()
 			childχ := Inter(childλ.Vertices(), vertCompLow)
 
-			// determine which componenents of child are inside comp_low
+			// determine which components of child are inside comp_low
 
 			//CHECK IF THIS ACTUALLY MAKES A DIFFERENCE
-			comps_c, _, _ := comp_low.GetComponents(childλ)
+			comps_c, _, _ := compLow.GetComponents(childλ)
 
 			//omitting the check for balancedness as it's guaranteed to still be conserved at this point
 
-			// check chache for previous encounters
+			// check cache for previous encounters
 			if l.cache.CheckNegative(childλ, comps_c) {
 				// log.Println("Skipping a child sep", childχ)
 				continue PARENT
@@ -325,9 +325,9 @@ CHILD:
 
 			//Computing upper component in parallel
 
-			ch_up := make(chan Decomp)
+			chanUp := make(chan Decomp)
 
-			var comp_up Graph
+			var compUp Graph
 			var decompUp Decomp
 			var specialChild Edges
 			tempEdgeSlice := []Edge{}
@@ -335,7 +335,7 @@ CHILD:
 
 			tempEdgeSlice = append(tempEdgeSlice, isolatedEdges...)
 			for i := range comps_p {
-				if i != comp_low_index {
+				if i != compLowIndex {
 					tempEdgeSlice = append(tempEdgeSlice, comps_p[i].Edges.Slice()...)
 					tempSpecialSlice = append(tempSpecialSlice, comps_p[i].Special...)
 				}
@@ -346,47 +346,47 @@ CHILD:
 
 			// if no comps_p, other than comp_low, just use parent as is
 			if len(comps_p) == 1 {
-				comp_up.Edges = parentλ
+				compUp.Edges = parentλ
 
 				// adding new Special Edge to connect Child to comp_up
-				comp_up.Special = append(comp_up.Special, specialChild)
+				compUp.Special = append(compUp.Special, specialChild)
 
-				decompTemp := Decomp{Graph: comp_up, Root: Node{Bag: Inter(parentλ.Vertices(), Vertices_H),
+				decompTemp := Decomp{Graph: compUp, Root: Node{Bag: Inter(parentλ.Vertices(), verticesH),
 					Cover: parentλ, Children: []Node{Node{Bag: childχ, Cover: childλ}}}}
 
 				go func(decomp Decomp) {
-					ch_up <- decomp
+					chanUp <- decomp
 				}(decompTemp)
 
 			} else if len(tempEdgeSlice) > 0 { // otherwise compute decomp for comp_up
 
-				comp_up.Edges = NewEdges(tempEdgeSlice)
-				comp_up.Special = tempSpecialSlice
+				compUp.Edges = NewEdges(tempEdgeSlice)
+				compUp.Special = tempSpecialSlice
 
 				// adding new Special Edge to connect Child to comp_up
-				comp_up.Special = append(comp_up.Special, specialChild)
+				compUp.Special = append(compUp.Special, specialChild)
 
 				// log.Println("Upper component:", comp_up)
 
 				//Reducing the allowed edges
-				allowedReduced := allowedFull.Diff(comp_low.Edges)
+				allowedReduced := allowedFull.Diff(compLow.Edges)
 
 				go func(comp_up Graph, Conn []int, allowedReduced Edges) {
-					ch_up <- recCall(comp_up, Conn, allowedReduced)
-				}(comp_up, Conn, allowedReduced)
+					chanUp <- recCall(comp_up, Conn, allowedReduced)
+				}(compUp, Conn, allowedReduced)
 
 			}
 
 			// Parallel Recursive Calls:
 
-			ch := make(chan DecompInt)
+			ch := make(chan decompInt)
 			var subtrees []Node
 
 			for x := range comps_c {
 				Conn_x := Inter(comps_c[x].Vertices(), childχ)
 
 				go func(x int, comps_c []Graph, Conn_x []int, allowedFull Edges) {
-					var out DecompInt
+					var out decompInt
 					out.Decomp = recCall(comps_c[x], Conn_x, allowedFull)
 					out.Int = x
 					ch <- out
@@ -411,7 +411,7 @@ CHILD:
 					// log.Printf("Produced Decomp: %+v\n", decomp)
 					subtrees = append(subtrees, decompInt.Decomp.Root)
 
-				case decompUpChan := <-ch_up:
+				case decompUpChan := <-chanUp:
 
 					if reflect.DeepEqual(decompUpChan, Decomp{}) {
 
@@ -424,19 +424,14 @@ CHILD:
 					if !Subset(Conn, decompUpChan.Root.Bag) {
 						fmt.Println("Current SubGraph, ", H)
 						fmt.Println("Conn ", PrintVertices(Conn))
-
-						log.Printf("Current Allowed Edges: %v\n", allowed)
-						log.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
-
+						fmt.Printf("Current Allowed Edges: %v\n", allowed)
+						fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 						fmt.Println("Child ", childλ, "  ", PrintVertices(childλ.Vertices()))
 						fmt.Println("Comps of child ", comps_c)
 						fmt.Println("parent ", parentλ, "( ", parentalSearch.Result, " ) from the set: ", allowedParent)
-						fmt.Println("comp_up ", comp_up, " V(comp_up) ", PrintVertices(comp_up.Vertices()))
-
+						fmt.Println("comp_up ", compUp, " V(comp_up) ", PrintVertices(compUp.Vertices()))
 						fmt.Println("Decomp up:  ", decompUpChan)
-
 						fmt.Println("Comps of p", comps_p)
-
 						fmt.Println("Compare against PredSearch: ", predPar.Check(&H, &parentλ, l.BalFactor))
 
 						log.Panicln("Conn not covered in parent, Wait, what?")
@@ -475,5 +470,4 @@ CHILD:
 
 	// exhausted search space
 	return Decomp{}
-
 }

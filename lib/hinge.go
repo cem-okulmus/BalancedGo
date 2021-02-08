@@ -14,8 +14,8 @@ type hingeEdge struct {
 	e Edge
 }
 
-// Algorithm_h is strict generalisation on the Algorithm interface.
-type Algorithm_h interface {
+// AlgorithmH is strict generalisation on the Algorithm interface.
+type AlgorithmH interface {
 	Name() string
 	FindDecomp() Decomp
 	FindDecompGraph(G Graph) Decomp
@@ -229,7 +229,7 @@ func (n Node) RerootEdge(edge []int) Node {
 
 // DecompHinge computes a decomposition of the original input graph,
 // using the hingetree to speed up the computation
-func (h Hingetree) DecompHinge(alg Algorithm_h, g Graph) Decomp {
+func (h Hingetree) DecompHinge(alg AlgorithmH, g Graph) Decomp {
 	h.decomp = alg.FindDecompGraph(h.hinge)
 
 	if reflect.DeepEqual(h.decomp, Decomp{}) {
