@@ -17,7 +17,7 @@ type Cache struct {
 	once     sync.Once
 }
 
-// CopyRef allows for save copying of a cache by reference, not value
+// CopyRef allows for safe copying of a cache by reference, not value
 func (c *Cache) CopyRef(other *Cache) {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
