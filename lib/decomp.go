@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // A Decomp (short for Decomposition) consists of a labelled tree which
@@ -19,6 +20,10 @@ func (d Decomp) String() string {
 
 // RestoreSubedges replaces any ad-hoc subedge with actual edges occurring in the graph
 func (d *Decomp) RestoreSubedges() {
+	if reflect.DeepEqual(*d, Decomp{}) { // don't change the empty decomp
+		return
+	}
+
 	newRoot := d.Root.restoreEdges(d.Graph.Edges)
 
 	d.Root = newRoot
@@ -28,6 +33,10 @@ func (d *Decomp) RestoreSubedges() {
 // It also checks for the special condition of HDs, though it merely prints a warning if it is not satisfied,
 // the output is not affected by this additional check.
 func (d Decomp) Correct(g Graph) bool {
+
+	if reflect.DeepEqual(d, Decomp{}) { // empty Decomp is always false
+		return false
+	}
 
 	//must be a decomp of same graph
 	if !d.Graph.equal(g) {
