@@ -53,16 +53,7 @@ clean:
 	@-rm $(GOBIN)/$(PROJECTNAME) 2> /dev/null
 	@-$(MAKE) go-clean
 
-go-compile: go-get go-build
-
-
-go-generate:
-	@echo "  >  Generating dependency files..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go generate $(generate)
-
-go-get:
-	@echo "  >  Checking if there is any missing dependencies..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get $(get)
+go-compile: go-build
 
 go-install:
 	go install $(LDFLAGS)
