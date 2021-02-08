@@ -23,7 +23,6 @@ MAKEFLAGS += --silent
 go-build:
 	@echo "  >  Building binary..."
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build $(LDFLAGS) -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
-	@go test ./test
 
 ## install: Install missing dependencies. Runs `go get` internally. e.g; make install get=github.com/foo/bar
 install: go-install
