@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/google/go-cmp/cmp"
 )
 
 func check(e error) {
@@ -76,7 +76,7 @@ func TestIntHash(t *testing.T) {
 			temp1 = append(temp1, rand.Intn(100))
 		}
 
-		if reflect.DeepEqual(temp1, temp2) {
+		if cmp.Equal(temp1, temp2) {
 			continue
 		}
 
@@ -185,7 +185,7 @@ func TestEdgeHash(t *testing.T) {
 			temp2 = append(temp2, r.Intn(100))
 		}
 
-		if reflect.DeepEqual(temp1, temp2) {
+		if cmp.Equal(temp1, temp2) {
 			continue
 		}
 
@@ -299,7 +299,7 @@ func TestEdgesHash(t *testing.T) {
 
 		}
 
-		if reflect.DeepEqual(temp, temp2) {
+		if cmp.Equal(temp, temp2) {
 			continue
 		}
 
@@ -444,7 +444,7 @@ func TestGraphHash(t *testing.T) {
 
 		}
 
-		if reflect.DeepEqual(temp, temp2) {
+		if cmp.Equal(temp, temp2) {
 			continue
 		}
 

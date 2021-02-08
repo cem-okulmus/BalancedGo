@@ -31,12 +31,6 @@ go-build:
 ## install: Install missing dependencies. Runs `go get` internally. e.g; make install get=github.com/foo/bar
 install: go-install
 
-
-## watch: Run given command when code changes. e.g; make watch run="echo 'hey'"
-watch:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) yolo -i . -e vendor -e bin -c "$(run)"
-
-
 ## compile: Compile the binary.
 compile:
 	@-touch $(STDERR)
@@ -70,4 +64,3 @@ help: Makefile
 	@echo
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
-
