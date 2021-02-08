@@ -17,9 +17,6 @@ LDFLAGS=-ldflags "-s -w  -X=main.Date=$(DATE) -X=main.Version=$(VERSION) -X=main
 # Redirect error output to a file, so we can show it in development mode.
 STDERR := /tmp/.$(PROJECTNAME)-stderr.txt
 
-# PID file will keep the process id of the server
-PID := /tmp/.$(PROJECTNAME).pid
-
 # Make is verbose in Linux. Make it silent.
 MAKEFLAGS += --silent
 
@@ -37,10 +34,6 @@ compile:
 	@-rm $(STDERR)
 	@-$(MAKE) -s go-compile 2> $(STDERR)
 	@cat $(STDERR) | sed -e '1s/.*/\nError:\n/'  | sed 's/make\[.*/ /' | sed "/^/s/^/     /" 1>&2
-
-## exec: Run given command, wrapped with custom GOPATH. e.g; make exec run="go test ./..."
-exec:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) $(run)
 
 ## clean: Clean build files. Runs `go clean` internally.
 clean:
