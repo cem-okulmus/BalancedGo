@@ -2,8 +2,10 @@ package tests
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,19 +20,19 @@ func check(e error) {
 
 }
 
-// bla bla
+// TestIntHash provides a basic test for hashes of integers
 func TestIntHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
 	for x := 0; x < 1000; x++ {
-		arity := rand.Intn(100) + 1
+		arity := r.Intn(100) + 1
 
 		var vertices []int
 
 		for i := 0; i < arity; i++ {
-			vertices = append(vertices, rand.Intn(1000)+i)
+			vertices = append(vertices, r.Intn(1000)+i)
 		}
 
 		hash1 := lib.IntHash(vertices)
@@ -39,7 +41,7 @@ func TestIntHash(t *testing.T) {
 
 		hash2 := lib.IntHash(vertices)
 
-		newVal := rand.Intn(100) + len(vertices)
+		newVal := r.Intn(100) + len(vertices)
 		different := vertices[len(vertices)/2] != newVal
 		vertices[len(vertices)/2] = newVal
 
@@ -62,18 +64,17 @@ func TestIntHash(t *testing.T) {
 
 	for x := 0; x < 1000; x++ {
 
-		// arity1 := rand.Intn(100) + 1
-		arity := rand.Intn(20) + 1
+		arity := r.Intn(20) + 1
 
 		var temp1 []int
 		var temp2 []int
 
 		for i := 0; i < arity; i++ {
-			temp1 = append(temp1, rand.Intn(100))
+			temp1 = append(temp1, r.Intn(100))
 		}
 
 		for i := 0; i < arity; i++ {
-			temp1 = append(temp1, rand.Intn(100))
+			temp2 = append(temp2, r.Intn(100))
 		}
 
 		if cmp.Equal(temp1, temp2) {
@@ -92,15 +93,26 @@ func TestIntHash(t *testing.T) {
 
 }
 
+// BenchmarkSeparator uses a specific hypergraph
 func BenchmarkSeparator(b *testing.B) {
 
-	dat, err := ioutil.ReadFile("/home/cem/Desktop/scripts/BalancedGo/hypergraphs/Nonogram-007-table.xml.hg")
-	check(err)
+	// Get the data
+	resp, err := http.Get("http://hyperbench.dbai.tuwien.ac.at/download/hypergraph/655")
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, resp.Body)
+	if err != nil {
+		return
+	}
 
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	parsedGraph, _ := lib.GetGraph(string(dat))
+	parsedGraph, _ := lib.GetGraph(buf.String())
 
 	pred := lib.BalancedCheck{}
 
@@ -120,13 +132,14 @@ func BenchmarkSeparator(b *testing.B) {
 	}
 }
 
+// TestEdgeHash tests the hash function of Edge against collissions and stability under permutation
 func TestEdgeHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
 	for x := 0; x < 100; x++ {
-		arity := rand.Intn(100) + 1
+		arity := r.Intn(100) + 1
 
 		var vertices []int
 
@@ -171,7 +184,6 @@ func TestEdgeHash(t *testing.T) {
 
 	for x := 0; x < 1000; x++ {
 
-		// arity1 := rand.Intn(100) + 1
 		arity := r.Intn(20) + 1
 
 		var temp1 []int
@@ -205,6 +217,7 @@ func TestEdgeHash(t *testing.T) {
 
 }
 
+// TestEdgesHash tests the hash function of Edges against collissions and stability under permutation
 func TestEdgesHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
@@ -273,7 +286,6 @@ func TestEdgesHash(t *testing.T) {
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := rand.Intn(100) + 1
 			arity := r.Intn(20) + 1
 
 			var temp1a []int
@@ -287,7 +299,6 @@ func TestEdgesHash(t *testing.T) {
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := rand.Intn(100) + 1
 			arity := r.Intn(20) + 1
 
 			var temp1a []int
@@ -319,13 +330,17 @@ func TestEdgesHash(t *testing.T) {
 
 }
 
+// TestGraphHash tests the hash function of Graph against collissions and stability under permutation
 func TestGraphHash(t *testing.T) {
+
+	s := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s)
 
 	var Sp []lib.Edges
 
-	lengthSpeciale := rand.Intn(20) + 1
+	lengthSpeciale := r.Intn(20) + 1
 
-	lengthK := rand.Intn(5) + 1
+	lengthK := r.Intn(5) + 1
 
 	for c := 0; c < lengthSpeciale; c++ {
 
@@ -333,12 +348,12 @@ func TestGraphHash(t *testing.T) {
 
 		for o := 0; o < lengthK; o++ {
 
-			arity := rand.Intn(100) + 1
+			arity := r.Intn(100) + 1
 
 			var vertices []int
 
 			for i := 0; i < arity; i++ {
-				vertices = append(vertices, rand.Intn(1000)+i)
+				vertices = append(vertices, r.Intn(1000)+i)
 			}
 
 			slice = append(slice, lib.Edge{Vertices: vertices})
@@ -347,9 +362,6 @@ func TestGraphHash(t *testing.T) {
 		Sp = append(Sp, lib.NewEdges(slice))
 
 	}
-
-	s := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(s)
 
 	for x := 0; x < 100; x++ {
 
