@@ -9,15 +9,10 @@ import (
 	"strings"
 	"sync"
 
-	jsoniter "github.com/json-iterator/go"
-
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
 )
-
-//hook for the json-iterator library
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
 var mutex = sync.RWMutex{}
