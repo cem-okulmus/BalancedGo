@@ -12,14 +12,9 @@ import (
 	"runtime/pprof"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-
 	. "github.com/cem-okulmus/BalancedGo/algorithms"
 	. "github.com/cem-okulmus/BalancedGo/lib"
 )
-
-//hook for the json-iterator library
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func logActive(b bool) {
 	if b {

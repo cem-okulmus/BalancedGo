@@ -236,18 +236,6 @@ func (n Node) attachChild(target int, child Node) Node {
 	return Node{}
 }
 
-// Implement Decomp parsing  (via JSON format)
-
-type decompJSON struct {
-	root nodeJSON
-}
-
-type nodeJSON struct {
-	bag      []string
-	cover    []string
-	children []nodeJSON
-}
-
 type arc struct {
 	Source int
 	Target int
