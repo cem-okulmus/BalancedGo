@@ -5,6 +5,9 @@ BalancedGo
 # ignore hypergraphs
 hypergraphs/
 
+# ignore binaries
+bin/
+
 # ignore project files
 *.sublime-workspace
 *.sublime-project
