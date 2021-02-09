@@ -170,7 +170,9 @@ func (n Node) addLeaf(v vertOp) (Node, bool) {
 	edge := Edge{Name: v.edge.Name, Vertices: append(v.edge.Vertices, v.vertex)}
 
 	if Subset(v.edge.Vertices, n.Bag) {
-		n.Children = append(n.Children, Node{Bag: edge.Vertices, Cover: Edges{slice: []Edge{edge}}})
+
+		nuCover := NewEdges([]Edge{edge})
+		n.Children = append(n.Children, Node{Bag: edge.Vertices, Cover: nuCover})
 		// fmt.Println("Restoring node with  ", v.edge.FullString())
 		return n, true // Won't work without deep copy
 	}

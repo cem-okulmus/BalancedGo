@@ -212,12 +212,12 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 		if ok {
 			continue
 		}
-		g := Graph{Special: compsSp[k]}
+		g := Graph{Edges: NewEdges([]Edge{}), Special: compsSp[k]}
 		outputG = append(outputG, g)
 	}
 
 	for i := range isolatedSp {
-		g := Graph{Special: []Edges{isolatedSp[i]}}
+		g := Graph{Edges: NewEdges([]Edge{}), Special: []Edges{isolatedSp[i]}}
 		outputG = append(outputG, g)
 	}
 

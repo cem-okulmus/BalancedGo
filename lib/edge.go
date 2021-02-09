@@ -170,9 +170,9 @@ func (e Edges) Less(i, j int) bool {
 //using an algorithm from "SliceTricks" https://github.com/golang/go/wiki/SliceTricks
 func removeDuplicateEdges(elementsSlice []Edge) Edges {
 	if len(elementsSlice) == 0 {
-		return Edges{}
+		return NewEdges([]Edge{})
 	}
-	elements := Edges{slice: elementsSlice}
+	elements := NewEdges(elementsSlice)
 	sort.Sort(elements)
 
 	j := 0
