@@ -148,7 +148,7 @@ func main() {
 			Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
 		flagSet.VisitAll(func(f *flag.Flag) {
-			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" {
+			if f.Name != "width" && f.Name != "graph" && f.Name != "exact" && f.Name != "approx" {
 				return
 			}
 			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
@@ -162,7 +162,7 @@ func main() {
 
 		fmt.Println("\nOptional Arguments: ")
 		flagSet.VisitAll(func(f *flag.Flag) {
-			if f.Name == "width" || f.Name == "graph" || f.Name == "exact" {
+			if f.Name == "width" || f.Name == "graph" || f.Name == "exact" || f.Name == "approx" {
 				return
 			}
 			s := fmt.Sprintf("%T", f.Value) // used to get type of flag
@@ -179,6 +179,11 @@ func main() {
 
 	// END Command-Line Argument Parsing
 	// ==============================================
+
+	if *exact && (*approx > 0) {
+		fmt.Println("Cannot have exact and approx flags set at the same time. Make up your mind.")
+		return
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
