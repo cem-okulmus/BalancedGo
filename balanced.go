@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"reflect"
 	"runtime"
@@ -405,10 +404,8 @@ func main() {
 		} else if *approx > 0 {
 			ch := make(chan int, 1)
 			go func() {
-				m := parsedGraph.Edges.Len()
-				k := int(math.Ceil(float64(m) / 2))
 				decomp = solver.FindDecomp()
-				k = decomp.CheckWidth()
+				k := decomp.CheckWidth()
 				solved := false
 
 				var newDecomp Decomp
