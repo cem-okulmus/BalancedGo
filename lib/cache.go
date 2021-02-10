@@ -19,12 +19,12 @@ type Cache struct {
 
 // CopyRef allows for safe copying of a cache by reference, not value
 func (c *Cache) CopyRef(other *Cache) {
-	c.cacheMux.RLock()
-	defer c.cacheMux.RUnlock()
-
 	if c.cache == nil { // to be sure only an initialised cache is copied
 		c.Init()
 	}
+
+	c.cacheMux.RLock()
+	defer c.cacheMux.RUnlock()
 
 	other.cache = c.cache
 	other.cacheMux = c.cacheMux
@@ -117,17 +117,24 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 
 // CheckPositive checks for a separator sep and a subgraph whether it is a known successor case
 // TODO: not really used and tested
-func (c *Cache) CheckPositive(sep Edges, comp Graph) bool {
+func (c *Cache) CheckPositive(sep Edges, comps []Graph) bool {
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
-	compCachePrev, _ := c.cache[sep.Hash()]
-	for i := range compCachePrev.Fail {
-		if comp.Hash() == compCachePrev.Succ[i] {
-			//  log.Println("Comp ", comp, " known as negative for sep ", sep)
-			return true
-		}
+	compCachePrev, ok := c.cache[sep.Hash()]
 
+	if !ok { // sep not encountered before
+		return false
+	}
+
+	for j := range comps {
+		for i := range compCachePrev.Succ {
+			if comps[j].Hash() == compCachePrev.Succ[i] {
+				//  log.Println("Comp ", comp, " known as negative for sep ", sep)
+				return true
+			}
+
+		}
 	}
 
 	return false
