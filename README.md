@@ -1,4 +1,8 @@
 # BalancedGo
+[![Actions Status](https://github.com/cem-okulmus/BalancedGo/workflows/Go/badge.svg)](https://github.com/cem-okulmus/BalancedGo/actions)
+[![](https://img.shields.io/github/v/release/cem-okulmus/BalancedGo)](https://github.com/cem-okulmus/BalancedGo/releases/latest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cem-okulmus/BalancedGo)](https://goreportcard.com/report/github.com/cem-okulmus/BalancedGo)
+
 Compute Generalized Hypertree Decompositions via the use of balanced separators, in Go with a focus on parallelism. 
 
 Takes as input a hypergraph in [HyperBench format](http://hyperbench.dbai.tuwien.ac.at/downloads/manual.pdf) or [PACE Challenge 2019 format](https://pacechallenge.org/2019/htd/htd_format/), and a width parameter (positive non-zero integer). 
