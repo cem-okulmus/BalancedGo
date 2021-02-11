@@ -83,11 +83,11 @@ func (d *DetKDecomp) findDecomp(H lib.Graph, oldSep []int) lib.Decomp {
 	compVertices := lib.Diff(verticesCurrent, oldSep)
 	bound := lib.FilterVertices(d.Graph.Edges, conn)
 
-	// log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
-	// log.Printf("D Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
-	// log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
-	// log.Println("D Hedges ", H)
-	// log.Println("D Comp Vertices: ", PrintVertices(compVertices))
+	log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", lib.PrintVertices(oldSep), lib.PrintVertices(conn))
+	log.Printf("D Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
+	log.Printf("D Current SubGraph: %v ( %v edges) (hash: %v )\n", H, H.Edges.Len(), H.Edges.Hash())
+	log.Println("D Hedges ", H)
+	log.Println("D Comp Vertices: ", lib.PrintVertices(compVertices))
 
 	// Base case if H <= K
 	if H.Edges.Len() == 0 && len(H.Special) <= 1 {

@@ -4,7 +4,7 @@ package lib
 
 import "sync"
 
-// compCache stores the hashes of subgraphs for which a separator is known to have failed or suceeded
+// compCache stores the hashes of subgraphs for which a separator is known to have failed or succeeded
 type compCache struct {
 	Succ []uint64
 	Fail []uint64

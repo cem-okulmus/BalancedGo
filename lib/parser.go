@@ -38,7 +38,7 @@ func GetGraph(s string) (Graph, ParseGraph) {
     String = "\"" { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
     Number = [ "-" | "+" ] ("." | digit) { "." | digit } .
     Punct = "." | ";"  | "_" | ":" | "!" | "?" | "\\" | "/" | "=" | "[" | "]" | "'" | "$" | "<" | ">" | "-" | "+" | "~" | "@" | "*" | "\""  .
-    Paranthesis = "(" | ")"  | "," .
+    Parenthesis = "(" | ")"  | "," .
     Whitespace = " " | "\t" | "\n" | "\r" .
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .

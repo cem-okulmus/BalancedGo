@@ -59,7 +59,7 @@ func TestIntHash(t *testing.T) {
 
 	}
 
-	// Collission Test
+	// Collision Test
 	// generate two different integers and see if their hashs collide
 
 	for x := 0; x < 1000; x++ {
@@ -86,7 +86,7 @@ func TestIntHash(t *testing.T) {
 		hash2 := lib.IntHash(temp2)
 
 		if hash1 == hash2 {
-			fmt.Println("Collission", temp1, temp2)
+			fmt.Println("Collision", temp1, temp2)
 			t.Errorf("hash collision 2")
 		}
 	}
@@ -132,7 +132,7 @@ func BenchmarkSeparator(b *testing.B) {
 	}
 }
 
-// TestEdgeHash tests the hash function of Edge against collissions and stability under permutation
+// TestEdgeHash tests the hash function of Edge against collisions and stability under permutation
 func TestEdgeHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
@@ -179,7 +179,7 @@ func TestEdgeHash(t *testing.T) {
 
 	}
 
-	// Collission Test
+	// Collision Test
 	// generate two different edges and see if their hashs collide
 
 	for x := 0; x < 1000; x++ {
@@ -210,14 +210,14 @@ func TestEdgeHash(t *testing.T) {
 		hash2 := edge2.Hash()
 
 		if hash1 == hash2 {
-			fmt.Println("Collission", temp1, temp2)
+			fmt.Println("Collision", temp1, temp2)
 			t.Errorf("hash collision 4")
 		}
 	}
 
 }
 
-// TestEdgesHash tests the hash function of Edges against collissions and stability under permutation
+// TestEdgesHash tests the hash function of Edges against collisions and stability under permutation
 func TestEdgesHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
@@ -274,7 +274,7 @@ func TestEdgesHash(t *testing.T) {
 
 	}
 
-	// Collission Test
+	// Collision Test
 	// generate two different edges and see if their hashs collide
 
 	for x := 0; x < 1000; x++ {
@@ -323,14 +323,14 @@ func TestEdgesHash(t *testing.T) {
 		hash2 := edges2.Hash()
 
 		if hash1 == hash2 {
-			fmt.Println("Collission", temp, temp2)
+			fmt.Println("Collision", temp, temp2)
 			t.Errorf("hash collision 6")
 		}
 	}
 
 }
 
-// TestGraphHash tests the hash function of Graph against collissions and stability under permutation
+// TestGraphHash tests the hash function of Graph against collisions and stability under permutation
 func TestGraphHash(t *testing.T) {
 
 	s := rand.NewSource(time.Now().UnixNano())
@@ -418,7 +418,7 @@ func TestGraphHash(t *testing.T) {
 
 	}
 
-	// Collission Test
+	// Collision Test
 	// generate two different edges and see if their hashs collide
 
 	for x := 0; x < 1000; x++ {
@@ -430,7 +430,6 @@ func TestGraphHash(t *testing.T) {
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := r.Intn(100) + 1
 			arity := r.Intn(20) + 1
 
 			var temp1a []int
@@ -444,7 +443,6 @@ func TestGraphHash(t *testing.T) {
 
 		for j := 0; j < length; j++ {
 
-			// arity1 := r.Intn(100) + 1
 			arity := r.Intn(20) + 1
 
 			var temp1a []int
@@ -471,7 +469,7 @@ func TestGraphHash(t *testing.T) {
 		hash2 := graph5.Hash()
 
 		if hash1 == hash2 {
-			fmt.Println("Collission", temp, temp2)
+			fmt.Println("Collision", temp, temp2)
 			t.Errorf("hash collision 9")
 		}
 	}

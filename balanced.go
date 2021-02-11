@@ -16,8 +16,13 @@ import (
 	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
+// Decomp used to improve readabilty
 type Decomp = lib.Decomp
+
+// Edge used to improve readabilty
 type Edge = lib.Edge
+
+// Graph used to improve readabilty
 type Graph = lib.Graph
 
 func logActive(b bool) {
