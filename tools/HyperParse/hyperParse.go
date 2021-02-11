@@ -7,12 +7,22 @@ import (
 	"log"
 	"os"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
-func pruneTree(n *Node) {
+// mem checks if an integer b occurs inside a slice as
+func mem(as []int, b int) bool {
+	for _, a := range as {
+		if a == b {
+			return true
+		}
+	}
+	return false
+}
 
-	var nuChildren []Node
+func pruneTree(n *lib.Node) {
+
+	var nuChildren []lib.Node
 
 	for i, c := range n.Children {
 
@@ -25,7 +35,7 @@ func pruneTree(n *Node) {
 			log.Panicln("the fuck?")
 		}
 		pruneTree(&c)
-		if Subset(c.Bag, n.Bag) {
+		if lib.Subset(c.Bag, n.Bag) {
 			nuChildren = append(nuChildren, c.Children...)
 
 		} else {
@@ -37,13 +47,13 @@ func pruneTree(n *Node) {
 
 }
 
-func getDegree(edges Edges, e Edge) int {
+func getDegree(edges lib.Edges, e lib.Edge) int {
 	output := 0
 
 	for _, node := range e.Vertices {
 		degree := 0
 		for _, e2 := range edges.Slice() {
-			if Mem(e2.Vertices, node) {
+			if mem(e2.Vertices, node) {
 				degree++
 			}
 		}
@@ -74,7 +84,7 @@ func main() {
 		panic(err)
 	}
 
-	parsedGraph, parseGraph := GetGraph(string(dat))
+	parsedGraph, parseGraph := lib.GetGraph(string(dat))
 
 	if *statFlag {
 		sumEdgeSizes := 0
@@ -100,7 +110,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	var reducedGraph Graph
+	var reducedGraph lib.Graph
 
 	if *starRedlag {
 
@@ -110,7 +120,7 @@ func main() {
 		// Performing GYÖ reduction
 		reducedGraph, _ = reducedGraph.GYÖReduct()
 
-		hinget := GetHingeTree(reducedGraph)
+		hinget := lib.GetHingeTree(reducedGraph)
 
 		reducedGraph = hinget.GetLargestGraph()
 
@@ -152,7 +162,7 @@ func main() {
 
 		defer f.Close()
 
-		decomp := GetDecompGML(string(dis), parsedGraph, parseGraph.Encoding)
+		decomp := lib.GetDecompGML(string(dis), parsedGraph, parseGraph.Encoding)
 
 		if decomp.Correct(parsedGraph) {
 
@@ -175,7 +185,7 @@ func main() {
 		reducedGraph, removalMap, _ = parsedGraph.TypeCollapse()
 		parsedGraph = reducedGraph
 
-		var ops []GYÖReduct
+		var ops []lib.GYÖReduct
 		// Performing GYÖ reduction
 
 		reducedGraph, ops = reducedGraph.GYÖReduct()

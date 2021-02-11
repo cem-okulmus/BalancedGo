@@ -32,6 +32,23 @@ type Hingetree struct {
 	children []hingeEdge
 }
 
+// GetLargestGraph returns the largest graph within the hinge tree
+func (h Hingetree) GetLargestGraph() Graph {
+	maxEdges := h.hinge.Edges.Len()
+	maxGraph := h.hinge
+
+	for _, c := range h.children {
+		tmpGraph := c.h.GetLargestGraph()
+
+		if tmpGraph.Edges.Len() > maxEdges {
+			maxEdges = tmpGraph.Edges.Len()
+			maxGraph = tmpGraph
+		}
+	}
+
+	return maxGraph
+}
+
 func (h Hingetree) stringIdent(i int) string {
 	var buffer bytes.Buffer
 

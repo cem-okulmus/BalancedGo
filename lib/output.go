@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// toPACE exports the graph as a string, in the PACE 2019 format
-func (g Graph) toPACE() string {
+// ToPACE exports the graph as a string, in the PACE 2019 format
+func (g Graph) ToPACE() string {
 	var buffer bytes.Buffer
 
 	initialLine := "p htd " + fmt.Sprint(len(g.Edges.Vertices())) + fmt.Sprint(" ", g.Edges.Len()) + "\n"
