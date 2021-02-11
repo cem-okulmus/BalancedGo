@@ -1,6 +1,6 @@
 # BalancedGo
 [![Actions Status](https://github.com/cem-okulmus/BalancedGo/workflows/Go/badge.svg)](https://github.com/cem-okulmus/BalancedGo/actions)
-[![](https://img.shields.io/github/v/release/cem-okulmus/BalancedGo)](https://github.com/cem-okulmus/BalancedGo/releases/latest)
+[![](https://img.shields.io/github/v/tag/cem-okulmus/BalancedGo?sort=semver)](https://github.com/cem-okulmus/BalancedGo/releases/latest)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cem-okulmus/BalancedGo.svg)](https://pkg.go.dev/github.com/cem-okulmus/BalancedGo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cem-okulmus/BalancedGo)](https://goreportcard.com/report/github.com/cem-okulmus/BalancedGo)
 
