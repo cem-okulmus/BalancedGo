@@ -41,7 +41,6 @@ func mem(as []int, b int) bool {
 
 // Diff computes the set difference between two slices a b
 func Diff(a, b []int) []int {
-	//var output []int
 	output := make([]int, 0, len(a))
 
 OUTER:
@@ -55,7 +54,6 @@ OUTER:
 	}
 
 	return output
-
 }
 
 // mem64 is the same as Mem, but for uint64
@@ -71,9 +69,8 @@ func mem64(as []uint64, b uint64) bool {
 // diffEdges computes the set difference between a and e
 func diffEdges(a Edges, e ...Edge) Edges {
 	var output []Edge
-	/// log.Println("Edges ", a, "Other ", e)
-
 	var hashes []uint64
+
 	for i := range e {
 		hashes = append(hashes, e[i].Hash())
 	}
@@ -84,10 +81,7 @@ func diffEdges(a Edges, e ...Edge) Edges {
 		}
 	}
 
-	//  log.Println("Result ", output)
-
 	return NewEdges(output)
-
 }
 
 // Inter is the set intersection between slices as and bs
@@ -101,7 +95,6 @@ OUTER:
 				continue OUTER
 			}
 		}
-
 	}
 
 	return output

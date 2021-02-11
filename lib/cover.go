@@ -103,14 +103,11 @@ func (c *Cover) NextSubset() int {
 
 		if (weight < c.uncovered) || (weight == 0) {
 			if !c.backtrack() {
-				// log.Println("No more covers available.")
 				return -1 // no more backtracking possible
 			}
 			continue
 		}
 
-		//  log.Println("Edge actual ", c.Bound.Slice()[c.pos])
-		//  log.Println("Current selection: ", GetSubset(c.Bound, c.Subset))
 		//check if current edge lies in component (precomputation via inComp ?)
 		selected := false
 
@@ -148,7 +145,6 @@ func (c *Cover) NextSubset() int {
 			if c.uncovered == 0 {
 				covered = true
 			}
-
 		}
 	}
 
@@ -187,5 +183,4 @@ func (c *Cover) backtrack() bool {
 		}
 	}
 	return true
-
 }
