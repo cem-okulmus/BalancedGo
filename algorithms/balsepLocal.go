@@ -4,14 +4,14 @@ import (
 	"reflect"
 	"runtime"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
 // BalSepLocal implements the local Balanced Separator algorithm for computing GHDs.
 // This will look for subedges locally, i.e. create them for each subgraph as needed.
 type BalSepLocal struct {
 	K         int
-	Graph     Graph
+	Graph     lib.Graph
 	BalFactor int
 }
 
@@ -20,17 +20,17 @@ func (b *BalSepLocal) SetWidth(K int) {
 	b.K = K
 }
 
-func (b BalSepLocal) findGHD(K int) Decomp {
+func (b BalSepLocal) findGHD(K int) lib.Decomp {
 	return b.findDecomp(b.Graph)
 }
 
 // FindDecomp finds a decomp
-func (b BalSepLocal) FindDecomp() Decomp {
+func (b BalSepLocal) FindDecomp() lib.Decomp {
 	return b.findDecomp(b.Graph)
 }
 
 // FindDecompGraph finds a decomp, for an explicit graph
-func (b BalSepLocal) FindDecompGraph(G Graph) Decomp {
+func (b BalSepLocal) FindDecompGraph(G lib.Graph) lib.Decomp {
 	return b.findDecomp(G)
 }
 
@@ -39,17 +39,17 @@ func (b BalSepLocal) Name() string {
 	return "BalSep Local"
 }
 
-func searchSubEdge(g *BalSepLocal, H *Graph, balsepOrig Edges, sepSub *SepSub) Edges {
+func searchSubEdge(g *BalSepLocal, H *lib.Graph, balsepOrig lib.Edges, sepSub *lib.SepSub) lib.Edges {
 	balsep := balsepOrig
 
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	// log.Printf("Current Special Edges: %v\n\n", Sp)
 	if sepSub == nil {
-		balsep = CutEdges(balsep, H.Vertices())
-		sepSub = GetSepSub(g.Graph.Edges, balsep, g.K)
+		balsep = lib.CutEdges(balsep, H.Vertices())
+		sepSub = lib.GetSepSub(g.Graph.Edges, balsep, g.K)
 	}
 	nextBalsepFound := false
-	pred := BalancedCheck{}
+	pred := lib.BalancedCheck{}
 
 	for !nextBalsepFound {
 		if sepSub.HasNext() {
@@ -60,14 +60,14 @@ func searchSubEdge(g *BalSepLocal, H *Graph, balsepOrig Edges, sepSub *SepSub) E
 				nextBalsepFound = true
 			}
 		} else {
-			return NewEdges([]Edge{})
+			return lib.NewEdges([]lib.Edge{})
 		}
 	}
 	// log.Println("Sub Sep chosen: ", balsep)
 	return balsep
 }
 
-func (b BalSepLocal) findDecomp(H Graph) Decomp {
+func (b BalSepLocal) findDecomp(H lib.Graph) lib.Decomp {
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 
 	//stop if there are at most two special edges left
@@ -79,12 +79,12 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 	if H.Edges.Len() <= b.K && len(H.Special) == 1 {
 		return earlyTermination(H)
 	}
-	var balsep Edges
+	var balsep lib.Edges
 
-	edges := CutEdges(b.Graph.Edges, append(H.Vertices()))
-	generators := SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
-	parallelSearch := Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
-	pred := BalancedCheck{}
+	edges := lib.CutEdges(b.Graph.Edges, append(H.Vertices()))
+	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
+	parallelSearch := lib.Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
@@ -92,9 +92,9 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
 
-		balsep = GetSubset(edges, parallelSearch.Result)
+		balsep = lib.GetSubset(edges, parallelSearch.Result)
 
-		var sepSub *SepSub
+		var sepSub *lib.SepSub
 		// balsepOrig := balsep
 		// log.Printf("Balanced Sep chosen: %v for H %v \n", balsep, H)
 
@@ -106,13 +106,13 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 
 			// log.Printf("Comps of Sep: %v for H %v \n", comps, H)
 
-			SepSpecial := NewEdges(balsep.Slice())
+			SepSpecial := lib.NewEdges(balsep.Slice())
 
-			ch := make(chan Decomp)
-			var subtrees []Decomp
+			ch := make(chan lib.Decomp)
+			var subtrees []lib.Decomp
 
 			for i := range comps {
-				go func(i int, comps []Graph, SepSpecial Edges) {
+				go func(i int, comps []lib.Graph, SepSpecial lib.Edges) {
 					comps[i].Special = append(comps[i].Special, SepSpecial)
 					ch <- b.findDecomp(comps[i])
 				}(i, comps, SepSpecial)
@@ -120,10 +120,10 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 
 			for i := 0; i < len(comps); i++ {
 				decomp := <-ch
-				if reflect.DeepEqual(decomp, Decomp{}) {
-					subtrees = []Decomp{}
+				if reflect.DeepEqual(decomp, lib.Decomp{}) {
+					subtrees = []lib.Decomp{}
 					if sepSub == nil {
-						sepSub = GetSepSub(b.Graph.Edges, balsep, b.K)
+						sepSub = lib.GetSepSub(b.Graph.Edges, balsep, b.K)
 					}
 					nextBalsepFound := false
 				thisLoop:
@@ -133,12 +133,12 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 							if len(balsep.Vertices()) == 0 {
 								continue thisLoop
 							}
-							_, ok := cache[IntHash(balsep.Vertices())]
+							_, ok := cache[lib.IntHash(balsep.Vertices())]
 							if ok { //skip since already seen
 								continue thisLoop
 							}
 							if pred.Check(&H, &balsep, b.BalFactor) {
-								cache[IntHash(balsep.Vertices())] = Empty
+								cache[lib.IntHash(balsep.Vertices())] = lib.Empty
 								nextBalsepFound = true
 							}
 						} else {
@@ -161,5 +161,5 @@ func (b BalSepLocal) findDecomp(H Graph) Decomp {
 	}
 
 	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-	return Decomp{} // empty Decomp signifying reject
+	return lib.Decomp{} // empty Decomp signifying reject
 }

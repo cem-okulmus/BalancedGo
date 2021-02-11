@@ -4,16 +4,16 @@ import (
 	"log"
 	"reflect"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
 // DetKDecomp computes for a graph and some width K a HD of width K if it exists
 type DetKDecomp struct {
 	K         int
-	Graph     Graph
+	Graph     lib.Graph
 	BalFactor int
 	SubEdge   bool
-	cache     Cache
+	cache     lib.Cache
 }
 
 // SetWidth sets the current width parameter of the algorithm
@@ -21,13 +21,13 @@ func (d *DetKDecomp) SetWidth(K int) {
 	d.K = K
 }
 
-func (d *DetKDecomp) findHD(currentGraph Graph) Decomp {
+func (d *DetKDecomp) findHD(currentGraph lib.Graph) lib.Decomp {
 	d.cache.Init()
 	return d.findDecomp(currentGraph, []int{})
 }
 
 // FindDecomp finds a decomp
-func (d *DetKDecomp) FindDecomp() Decomp {
+func (d *DetKDecomp) FindDecomp() lib.Decomp {
 	return d.findHD(d.Graph)
 }
 
@@ -40,16 +40,16 @@ func (d *DetKDecomp) Name() string {
 }
 
 // FindDecompGraph finds a decomp, for an explicit graph
-func (d *DetKDecomp) FindDecompGraph(G Graph) Decomp {
+func (d *DetKDecomp) FindDecompGraph(G lib.Graph) lib.Decomp {
 	return d.findHD(G)
 }
 
 func connectingSep(sep []int, conn []int, comp []int) bool {
-	if !Subset(conn, sep) {
+	if !lib.Subset(conn, sep) {
 		return false
 	}
 
-	if len(Inter(sep, comp)) == 0 {
+	if len(lib.Inter(sep, comp)) == 0 {
 		return false
 	}
 
@@ -57,31 +57,31 @@ func connectingSep(sep []int, conn []int, comp []int) bool {
 }
 
 //Note: as implemented this breaks Special Condition (bag must be limited by oldSep)
-func baseCaseDetK(H Graph) Decomp {
+func baseCaseDetK(H lib.Graph) lib.Decomp {
 	// log.Printf("Base case reached. Number of Special Edges %d\n", len(Sp))
-	var children Node
+	var children lib.Node
 
 	switch len(H.Special) {
 	case 0:
-		return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges}}
+		return lib.Decomp{Graph: H, Root: lib.Node{Bag: H.Vertices(), Cover: H.Edges}}
 
 	case 1:
 		sp1 := H.Special[0]
-		children = Node{Bag: sp1.Vertices(), Cover: sp1}
+		children = lib.Node{Bag: sp1.Vertices(), Cover: sp1}
 	}
 
 	if H.Edges.Len() == 0 {
-		return Decomp{Graph: H, Root: children}
+		return lib.Decomp{Graph: H, Root: children}
 	}
-	return Decomp{Graph: H, Root: Node{Bag: H.Vertices(), Cover: H.Edges, Children: []Node{children}}}
+	return lib.Decomp{Graph: H, Root: lib.Node{Bag: H.Vertices(), Cover: H.Edges, Children: []lib.Node{children}}}
 }
 
-func (d *DetKDecomp) findDecomp(H Graph, oldSep []int) Decomp {
+func (d *DetKDecomp) findDecomp(H lib.Graph, oldSep []int) lib.Decomp {
 	verticesCurrent := append(H.Vertices())
 	verticesExtended := append(verticesCurrent, oldSep...)
-	conn := Inter(oldSep, verticesCurrent)
-	compVertices := Diff(verticesCurrent, oldSep)
-	bound := FilterVertices(d.Graph.Edges, conn)
+	conn := lib.Inter(oldSep, verticesCurrent)
+	compVertices := lib.Diff(verticesCurrent, oldSep)
+	bound := lib.FilterVertices(d.Graph.Edges, conn)
 
 	// log.Printf("\n\nD Current oldSep: %v, Conn: %v\n", PrintVertices(oldSep), PrintVertices(conn))
 	// log.Printf("D Current SubGraph: %v ( %v hash) \n", H, H.Edges.Hash())
@@ -94,7 +94,7 @@ func (d *DetKDecomp) findDecomp(H Graph, oldSep []int) Decomp {
 		return baseCaseDetK(H)
 	}
 
-	gen := NewCover(d.K, conn, bound, H.Edges.Vertices())
+	gen := lib.NewCover(d.K, conn, bound, H.Edges.Vertices())
 
 OUTER:
 	for gen.HasNext {
@@ -107,8 +107,8 @@ OUTER:
 			continue
 		}
 
-		var sep Edges
-		sep = GetSubset(bound, gen.Subset)
+		var sep lib.Edges
+		sep = lib.GetSubset(bound, gen.Subset)
 
 		// if !Subset(conn, sep.Vertices()) {
 		//  log.Panicln("Cover messed up! 137")
@@ -119,7 +119,7 @@ OUTER:
 
 		//check if sep "makes some progress" into separating H
 
-		if len(Inter(sep.Vertices(), compVertices)) == 0 {
+		if len(lib.Inter(sep.Vertices(), compVertices)) == 0 {
 			addEdges = true
 		}
 
@@ -128,18 +128,18 @@ OUTER:
 
 		addingEdges:
 			for !addEdges || iAdd < H.Edges.Len() {
-				var sepActual Edges
+				var sepActual lib.Edges
 
 				if addEdges {
-					sepActual = NewEdges(append(sep.Slice(), H.Edges.Slice()[iAdd]))
+					sepActual = lib.NewEdges(append(sep.Slice(), H.Edges.Slice()[iAdd]))
 				} else {
 					sepActual = sep
 				}
 
 				// sepActualOrigin := sepActual
-				var sepSub *SepSub
-				var sepConst []Edge
-				var sepChanging []Edge
+				var sepSub *lib.SepSub
+				var sepConst []lib.Edge
+				var sepChanging []lib.Edge
 				if d.SubEdge {
 					for i, v := range gen.Subset {
 						if gen.InComp[v] {
@@ -172,12 +172,12 @@ OUTER:
 
 					// log.Printf("Comps of Sep: %v, len: %v\n", comps, len(comps))
 
-					var subtrees []Node
-					bag := Inter(sepActual.Vertices(), verticesExtended)
+					var subtrees []lib.Node
+					bag := lib.Inter(sepActual.Vertices(), verticesExtended)
 
 					for i := range comps {
 						decomp := d.findDecomp(comps[i], bag)
-						if reflect.DeepEqual(decomp, Decomp{}) {
+						if reflect.DeepEqual(decomp, lib.Decomp{}) {
 
 							d.cache.AddNegative(sepActual, comps[i])
 							// log.Printf("detK REJECTING %v: couldn't decompose %v  \n",
@@ -187,7 +187,7 @@ OUTER:
 
 							if d.SubEdge {
 								if sepSub == nil {
-									sepSub = GetSepSub(d.Graph.Edges, NewEdges(sepChanging), d.K)
+									sepSub = lib.GetSepSub(d.Graph.Edges, lib.NewEdges(sepChanging), d.K)
 								}
 
 								nextBalsepFound := false
@@ -195,7 +195,7 @@ OUTER:
 								for !nextBalsepFound {
 									if sepSub.HasNext() {
 										sepActual = sepSub.GetCurrent()
-										sepActual = NewEdges(append(sepActual.Slice(), sepConst...))
+										sepActual = lib.NewEdges(append(sepActual.Slice(), sepConst...))
 										if connectingSep(sepActual.Vertices(), conn, compVertices) {
 											nextBalsepFound = true
 										}
@@ -228,7 +228,7 @@ OUTER:
 						subtrees = append(subtrees, decomp.Root)
 					}
 
-					return Decomp{Graph: H, Root: Node{Bag: bag, Cover: sepActual, Children: subtrees}}
+					return lib.Decomp{Graph: H, Root: lib.Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
 
@@ -236,5 +236,5 @@ OUTER:
 
 	}
 
-	return Decomp{} // Reject if no separator could be found
+	return lib.Decomp{} // Reject if no separator could be found
 }

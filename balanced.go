@@ -5,15 +5,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"reflect"
 	"runtime"
 	"runtime/pprof"
 	"time"
 
-	. "github.com/cem-okulmus/BalancedGo/algorithms"
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	algo "github.com/cem-okulmus/BalancedGo/algorithms"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
+
+type Decomp = lib.Decomp
+type Edge = lib.Edge
+type Graph = lib.Graph
 
 func logActive(b bool) {
 	if b {
@@ -204,9 +209,9 @@ func main() {
 	var parsedGraph Graph
 
 	if !*pace {
-		parsedGraph, _ = GetGraph(string(dat))
+		parsedGraph, _ = lib.GetGraph(string(dat))
 	} else {
-		parsedGraph = GetGraphPACE(string(dat))
+		parsedGraph = lib.GetGraphPACE(string(dat))
 	}
 
 	originalGraph := parsedGraph
@@ -222,19 +227,19 @@ func main() {
 		start := time.Now()
 		switch *useHeuristic {
 		case 1:
-			parsedGraph.Edges = GetDegreeOrder(parsedGraph.Edges)
+			parsedGraph.Edges = lib.GetDegreeOrder(parsedGraph.Edges)
 			heuristicMessage = "Using degree ordering as a heuristic"
 			break
 		case 2:
-			parsedGraph.Edges = GetMaxSepOrder(parsedGraph.Edges)
+			parsedGraph.Edges = lib.GetMaxSepOrder(parsedGraph.Edges)
 			heuristicMessage = "Using max separator ordering as a heuristic"
 			break
 		case 3:
-			parsedGraph.Edges = GetMSCOrder(parsedGraph.Edges)
+			parsedGraph.Edges = lib.GetMSCOrder(parsedGraph.Edges)
 			heuristicMessage = "Using MSC ordering as a heuristic"
 			break
 		case 4:
-			parsedGraph.Edges = GetEdgeDegreeOrder(parsedGraph.Edges)
+			parsedGraph.Edges = lib.GetEdgeDegreeOrder(parsedGraph.Edges)
 			heuristicMessage = "Using edge degree ordering as a heuristic"
 			break
 		}
@@ -264,7 +269,7 @@ func main() {
 		}
 	}
 
-	var ops []GYÖReduct
+	var ops []lib.GYÖReduct
 	// Performing GYÖ reduction
 	if *gyö {
 
@@ -291,13 +296,13 @@ func main() {
 		fmt.Println("Graph with subedges \n", parsedGraph)
 	}
 
-	var hinget Hingetree
+	var hinget lib.Hingetree
 	var msecHinge float64
 
 	if *hingeFlag {
 		startHinge := time.Now()
 
-		hinget = GetHingeTree(parsedGraph)
+		hinget = lib.GetHingeTree(parsedGraph)
 
 		dHinge := time.Now().Sub(startHinge)
 		msecHinge = dHinge.Seconds() * float64(time.Second/time.Millisecond)
@@ -309,40 +314,63 @@ func main() {
 		}
 	}
 
-	var solver Algorithm
+	var solver algo.Algorithm
 
 	// Check for multiple flags
 	chosen := 0
 
 	if *balDetFlag > 0 {
-		balDet := &BalSepHybrid{K: *width, Graph: parsedGraph, BalFactor: BalFactor, Depth: *balDetFlag - 1}
+		balDet := &algo.BalSepHybrid{
+			K:         *width,
+			Graph:     parsedGraph,
+			BalFactor: BalFactor,
+			Depth:     *balDetFlag - 1,
+		}
 		solver = balDet
 		chosen++
 	}
 
 	if *seqBalDetFlag > 0 {
-		seqBalDet := &SeqBalSepHybrid{K: *width, Graph: parsedGraph, BalFactor: BalFactor, Depth: *seqBalDetFlag - 1}
+		seqBalDet := &algo.BalSepHybridSeq{
+			K:         *width,
+			Graph:     parsedGraph,
+			BalFactor: BalFactor,
+			Depth:     *seqBalDetFlag - 1,
+		}
 		solver = seqBalDet
 		chosen++
 	}
 
 	if *detKFlag {
-		det := &DetKDecomp{K: *width, Graph: parsedGraph, BalFactor: BalFactor, SubEdge: *localBIP}
+		det := &algo.DetKDecomp{
+			K:         *width,
+			Graph:     parsedGraph,
+			BalFactor: BalFactor,
+			SubEdge:   *localBIP,
+		}
 		solver = det
 		chosen++
 	}
 
 	if *logK {
-		logK := &LogKDecomp{Graph: parsedGraph, K: *width, BalFactor: BalFactor}
+		logK := &algo.LogKDecomp{
+			Graph:     parsedGraph,
+			K:         *width,
+			BalFactor: BalFactor,
+		}
 		solver = logK
 		chosen++
 	}
 
 	if *logKHybrid > 0 {
-		logKHyb := &LogKHybrid{Graph: parsedGraph, K: *width, BalFactor: BalFactor}
+		logKHyb := &algo.LogKHybrid{
+			Graph:     parsedGraph,
+			K:         *width,
+			BalFactor: BalFactor,
+		}
 		logKHyb.Size = *meta
 
-		var pred HybridPredicate
+		var pred algo.HybridPredicate
 
 		switch *logKHybrid {
 		case 1:
@@ -363,13 +391,20 @@ func main() {
 	}
 
 	if *globalBal {
-		global := &BalSepGlobal{K: *width, Graph: parsedGraph, BalFactor: BalFactor}
+		global := &algo.BalSepGlobal{
+			K: *width, Graph: parsedGraph,
+			BalFactor: BalFactor,
+		}
 		solver = global
 		chosen++
 	}
 
 	if *localBal {
-		local := &BalSepLocal{K: *width, Graph: parsedGraph, BalFactor: BalFactor}
+		local := &algo.BalSepLocal{
+			K:         *width,
+			Graph:     parsedGraph,
+			BalFactor: BalFactor,
+		}
 		solver = local
 		chosen++
 	}
@@ -384,11 +419,9 @@ func main() {
 		start := time.Now()
 
 		if *exact {
-			k := 1
-
 			solved := false
-			for !solved {
-
+			k := 1
+			for ; !solved; k++ {
 				solver.SetWidth(k)
 
 				if *hingeFlag {
@@ -398,20 +431,21 @@ func main() {
 				}
 
 				solved = decomp.Correct(parsedGraph)
-				k++
 			}
 			*width = k - 1 // for correct output
 		} else if *approx > 0 {
 			ch := make(chan int, 1)
 			go func() {
+				m := parsedGraph.Edges.Len()
+				k := int(math.Ceil(float64(m) / 2))
+				solver.SetWidth(k)
 				decomp = solver.FindDecomp()
-				k := decomp.CheckWidth()
+				k = decomp.CheckWidth() // check width again in case it became smaller
 				solved := false
 
 				var newDecomp Decomp
 				for !solved {
 					newK := k - 1
-
 					solver.SetWidth(newK)
 
 					if *hingeFlag {
@@ -452,13 +486,11 @@ func main() {
 			decomp.Root, result = decomp.Root.RestoreGYÖ(ops)
 			if !result {
 				fmt.Println("Partial decomp:", decomp.Root)
-
 				log.Panicln("GYÖ reduction failed")
 			}
 			decomp.Root, result = decomp.Root.RestoreTypes(removalMap)
 			if !result {
 				fmt.Println("Partial decomp:", decomp.Root)
-
 				log.Panicln("Type Collapse reduction failed")
 			}
 		}

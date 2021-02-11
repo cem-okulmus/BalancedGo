@@ -4,42 +4,42 @@ import (
 	"reflect"
 	"strconv"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
-// SeqBalSepHybrid is a purely sequential version of BalSepHybrid
-type SeqBalSepHybrid struct {
+// BalSepHybridSeq is a purely sequential version of BalSepHybrid
+type BalSepHybridSeq struct {
 	K         int
-	Graph     Graph
+	Graph     lib.Graph
 	BalFactor int
 	Depth     int // how many rounds of balSep are used
 }
 
 // SetWidth sets the current width parameter of the algorithm
-func (s *SeqBalSepHybrid) SetWidth(K int) {
+func (s *BalSepHybridSeq) SetWidth(K int) {
 	s.K = K
 }
 
-func (s SeqBalSepHybrid) findGHD(currentGraph Graph) Decomp {
+func (s BalSepHybridSeq) findGHD(currentGraph lib.Graph) lib.Decomp {
 	return s.findDecomp(s.Depth, currentGraph)
 }
 
 // FindDecomp finds a decomp
-func (s SeqBalSepHybrid) FindDecomp() Decomp {
+func (s BalSepHybridSeq) FindDecomp() lib.Decomp {
 	return s.findGHD(s.Graph)
 }
 
 // FindDecompGraph finds a decomp, for an explicit graph
-func (s SeqBalSepHybrid) FindDecompGraph(G Graph) Decomp {
+func (s BalSepHybridSeq) FindDecompGraph(G lib.Graph) lib.Decomp {
 	return s.findGHD(G)
 }
 
 // Name returns the name of the algorithm
-func (s SeqBalSepHybrid) Name() string {
+func (s BalSepHybridSeq) Name() string {
 	return "BalSep / DetK - Hybrid with Depth " + strconv.Itoa(s.Depth+1)
 }
 
-func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
+func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 	// log.Println("Current Depth: ", (b.Depth - currentDepth))
 	// log.Printf("Current SubGraph: %+v\n", H)
 	// log.Printf("Current Special Edges: %+v\n\n", Sp)
@@ -54,13 +54,13 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 		return earlyTermination(H)
 	}
 
-	var balsep Edges
+	var balsep lib.Edges
 
 	//find a balanced separator
-	edges := CutEdges(s.Graph.Edges, append(H.Vertices()))
-	generators := SplitCombin(edges.Len(), s.K, 1, true) // create just one goroutine, making this sequential
-	parallelSearch := Search{H: &H, Edges: &edges, BalFactor: s.BalFactor, Generators: generators}
-	pred := BalancedCheck{}
+	edges := lib.CutEdges(s.Graph.Edges, append(H.Vertices()))
+	generators := lib.SplitCombin(edges.Len(), s.K, 1, true) // create just one goroutine, making this sequential
+	parallelSearch := lib.Search{H: &H, Edges: &edges, BalFactor: s.BalFactor, Generators: generators}
+	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
@@ -69,10 +69,10 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 	// OUTER:
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
 
-		balsep = GetSubset(edges, parallelSearch.Result)
+		balsep = lib.GetSubset(edges, parallelSearch.Result)
 
 		//  balsepOrig := balsep
-		var sepSub *SepSub
+		var sepSub *lib.SepSub
 
 		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
 		exhaustedSubedges := false
@@ -83,22 +83,22 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
-			SepSpecial := NewEdges(balsep.Slice())
+			SepSpecial := lib.NewEdges(balsep.Slice())
 
-			var subtrees []Decomp
-			var outDecomps []Decomp
+			var subtrees []lib.Decomp
+			var outDecomps []lib.Decomp
 
 			//var outDecomp []Decomp
 			for i := range comps {
-				var out Decomp
+				var out lib.Decomp
 
 				if currentDepth > 0 {
-					out = func(i int, comps []Graph, SepSpecial Edges) Decomp {
+					out = func(i int, comps []lib.Graph, SepSpecial lib.Edges) lib.Decomp {
 						comps[i].Special = append(comps[i].Special, SepSpecial)
 						return s.findDecomp(decrease(currentDepth), comps[i])
 					}(i, comps, SepSpecial)
 				} else {
-					out = func(i int, comps []Graph, SepSpecial Edges) Decomp {
+					out = func(i int, comps []lib.Graph, SepSpecial lib.Edges) lib.Decomp {
 
 						// Base case handling
 						comps[i].Special = append(comps[i].Special, SepSpecial)
@@ -125,7 +125,7 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 						// det.cache = make(map[uint64]*CompCache)
 						det.cache.Init()
 						result := det.findDecomp(comps[i], balsep.Vertices())
-						if !reflect.DeepEqual(result, Decomp{}) && currentDepth == 0 {
+						if !reflect.DeepEqual(result, lib.Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
 						}
 						return result
@@ -138,29 +138,29 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 
 			for i := range outDecomps {
 				decomp := outDecomps[i]
-				if reflect.DeepEqual(decomp, Decomp{}) {
+				if reflect.DeepEqual(decomp, lib.Decomp{}) {
 					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n",
 					//        Graph{Edges: balsep}, H)
 					// log.Println("\n\nCurrent Depth: ", (b.Depth - currentDepth))
 					// log.Printf("Current SubGraph: %+v\n", H)
 					// log.Printf("Current Special Edges: %+v\n\n", Sp)
 
-					subtrees = []Decomp{}
+					subtrees = []lib.Decomp{}
 					if sepSub == nil {
-						sepSub = GetSepSub(s.Graph.Edges, balsep, s.K)
+						sepSub = lib.GetSepSub(s.Graph.Edges, balsep, s.K)
 					}
 					nextBalsepFound := false
 				thisLoop:
 					for !nextBalsepFound {
 						if sepSub.HasNext() {
 							balsep = sepSub.GetCurrent()
-							_, ok := cache[IntHash(balsep.Vertices())]
+							_, ok := cache[lib.IntHash(balsep.Vertices())]
 							if ok { //skip since already seen
 								continue thisLoop
 							}
 
 							if pred.Check(&H, &balsep, s.BalFactor) {
-								cache[IntHash(balsep.Vertices())] = Empty
+								cache[lib.IntHash(balsep.Vertices())] = lib.Empty
 								nextBalsepFound = true
 							}
 						} else {
@@ -176,7 +176,7 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 				subtrees = append(subtrees, decomp)
 			}
 
-			output := Node{Bag: balsep.Vertices(), Cover: balsep}
+			output := lib.Node{Bag: balsep.Vertices(), Cover: balsep}
 
 			for _, s := range subtrees {
 				//TODO: Reroot only after all subtrees received
@@ -186,7 +186,7 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 					// decomp_deux := local.findDecomp(K, comps[i], append(compsSp[i], SepSpecial))
 					// fmt.Println("Output from Balsep: ", decomp_deux)
 				} else {
-					s.Root = s.Root.Reroot(Node{Bag: balsep.Vertices(), Cover: balsep})
+					s.Root = s.Root.Reroot(lib.Node{Bag: balsep.Vertices(), Cover: balsep})
 					s.Root = s.Root.Children[0]
 					// log.Printf("Produced Decomp (with balsep %v): %+v\n", balsep, decomp)
 				}
@@ -194,10 +194,10 @@ func (s SeqBalSepHybrid) findDecomp(currentDepth int, H Graph) Decomp {
 				output.Children = append(output.Children, s.Root)
 			}
 
-			return Decomp{Graph: H, Root: output}
+			return lib.Decomp{Graph: H, Root: output}
 		}
 	}
 
 	// log.Printf("REJECT: Couldn't find balsep for H %v SP %v\n", H, Sp)
-	return Decomp{} // empty Decomp signifying reject
+	return lib.Decomp{} // empty Decomp signifying reject
 }
