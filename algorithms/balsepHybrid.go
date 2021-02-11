@@ -1,7 +1,7 @@
+package algorithms
+
 // Combination of BalSep and DetKDecomp, executing Balsep first (for constant number of rounds) then switching to
 // DetKDecomp
-
-package algorithms
 
 import (
 	"reflect"

@@ -51,7 +51,7 @@ func baseCaseSmart(g lib.Graph, H lib.Graph) lib.Decomp {
 		sp1 := H.Special[0]
 		output = lib.Decomp{Graph: H,
 			Root: lib.Node{Bag: H.Edges.Vertices(), Cover: H.Edges,
-				Children: []lib.Node{lib.Node{Bag: sp1.Vertices(), Cover: sp1}}}}
+				Children: []lib.Node{{Bag: sp1.Vertices(), Cover: sp1}}}}
 	} else {
 		return baseCase(g, H)
 	}
@@ -73,7 +73,7 @@ func baseCase(g lib.Graph, H lib.Graph) lib.Decomp {
 		sp2 := H.Special[1]
 		output = lib.Decomp{Graph: H,
 			Root: lib.Node{Bag: sp1.Vertices(), Cover: sp1,
-				Children: []lib.Node{lib.Node{Bag: sp2.Vertices(), Cover: sp2}}}}
+				Children: []lib.Node{{Bag: sp2.Vertices(), Cover: sp2}}}}
 	}
 	return output
 }
@@ -82,7 +82,7 @@ func earlyTermination(H lib.Graph) lib.Decomp {
 	//We assume that H as less than K edges, and only one special edge
 	return lib.Decomp{Graph: H,
 		Root: lib.Node{Bag: H.Edges.Vertices(), Cover: H.Edges,
-			Children: []lib.Node{lib.Node{Bag: H.Special[0].Vertices(), Cover: H.Special[0]}}}}
+			Children: []lib.Node{{Bag: H.Special[0].Vertices(), Cover: H.Special[0]}}}}
 }
 
 func rerooting(H lib.Graph, balsep lib.Edges, subtrees []lib.Decomp) lib.Decomp {

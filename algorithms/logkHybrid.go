@@ -342,7 +342,7 @@ CHILD:
 			}
 
 			// specialChild = NewEdges([]Edge{Edge{Vertices: Inter(childχ, comp_up.Vertices())}})
-			specialChild = lib.NewEdges([]lib.Edge{lib.Edge{Vertices: childχ}})
+			specialChild = lib.NewEdges([]lib.Edge{{Vertices: childχ}})
 
 			// if no comps_p, other than comp_low, just use parent as is
 			if len(comps_p) == 1 {
@@ -352,7 +352,7 @@ CHILD:
 				compUp.Special = append(compUp.Special, specialChild)
 
 				decompTemp := lib.Decomp{Graph: compUp, Root: lib.Node{Bag: lib.Inter(parentλ.Vertices(), verticesH),
-					Cover: parentλ, Children: []lib.Node{lib.Node{Bag: childχ, Cover: childλ}}}}
+					Cover: parentλ, Children: []lib.Node{{Bag: childχ, Cover: childλ}}}}
 
 				go func(decomp lib.Decomp) {
 					chanUp <- decomp
