@@ -139,7 +139,7 @@ func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 }
 
 // ParentCheck looks a separator that could function as the direct ancestor (or "parent")
-// of some child node in the GHD, where the connecting vertices "Conn" are explicitely provided
+// of some child node in the GHD, where the connecting vertices "Conn" are explicitly provided
 type ParentCheck struct {
 	Conn  []int
 	Child []int
