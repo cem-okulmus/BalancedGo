@@ -121,14 +121,12 @@ func (n Node) coversEdge(e Edge) bool {
 // getNumber assigns some number to a node
 func (n *Node) getNumber() {
 	if n.num == 0 {
-
 		temp := "num : " + strconv.Itoa(n.num) + " node: " + n.Cover.String()
 		mutex.Lock()
 		n.num = encode
 		m[n.num] = temp
 		encode++
 		mutex.Unlock()
-
 	}
 }
 
@@ -157,7 +155,7 @@ func (n *Node) getConGraph(withLoops bool) Edges {
 
 // parent returns the parent of of in n, if it doesn't exist, nil is returned
 func (n *Node) parent(o Node) Node {
-	if n.parPointer != nil {
+	if n.parPointer != nil { // check for existing pointer
 		return *n.parPointer
 	}
 
@@ -171,14 +169,12 @@ func (n *Node) parent(o Node) Node {
 
 	}
 
-	n.parPointer = &o
-
+	n.parPointer = &o // cache the result
 	return o
 }
 
 // Reroot produces a new, isomorphic subtree, rerooting G at child
 func (n Node) Reroot(child Node) Node {
-
 	if !n.contains(child) {
 		log.Panicf("Can't reRoot: no child %+v in node %+v!\n", child, n)
 	}
@@ -298,16 +294,12 @@ func (n *Node) CombineNodes(subtree Node, connecting Edges) *Node {
 		}
 	}
 
-	// log.Println("encountered error case at node Bag: ", PrintVertices(n.Bag), " Cover: ", n.Cover)
-	// failure case, no connecting node was found inside n
 	return nil
 }
 
 func (n Node) connected(v int, parentContainsV bool) (bool, bool) {
-
 	containsV := mem(n.Bag, v)
 	subtreeContainsV := containsV
-
 	numNeighboursContainingV := 0
 
 	if parentContainsV {

@@ -5,18 +5,19 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
+//TestCover simply checks if cover can still run to the end, for a random input graph
 func TestCover(t *testing.T) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	graph := getRandomGraph()
+	graph := getRandomGraph(100)
 
 	k := r.Intn(10) + 1
 
-	c := NewCover(k, []int{}, graph.Edges, graph.Vertices())
+	c := lib.NewCover(k, []int{}, graph.Edges, graph.Vertices())
 
 	for c.HasNext {
 		c.NextSubset()
@@ -24,9 +25,9 @@ func TestCover(t *testing.T) {
 
 }
 
-func shuffle(input Edges) Edges {
+func shuffle(input lib.Edges) lib.Edges {
 	rand.Seed(time.Now().UTC().UnixNano())
-	a := make([]Edge, len(input.Slice()))
+	a := make([]lib.Edge, len(input.Slice()))
 	copy(a, input.Slice())
 
 	for i := len(a) - 1; i > 0; i-- {
@@ -34,18 +35,18 @@ func shuffle(input Edges) Edges {
 		a[i], a[j] = a[j], a[i]
 	}
 
-	return NewEdges(a)
+	return lib.NewEdges(a)
 }
 
+//TestCover2 also checks if Cover works for non-empty Conn
 func TestCover2(t *testing.T) {
+	graph := getRandomGraph(100)
+	oldSep := getRandomSep(graph, 10)
 
-	graph := getRandomGraph()
-	oldSep := getRandomSep(graph)
+	conn := lib.Inter(oldSep.Vertices(), graph.Vertices())
+	bound := lib.FilterVertices(graph.Edges, oldSep.Vertices())
 
-	conn := Inter(oldSep.Vertices(), graph.Vertices())
-	bound := FilterVertices(graph.Edges, oldSep.Vertices())
-
-	gen := NewCover(oldSep.Len(), conn, bound, graph.Vertices())
+	gen := lib.NewCover(oldSep.Len(), conn, bound, graph.Vertices())
 
 	for gen.HasNext {
 		gen.NextSubset()

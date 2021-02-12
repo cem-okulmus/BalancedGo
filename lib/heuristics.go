@@ -43,7 +43,6 @@ func GetMSCOrder(edges Edges) Edges {
 
 		//randomly select one of the edges with equal connectivity
 		nextInOrder := candidates[rand.Intn(len(candidates))]
-		//nextInOrder := candidates[0]
 
 		selected = append(selected, edges.Slice()[nextInOrder])
 		chosen[nextInOrder] = true
@@ -86,7 +85,6 @@ func isInf(a int) bool {
 }
 
 func addEdgeDistances(order map[int]int, output [][]int, e Edge) [][]int {
-
 	for _, n := range e.Vertices {
 		for _, m := range e.Vertices {
 			nIndex, _ := order[n]
@@ -145,7 +143,6 @@ func getMinDistances(vertices []int, edges Edges) ([][]int, map[int]int) {
 		if !changed {
 			break
 		}
-
 	}
 
 	return output, order

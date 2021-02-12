@@ -36,7 +36,6 @@ func NewCover(K int, vertices []int, bound Edges, compVertices []int) Cover {
 	for i, e := range bound.Slice() {
 		sum := 0
 		for _, v := range e.Vertices {
-
 			_, ok := covered[v]
 			if ok {
 				sum++
@@ -64,7 +63,6 @@ func NewCover(K int, vertices []int, bound Edges, compVertices []int) Cover {
 
 	return Cover{k: K, covered: covered, uncovered: len(vertices),
 		InComp: inComp, covWeights: covWeights, bound: bound, pos: 0, HasNext: true, first: true}
-
 }
 
 // NextSubset returns number of selected edges, or -1 if no alternative possible

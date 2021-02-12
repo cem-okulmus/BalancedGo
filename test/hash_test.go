@@ -77,13 +77,18 @@ func TestIntHash(t *testing.T) {
 			temp2 = append(temp2, r.Intn(100))
 		}
 
+
+		hash1 := lib.IntHash(temp1)
+		hash2 := lib.IntHash(temp2)
+
+
+		temp1 = lib.RemoveDuplicates(temp1)
+		temp2 = lib.RemoveDuplicates(temp2)
+
 		if cmp.Equal(temp1, temp2) {
 			continue
 		}
 
-		hash1 := lib.IntHash(temp1)
-
-		hash2 := lib.IntHash(temp2)
 
 		if hash1 == hash2 {
 			fmt.Println("Collision", temp1, temp2)

@@ -11,63 +11,62 @@ import (
 )
 
 //getRandomEdge will produce a random Edge
-func getRandomEdge() lib.Edge {
+func getRandomEdge(size int) lib.Edge {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	arity := r.Intn(100) + 1
+	arity := r.Intn(size) + 1
 	var vertices []int
-	name := r.Intn(1000)
+	name := r.Intn(size * 10)
 
 	for i := 0; i < arity; i++ {
-		vertices = append(vertices, r.Intn(1000)+i)
+		vertices = append(vertices, r.Intn(size*10)+i)
 	}
 
 	return lib.Edge{Name: name, Vertices: vertices}
 }
 
 //getRandomGraph will produce a random Graph
-func getRandomGraph() lib.Graph {
+func getRandomGraph(size int) lib.Graph {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	size := r.Intn(100) + 1
-	special := r.Intn(10)
+	card := r.Intn(size) + 1
+	special := r.Intn(size)
 
 	var edges []lib.Edge
 	var SpEdges []lib.Edges
 
-	for i := 0; i < size; i++ {
-		edges = append(edges, getRandomEdge())
+	for i := 0; i < card; i++ {
+		edges = append(edges, getRandomEdge(size))
 	}
 
 	for i := 0; i < special; i++ {
-		SpEdges = append(SpEdges, getRandomEdges())
+		SpEdges = append(SpEdges, getRandomEdges(size))
 	}
 
 	return lib.Graph{Edges: lib.NewEdges(edges), Special: SpEdges}
 }
 
 //getRandomEdges will produce a random Edges struct
-func getRandomEdges() lib.Edges {
+func getRandomEdges(size int) lib.Edges {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	k := r.Intn(10) + 1
+	k := r.Intn(size) + 1
 	var edges []lib.Edge
 	for j := 0; j < k; j++ {
-		edges = append(edges, getRandomEdge())
+		edges = append(edges, getRandomEdge(size*10))
 	}
 
 	return lib.NewEdges(edges)
 }
 
-func getRandomSep(g lib.Graph) lib.Edges {
-
+func getRandomSep(g lib.Graph, size int) lib.Edges {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	k := r.Intn(10) + 1
+	k := r.Intn(size) + 1
 
 	var selection []int
 	for j := 0; j < k; j++ {
@@ -75,14 +74,13 @@ func getRandomSep(g lib.Graph) lib.Edges {
 	}
 
 	return lib.GetSubset(g.Edges, selection)
-
 }
 
 func TestCache(t *testing.T) {
-	randomGraph := getRandomGraph()
-	randomSep := getRandomSep(randomGraph)
-	randomSep2 := getRandomSep(randomGraph)
-	randomSep3 := getRandomSep(randomGraph)
+	randomGraph := getRandomGraph(100)
+	randomSep := getRandomSep(randomGraph, 10)
+	randomSep2 := getRandomSep(randomGraph, 10)
+	randomSep3 := getRandomSep(randomGraph, 10)
 
 	var cache lib.Cache
 	var cacheCopy lib.Cache

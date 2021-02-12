@@ -11,7 +11,6 @@ type Decomp struct {
 	Graph         Graph
 	Root          Node
 	SkipRerooting bool //needed for BalDetK
-	UpConnecting  bool //needed for DivideK
 }
 
 func (d Decomp) String() string {

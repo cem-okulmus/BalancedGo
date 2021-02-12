@@ -31,10 +31,7 @@ func (s *Search) FindNext(pred Predicate) {
 		}
 	}()
 
-	// log.Println("starting search")
-
 	s.Result = []int{} // reset result
-
 	var numProc = runtime.GOMAXPROCS(-1)
 
 	var wg sync.WaitGroup
@@ -90,12 +87,6 @@ func (s Search) worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
 			gen.confirm()
-
-			// if !pred.IsParent() {
-			// 	fmt.Println("Worker ", workernum, ": found balsep of combin", j, "( ", GetSubset(*s.Edges, j), ") from the set: ", *s.Edges)
-
-			// }
-
 			*finished = true
 			return
 		}
@@ -108,19 +99,14 @@ type BalancedCheck struct{}
 
 // Check performs the needed computation to ensure whether sep is a Balanced Separator
 func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
-	// log.Printf("Current considered sep %+v\n", sep)
-	// log.Printf("Current present SP %+v\n", sp)
 
 	//balancedness condition
 	comps, _, _ := H.GetComponents(*sep)
-	// log.Printf("Components of sep %+v\n", comps)
 
 	balancednessLimit := (((H.Len()) * (balFactor - 1)) / balFactor)
 
 	for i := range comps {
 		if comps[i].Len() > balancednessLimit {
-			//log.Printf("Using %+v component %+v has weight %d instead of %d\n", sep,
-			//        comps[i], comps[i].Edges.Len()+len(compSps[i]), ((g.Edges.Len() + len(sp)) / 2))
 			return false
 		}
 	}
@@ -128,12 +114,9 @@ func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	// Make sure that "special seps can never be used as separators"
 	for i := range H.Special {
 		if IntHash(H.Special[i].Vertices()) == IntHash(sep.Vertices()) {
-			//log.Println("Special edge %+v\n used again", s)
 			return false
 		}
 	}
-
-	// fmt.Println("\nBALANECDCHECK:   I found the balsep ", sep, "for the hypergraph ", H, "\n\n")
 
 	return true
 }
@@ -147,16 +130,12 @@ type ParentCheck struct {
 
 // Check performs the needed computation to ensure whether sep is a good parent
 func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
-	// log.Printf("Current considered sep %+v\n", sep)
-	// log.Printf("Current present SP %+v\n", sp)
 
 	//balancedness condition
 	comps, _, _ := H.GetComponents(*sep)
 
 	foundCompLow := false
 	var compLow Graph
-
-	// log.Printf("Components of sep %+v\n", comps)
 
 	balancednessLimit := (((H.Len()) * (balFactor - 1)) / balFactor)
 
@@ -175,25 +154,13 @@ func (p ParentCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 	childχ := Inter(p.Child, vertCompLow)
 
 	if !Subset(Inter(vertCompLow, p.Conn), sep.Vertices()) {
-		// log.Println("Conn not covered by parent")
-		// log.Println("Conn: ", PrintVertices(Conn))
-		// log.Println("V(parentλ) \\cap Conn", PrintVertices(Inter(parentλ.Vertices(), Conn)))
-		// log.Println("V(Comp_lo w) \\cap Conn ", PrintVertices(Inter(vertCompLow, Conn)))
-
 		return false // also a bad parent :(
 	}
 
 	// Connectivity check
 	if !Subset(Inter(vertCompLow, sep.Vertices()), childχ) {
-		// log.Println("Child not connected to parent!")
-		// log.Println("Parent lambda: ", PrintVertices(parentλ.Vertices()))
-		// log.Println("Child lambda: ", PrintVertices(childλ.Vertices()))
-		// log.Println("Child", childλ)
-
 		return false // again a bad parent :( Calling child services ...
 	}
-
-	// fmt.Println("\nPARENTCHECK: I found the parent ", sep, " relative to child ", PrintVertices(p.Child), "for the hypergraph ", H, "\n\n")
 
 	return true // found a good parent :)
 }

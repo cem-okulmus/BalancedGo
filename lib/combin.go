@@ -19,7 +19,6 @@ package lib
 // n and k must be non-negative with n >= k, otherwise binomial will panic.
 // No check is made for overflow.
 func binomial(n, k int) int {
-
 	if n < 0 || k < 0 {
 		panic("combin: negative input")
 	}
@@ -83,10 +82,6 @@ func nextCombination(s []int, n, k int) bool {
 		if s[j] == n+j-k {
 			continue
 		}
-		// for i := 0; i < 1000; i++ {
-		// 	s[j]++
-		// 	s[j]--
-		// }
 
 		s[j]++
 
@@ -199,7 +194,6 @@ func combinatorialOrder(combination []int) int {
 // GetPercentage returns the current progress as a percentage,
 // with 100% representing that all combinations have been visited
 func (c CombinationIterator) GetPercentage() float32 {
-
 	if !c.hasNext() {
 		return 1.0
 	}

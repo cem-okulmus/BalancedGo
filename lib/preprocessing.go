@@ -43,7 +43,6 @@ func (v vertOp) String() string {
 	return fmt.Sprintf("(%v ∈ %v)", m[v.vertex], v.edge)
 }
 
-//TODO fix this to run in linear time
 // Performs one part of GYÖ reduct
 func (g Graph) removeEdges() (Graph, []GYÖReduct) {
 	var output []Edge
@@ -73,10 +72,8 @@ func (g Graph) removeVertices() (Graph, []GYÖReduct) {
 	for _, e1 := range g.Edges.Slice() {
 		var vertices []int
 		var remVertices []int
-		// fmt.Println("Working on edge ", e1)
 	INNER:
 		for _, v := range e1.Vertices {
-			// fmt.Printf("Degree of %v is %v\n", m[v], getDegree(g.Edges, v))
 			if getDegree(g.Edges, v) == 1 {
 				remVertices = append(remVertices, v)
 				continue INNER
@@ -105,18 +102,10 @@ func (g Graph) GYÖReduct() (Graph, []GYÖReduct) {
 	for {
 		//Perform edge removal
 		g1, ops1 := g.removeEdges()
-		// fmt.Println("After Edge Removal:")
-		// fmt.Println(g1)
-
 		ops = append(ops, ops1...)
 
 		//Perform vertex removal
 		g2, ops2 := g1.removeVertices()
-		// fmt.Println("After Vertex Removal:")
-		// for _, e := range g2.Edges.Slice() {
-		//  fmt.Printf("%v %v\n", e, Edge{Vertices: e.Vertices})
-		// }
-
 		ops = append(ops, ops2...)
 
 		//Check if something changed
@@ -170,10 +159,8 @@ func (n Node) addLeaf(v vertOp) (Node, bool) {
 	edge := Edge{Name: v.edge.Name, Vertices: append(v.edge.Vertices, v.vertex)}
 
 	if Subset(v.edge.Vertices, n.Bag) {
-
 		nuCover := NewEdges([]Edge{edge})
 		n.Children = append(n.Children, Node{Bag: edge.Vertices, Cover: nuCover})
-		// fmt.Println("Restoring node with  ", v.edge.FullString())
 		return n, true // Won't work without deep copy
 	}
 
@@ -223,7 +210,6 @@ func (n Node) restoreVertex(v vertOp) (Node, bool) {
 
 // RestoreGYÖ can restore any performed reductions on the graph, given a slice of reducts
 func (n Node) RestoreGYÖ(reducts []GYÖReduct) (Node, bool) {
-
 	output := n
 	result := true
 
@@ -282,7 +268,6 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 
 		if _, ok := encountered[typeString]; ok {
 			// already seen this type before
-			// fmt.Println("Seen type of ", m[v], "before!")
 			count++
 			substituteMap[v] = encountered[typeString]
 			restorationMap[encountered[typeString]] = append(restorationMap[encountered[typeString]], v)
@@ -311,15 +296,10 @@ func (e Edges) addVertex(target int, oldVertices []int) Edges {
 
 	for i := range edges {
 		if mem(edges[i].Vertices, target) {
-
 			newLambda := make([]int, len(edges[i].Vertices))
-
 			copy(newLambda, edges[i].Vertices)
-
 			newLambda = append(newLambda, oldVertices...)
-
 			edges[i].Vertices = newLambda
-
 		}
 	}
 
@@ -350,7 +330,6 @@ func (n Node) addVertices(target int, oldVertices []int) (Node, bool) {
 
 // RestoreTypes can restore any performed Type reductions given a mapping of the reductions
 func (n Node) RestoreTypes(restoreMap map[int][]int) (Node, bool) {
-
 	output := n
 
 	for k, v := range restoreMap {

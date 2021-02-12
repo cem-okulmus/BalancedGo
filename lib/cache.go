@@ -39,11 +39,8 @@ func (c *Cache) Init() {
 func (c *Cache) initFunction() {
 	if c.cache == nil {
 		var newMutex sync.RWMutex
-
 		c.cacheMux = &newMutex
-
 		c.cache = make(map[uint64]*compCache)
-
 	}
 }
 
@@ -104,12 +101,9 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 		for i := range compCachePrev.Fail {
 			if comps[j].Hash() == compCachePrev.Fail[i] {
 				//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
-
 				return true
 			}
-
 		}
-
 	}
 
 	return false
@@ -133,7 +127,6 @@ func (c *Cache) CheckPositive(sep Edges, comps []Graph) bool {
 				//  log.Println("Comp ", comp, " known as negative for sep ", sep)
 				return true
 			}
-
 		}
 	}
 

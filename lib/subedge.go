@@ -112,20 +112,16 @@ func (s *subEdges) hasNext() bool {
 	newSelected := false
 	if s.currentSubset == nil || !s.currentSubset.hasNext() {
 		for s.hasNextCombination() {
-			// fmt.Println("We need a new subset")
-			// fmt.Println("current:", GetSubset(s.source, s.Combination))
 			edges := GetSubset(s.source, s.combination)
 			vertices := edges.Vertices()
 			if len(vertices) == 0 || len(vertices) == s.source.Len() || s.existsSubset(vertices) {
 				continue //skip
 			} else {
-				//s.cache = append(s.cache, vertices)
 				s.currentSubset = getSubsetIterator(vertices)
 				s.currentSubset.hasNext()
 				newSelected = true
 				break
 			}
-
 		}
 		if !newSelected && !s.hasNextCombination() {
 			if !s.emptyReturned {
@@ -137,7 +133,6 @@ func (s *subEdges) hasNext() bool {
 	}
 
 	s.current = s.currentSubset.getCurrent()
-
 	s.cache[IntHash(s.current.Vertices)] = Empty // add used combination to cache
 
 	return true
@@ -189,7 +184,9 @@ func (sep *SepSub) HasNext() bool {
 		if sep.edges[i].hasNext() {
 			return true
 		}
-		sep.edges[i].reset()
+		if i < len(sep.edges)-1 {
+			sep.edges[i].reset()
+		}
 	}
 
 	return false

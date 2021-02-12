@@ -36,9 +36,7 @@ func (d Decomp) ToGML() string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("graph [\n\n  directed 0\n\n")
-
 	edges := d.Root.getConGraph(false).Slice()
-
 	buffer.WriteString(d.Root.toGML())
 
 	for i := range edges {

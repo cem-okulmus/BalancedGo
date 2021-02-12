@@ -105,15 +105,13 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 	for k := range g.Edges.Slice() {
 		for i := 0; i < len(g.Edges.Slice()[k].Vertices); i++ {
 			if balSepCache[g.Edges.Slice()[k].Vertices[i]] {
-
 				continue
 			}
 			for j := i + 1; j < len(g.Edges.Slice()[k].Vertices); j++ {
 				if balSepCache[g.Edges.Slice()[k].Vertices[j]] {
 					continue
 				}
-				// fmt.Println("Union of ", m[g.Edges.Slice()[k].Vertices[i]], "and ",
-				//      m[g.Edges.Slice()[k].Vertices[j]])
+
 				disjoint.Union(vertices[g.Edges.Slice()[k].Vertices[i]], vertices[g.Edges.Slice()[k].Vertices[j]])
 				// j = i-1
 				break
@@ -135,7 +133,6 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 				break
 			}
 		}
-
 	}
 
 	var isolatedEdges []Edge
@@ -165,7 +162,6 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 		}
 
 		comps[vertices[vertexRep].Find()] = append(slice, g.Edges.Slice()[i])
-
 	}
 
 	var isolatedSp []Edges
@@ -262,16 +258,6 @@ func CutEdges(edges Edges, vertices []int) Edges {
 		inter := Inter(edges.Slice()[i].Vertices, vertices)
 		if len(inter) > 0 {
 			name := edges.Slice()[i].Name
-			// if len(inter) < len(edges.Slice()[i].Vertices) {
-
-			//  var mux sync.Mutex
-			//  mux.Lock() // ensure that hash is computed only on one goroutine at a time
-			//  name = encode
-			//  m[encode] = m[edges.Slice()[i].Name] + "'"
-			//  encode++
-			//  mux.Unlock()
-
-			// }
 			output = append(output, Edge{Name: name, Vertices: inter})
 		}
 	}

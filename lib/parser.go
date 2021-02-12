@@ -188,7 +188,6 @@ func GetGraphPACE(s string) Graph {
 				encoding[encode] = "V" + strconv.Itoa(n)
 				outputEdges = append(outputEdges, encode)
 				encode++
-
 			}
 		}
 		edges = append(edges, Edge{Name: pgraph.m[e.Name], Vertices: outputEdges})
