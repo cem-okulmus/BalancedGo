@@ -29,7 +29,7 @@ type ParseGraph struct {
 	Encoding map[string]int
 }
 
-// GetGraph parses a string in Hyperbench format into a graph
+// GetGraph parses a string in HyperBench format into a graph
 func GetGraph(s string) (Graph, ParseGraph) {
 
 	graphLexer := lexer.Must(ebnf.New(`

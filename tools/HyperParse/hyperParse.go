@@ -1,3 +1,6 @@
+// This package implements a basic tool to change the formatting of hypergraphs, as well as restore
+// various errors in an input GHD and also compute various statistics for an input hypergraph.
+
 package main
 
 import (

@@ -1,3 +1,6 @@
+// This package provides various functions, data structures and methods to aid in the design of algorithms to
+// compute structural decomposition methodds.
+
 package lib
 
 import (
@@ -56,7 +59,7 @@ OUTER:
 	return output
 }
 
-// mem64 is the same as Mem, but for uint64
+// mem64 is the same as mem, but for uint64
 func mem64(as []uint64, b uint64) bool {
 	for _, a := range as {
 		if a == b {
@@ -74,7 +77,6 @@ func diffEdges(a Edges, e ...Edge) Edges {
 	for i := range e {
 		hashes = append(hashes, e[i].Hash())
 	}
-
 	for i := range a.Slice() {
 		if !mem64(hashes, a.Slice()[i].Hash()) {
 			output = append(output, a.Slice()[i])

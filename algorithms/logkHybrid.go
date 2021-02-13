@@ -100,7 +100,6 @@ func (l *LogKHybrid) Name() string {
 
 // FindDecomp finds a decomp
 func (l *LogKHybrid) FindDecomp() lib.Decomp {
-	// l.cache = make(map[uint32]*CompCache)
 	l.cache.Init()
 	return l.findDecomp(l.Graph, []int{}, l.Graph.Edges)
 }
@@ -112,12 +111,9 @@ func (l *LogKHybrid) FindDecompGraph(Graph lib.Graph) lib.Decomp {
 }
 
 func (l *LogKHybrid) detKWrapper(H lib.Graph, Conn []int, allwowed lib.Edges) lib.Decomp {
-
 	det := DetKDecomp{K: l.K, Graph: lib.Graph{Edges: allwowed}, BalFactor: l.BalFactor, SubEdge: false}
 
-	// TODO: reuse the same cache as for Logk?
-	// det.Cache.Init()
-	l.cache.CopyRef(&det.cache)
+	l.cache.CopyRef(&det.cache) // reuse the same cache as log-k
 
 	return det.findDecomp(H, Conn)
 }
@@ -154,7 +150,6 @@ func (l *LogKHybrid) baseCase(H lib.Graph, lenAE int) lib.Decomp {
 	}
 
 	// construct a decomp in the remaining two
-
 	if H.Edges.Len() <= l.K && len(H.Special) == 0 {
 		output = lib.Decomp{Graph: H, Root: lib.Node{Bag: H.Vertices(), Cover: H.Edges}}
 	}
@@ -183,7 +178,7 @@ func (l *LogKHybrid) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges) 
 		return l.baseCase(H, allowedFull.Len())
 	}
 
-	// Deterime the function to use for the recursive calls
+	// Determine the function to use for the recursive calls
 	var recCall recursiveCall
 
 	if l.Predicate(H, l.K) {

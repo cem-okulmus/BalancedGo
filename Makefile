@@ -4,7 +4,7 @@
 VERSION := $(shell git tag | sort -V | tail -1)
 DATE := $(shell git log -1 --format=%cd --date=short)
 BUILD := $(shell git rev-parse --short HEAD)
-PROJECTNAME := $(shell basename "$(PWD)")
+PROJECTNAME := "BalancedGo"
 
 # Go related variables.
 GOBASE := $(shell pwd)

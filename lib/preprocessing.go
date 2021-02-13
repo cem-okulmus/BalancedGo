@@ -264,7 +264,6 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 
 	for _, v := range g.Vertices() {
 		typeString := g.getType(v).String()
-		// fmt.Println("Type of ", m[v], "is ", typeString)
 
 		if _, ok := encountered[typeString]; ok {
 			// already seen this type before
@@ -272,7 +271,7 @@ func (g Graph) TypeCollapse() (Graph, map[int][]int, int) {
 			substituteMap[v] = encountered[typeString]
 			restorationMap[encountered[typeString]] = append(restorationMap[encountered[typeString]], v)
 		} else {
-			// Record thie type as a new element
+			// Record this type as a new element
 			encountered[typeString] = v
 			substituteMap[v] = v
 		}

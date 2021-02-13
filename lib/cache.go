@@ -22,7 +22,6 @@ func (c *Cache) CopyRef(other *Cache) {
 	if c.cache == nil { // to be sure only an initialised cache is copied
 		c.Init()
 	}
-
 	c.cacheMux.RLock()
 	defer c.cacheMux.RUnlock()
 
@@ -74,12 +73,10 @@ func (c *Cache) AddNegative(sep Edges, comp Graph) {
 	defer c.cacheMux.Unlock()
 
 	_, ok := c.cache[sep.Hash()]
-
 	if !ok {
 		var newCache compCache
 		c.cache[sep.Hash()] = &newCache
 	}
-	// fmt.Println("Adding negative, current length of cache", len(c.cache))
 
 	c.cache[sep.Hash()].Fail = append(c.cache[sep.Hash()].Fail, comp.Hash())
 }
@@ -90,7 +87,6 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 	defer c.cacheMux.RUnlock()
 
 	//check cache for previous encounters
-
 	compCachePrev, ok := c.cache[sep.Hash()]
 
 	if !ok { // sep not encountered before
@@ -100,7 +96,6 @@ func (c *Cache) CheckNegative(sep Edges, comps []Graph) bool {
 	for j := range comps {
 		for i := range compCachePrev.Fail {
 			if comps[j].Hash() == compCachePrev.Fail[i] {
-				//  log.Println("Comp ", comp, "(hash ", comp.Edges.Hash(), ")  known as negative for sep ", sep)
 				return true
 			}
 		}
@@ -124,7 +119,6 @@ func (c *Cache) CheckPositive(sep Edges, comps []Graph) bool {
 	for j := range comps {
 		for i := range compCachePrev.Succ {
 			if comps[j].Hash() == compCachePrev.Succ[i] {
-				//  log.Println("Comp ", comp, " known as negative for sep ", sep)
 				return true
 			}
 		}

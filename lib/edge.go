@@ -189,8 +189,8 @@ func removeDuplicateEdges(elementsSlice []Edge) Edges {
 	return NewEdges(elements.slice[:j+1])
 }
 
-// subedges computes all subdges for an Edges slice.
-// TODO: Unnessarily adds empty edge
+// subedges computes all subedges for an Edges slice.
+// TODO: Unnecessarily adds empty edge
 func (e Edge) subedges() []Edge {
 	var output []Edge
 

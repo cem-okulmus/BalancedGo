@@ -179,7 +179,6 @@ func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 			output := lib.Node{Bag: balsep.Vertices(), Cover: balsep}
 
 			for _, s := range subtrees {
-				//TODO: Reroot only after all subtrees received
 				if currentDepth == 0 && s.SkipRerooting {
 					// log.Println("\nFrom detK on", decomp.Graph, ":\n", decomp)
 					// local := BalSepGlobal{Graph: b.Graph, BalFactor: b.BalFactor}

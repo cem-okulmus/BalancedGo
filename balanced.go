@@ -1,3 +1,18 @@
+// BalancedGo - A research prototype to compute structural decompositions of Conjunctive Queries and CSPs
+// via the use of Balanced Separators with a focus on parallelism using the programming language Go.
+//
+// For more detailed information,  see "Fast and Parallel Decomposition of Constraint Satisfaction Problems",
+// Georg Gottlob, Cem Okulmus, Reinhard Pichler, released in Proc. IJCAI 2020.
+// https://www.ijcai.org/Proceedings/2020/161
+//
+// The tool is split into three packages. main is responsible to actually run the various algorithms supported
+// by the tool, lib is used to implement various functionality used by the algorithms and lastly algorithms which
+// implements the actual algorithms to compute various decompositions.
+//
+// In addition to this, there is also a tool subdirectory in the repository which is intended to support functionality
+// not directly related to the computation of decompositions, such as changing the formatting of hypergraphs, or fixing
+// a faulty decomposition.
+
 package main
 
 import (
@@ -16,13 +31,13 @@ import (
 	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
-// Decomp used to improve readabilty
+// Decomp used to improve readability
 type Decomp = lib.Decomp
 
-// Edge used to improve readabilty
+// Edge used to improve readability
 type Edge = lib.Edge
 
-// Graph used to improve readabilty
+// Graph used to improve readability
 type Graph = lib.Graph
 
 func logActive(b bool) {

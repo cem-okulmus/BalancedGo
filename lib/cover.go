@@ -69,7 +69,6 @@ func NewCover(K int, vertices []int, bound Edges, compVertices []int) Cover {
 func (c *Cover) NextSubset() int {
 	if !c.first {
 		if !c.backtrack() {
-			// log.Println("No more covers possible.")
 			return -1 // no more backtracking possible
 		}
 		c.pos++

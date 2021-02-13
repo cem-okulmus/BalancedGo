@@ -32,7 +32,6 @@ func (d *Decomp) RestoreSubedges() {
 // It also checks for the special condition of HDs, though it merely prints a warning if it is not satisfied,
 // the output is not affected by this additional check.
 func (d Decomp) Correct(g Graph) bool {
-
 	if reflect.DeepEqual(d, Decomp{}) { // empty Decomp is always false
 		return false
 	}
@@ -63,7 +62,6 @@ func (d Decomp) Correct(g Graph) bool {
 
 	//connectedness
 	for _, i := range d.Graph.Edges.Vertices() {
-
 		nodeCheck, _ := d.Root.connected(i, false)
 		if !nodeCheck {
 			mutex.RLock()
@@ -71,14 +69,9 @@ func (d Decomp) Correct(g Graph) bool {
 			mutex.RUnlock()
 			return false
 		}
-		// if d.connected(i) != nodeCheck {
-		// 	log.Panicln("Node based connectedness check not working!")
-		// }
-
 	}
 
 	//special condition (optionally)
-
 	if !d.Root.noSCViolation() {
 		fmt.Println("SCV found!. Not a valid hypertree decomposition!")
 	}
@@ -99,7 +92,6 @@ func (d Decomp) CheckWidth() int {
 			if n.Cover.Len() > output {
 				output = n.Cover.Len()
 			}
-
 			for _, c := range n.Children {
 				children = append(children, c) // build up the next level of the tree
 			}

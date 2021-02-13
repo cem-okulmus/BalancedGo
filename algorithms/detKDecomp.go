@@ -221,9 +221,7 @@ OUTER:
 								continue OUTER
 							}
 						}
-
 						//d.Cache.AddPositive(sepActual, comps[i])
-
 						// log.Printf("Produced Decomp: %v\n", decomp)
 						subtrees = append(subtrees, decomp.Root)
 					}
@@ -231,9 +229,7 @@ OUTER:
 					return lib.Decomp{Graph: H, Root: lib.Node{Bag: bag, Cover: sepActual, Children: subtrees}}
 				}
 			}
-
 		}
-
 	}
 
 	return lib.Decomp{} // Reject if no separator could be found

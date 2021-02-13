@@ -99,7 +99,6 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 			ch := make(chan lib.Decomp)
 			var subtrees []lib.Decomp
 
-			//var outDecomp []Decomp
 			for i := range comps {
 
 				if currentDepth > 0 {
@@ -114,24 +113,18 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 						//stop if there are at most two special edges left
 						if comps[i].Len() <= 2 {
 							ch <- baseCaseSmart(b.Graph, comps[i])
-							//outDecomp = append(outDecomp, baseCaseSmart(b.Graph, comps[i], Sp))
 							return
 						}
 
 						//Early termination
 						if comps[i].Edges.Len() <= b.K && len(comps[i].Special) == 1 {
 							ch <- earlyTermination(comps[i])
-							//outDecomp = append(outDecomp, earlyTermination(comps[i], Sp[0]))
 							return
 						}
 
 						det := DetKDecomp{K: b.K, Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
-
-						// edgesFromSpecial := EdgesSpecial(Sp)
-						// comps[i].Edges.Append(edgesFromSpecial...)
-
-						// det.cache = make(map[uint64]*CompCache)
 						det.cache.Init()
+
 						result := det.findDecomp(comps[i], balsep.Vertices())
 						if !reflect.DeepEqual(result, lib.Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
@@ -146,14 +139,12 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 							// }
 						}
 						ch <- result
-						// outDecomp = append(outDecomp, result)
 					}(i, comps, SepSpecial)
 				}
 
 			}
 
 			for i := 0; i < len(comps); i++ {
-				//  decomp := outDecomp[i]
 				decomp := <-ch
 				if reflect.DeepEqual(decomp, lib.Decomp{}) {
 					// log.Printf("balDet REJECTING %v: couldn't decompose a component of H %v \n",

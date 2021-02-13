@@ -25,7 +25,7 @@ func binomial(n, k int) int {
 	if n < k {
 		panic("combin: n < k")
 	}
-	// (n,k) = (n, n-k)
+
 	if k > n/2 {
 		k = n - k
 	}
@@ -165,15 +165,12 @@ func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 	var output []*CombinationIterator
 
 	initial := CombinationIterator{n: n, k: k, stepSize: split, extended: !unextended, confirmed: true}
-
 	output = append(output, &initial)
 
 	for i := 1; i < split; i++ {
 		tempIter := CombinationIterator{n: n, k: k, stepSize: split, extended: !unextended, confirmed: true}
-
 		tempIter.hasNext()
 		nextCombinationStep(tempIter.combination, n, k, i)
-
 		output = append(output, &tempIter)
 	}
 

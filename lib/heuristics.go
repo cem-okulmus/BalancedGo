@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// GetMSCOrder produes the Maximal Cardinality Search Ordering.
+// GetMSCOrder produces the Maximal Cardinality Search Ordering.
 // Implementation is based det-k-decomp of Samer and Gottlob '09
 func GetMSCOrder(edges Edges) Edges {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -158,7 +158,7 @@ func diffDistances(old, new [][]int) int {
 		for i := 0; i < len(old[j]); i++ {
 			if isInf(old[j][i]) && !isInf(new[j][i]) { // disconnected a path
 				output = output + SepWeight
-			} else if !isInf(old[j][i]) && !isInf(new[j][i]) { // check if parth shortened
+			} else if !isInf(old[j][i]) && !isInf(new[j][i]) { // check if path shortened
 				diff := old[j][i] - new[j][i]
 				output = output + diff
 			}
