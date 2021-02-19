@@ -30,6 +30,18 @@ func (c *Cache) CopyRef(other *Cache) {
 	other.once.Do(func() {}) // if cache is copied, it's assumed to already be initialised, so once is pre-fired here
 }
 
+// Reset will throw out all saved cache entries
+func (c *Cache) Reset() {
+	if c.cacheMux == nil {
+		return // don't do anything if cache wasn't initialised yet
+	}
+	c.cacheMux.Lock()
+	defer c.cacheMux.Unlock()
+
+	c.cache = make(map[uint64]*compCache)
+
+}
+
 // Init needs to be called to initialise the cache
 func (c *Cache) Init() {
 	c.once.Do(c.initFunction)
@@ -45,8 +57,8 @@ func (c *Cache) initFunction() {
 
 // Len returns the number of bindings in the cache
 func (c *Cache) Len() int {
-	c.cacheMux.Lock()
-	defer c.cacheMux.Unlock()
+	c.cacheMux.RLock()
+	defer c.cacheMux.RUnlock()
 
 	return len(c.cache)
 }

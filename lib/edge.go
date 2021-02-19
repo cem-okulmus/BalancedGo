@@ -6,6 +6,7 @@ import (
 	"math"
 	"reflect"
 	"sort"
+	"strconv"
 	"sync"
 )
 
@@ -294,4 +295,25 @@ func (e *Edges) Diff(other Edges) Edges {
 	}
 
 	return NewEdges(output)
+}
+
+// FullString always prints the list of vertices of an edge, even if the edge is named
+func (e Edge) FullStringInt() string {
+	var buffer bytes.Buffer
+	mutex.RLock()
+	defer mutex.RUnlock()
+	if e.Name > 0 {
+		buffer.WriteString("E" + strconv.Itoa(e.Name))
+	}
+	buffer.WriteString(" (")
+	for i, n := range e.Vertices {
+		var s string
+		s = fmt.Sprintf("V%v", n)
+		buffer.WriteString(s)
+		if i != len(e.Vertices)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString(")")
+	return buffer.String()
 }

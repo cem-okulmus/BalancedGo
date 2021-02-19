@@ -10,6 +10,8 @@ import (
 	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
+var EDGE int
+
 //getRandomEdge will produce a random Edge
 func getRandomEdge(size int) lib.Edge {
 	s := rand.NewSource(time.Now().UnixNano())
@@ -17,22 +19,22 @@ func getRandomEdge(size int) lib.Edge {
 
 	arity := r.Intn(size) + 1
 	var vertices []int
-	name := r.Intn(size * 10)
+	name := r.Intn(size*10) + EDGE + 1
+	EDGE = name
 
 	for i := 0; i < arity; i++ {
-		vertices = append(vertices, r.Intn(size*10)+i)
+
+		vertices = append(vertices, r.Intn(size*10)+i+1)
 	}
 
 	return lib.Edge{Name: name, Vertices: vertices}
 }
 
 //getRandomGraph will produce a random Graph
-func getRandomGraph(size int) lib.Graph {
+func getRandomGraph(size int) (lib.Graph, map[string]int) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-
 	card := r.Intn(size) + 1
-	special := r.Intn(size)
 
 	var edges []lib.Edge
 	var SpEdges []lib.Edges
@@ -41,11 +43,10 @@ func getRandomGraph(size int) lib.Graph {
 		edges = append(edges, getRandomEdge(size))
 	}
 
-	for i := 0; i < special; i++ {
-		SpEdges = append(SpEdges, getRandomEdges(size))
-	}
+	outString := lib.Graph{Edges: lib.NewEdges(edges), Special: SpEdges}.ToHyberBenchFormat()
+	parsedGraph, pGraph := lib.GetGraph(outString)
 
-	return lib.Graph{Edges: lib.NewEdges(edges), Special: SpEdges}
+	return parsedGraph, pGraph.Encoding
 }
 
 //getRandomEdges will produce a random Edges struct
@@ -77,7 +78,7 @@ func getRandomSep(g lib.Graph, size int) lib.Edges {
 }
 
 func TestCache(t *testing.T) {
-	randomGraph := getRandomGraph(100)
+	randomGraph, _ := getRandomGraph(100)
 	randomSep := getRandomSep(randomGraph, 10)
 	randomSep2 := getRandomSep(randomGraph, 10)
 	randomSep3 := getRandomSep(randomGraph, 10)

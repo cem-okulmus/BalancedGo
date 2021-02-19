@@ -13,7 +13,7 @@ func TestCover(t *testing.T) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	graph := getRandomGraph(100)
+	graph, _ := getRandomGraph(100)
 
 	k := r.Intn(10) + 1
 
@@ -40,7 +40,7 @@ func shuffle(input lib.Edges) lib.Edges {
 
 //TestCover2 also checks if Cover works for non-empty Conn
 func TestCover2(t *testing.T) {
-	graph := getRandomGraph(100)
+	graph, _ := getRandomGraph(100)
 	oldSep := getRandomSep(graph, 10)
 
 	conn := lib.Inter(oldSep.Vertices(), graph.Vertices())

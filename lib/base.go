@@ -1,6 +1,5 @@
 // This package provides various functions, data structures and methods to aid in the design of algorithms to
-// compute structural decomposition methodds.
-
+// compute structural decomposition methods.
 package lib
 
 import (

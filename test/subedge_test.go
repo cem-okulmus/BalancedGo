@@ -10,7 +10,7 @@ import (
 
 //TestSubedge creates a random scenario for the SepSub struct and checks if some subedges are being produced
 func TestSubedge(t *testing.T) {
-	graph := getRandomGraph(20)
+	graph, _ := getRandomGraph(20)
 	sep := getRandomSep(graph, 10)
 
 	test := lib.GetSepSub(graph.Edges, sep, sep.Len())

@@ -17,7 +17,7 @@ func TestSearchBal(t *testing.T) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	randGraph := getRandomGraph(20)
+	randGraph, _ := getRandomGraph(20)
 	k := r.Intn(5) + 1
 
 	combinParallel := lib.SplitCombin(randGraph.Edges.Len(), k, runtime.GOMAXPROCS(-1), false)
@@ -71,7 +71,7 @@ func TestSearchPar(t *testing.T) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
-	randGraph := getRandomGraph(30)
+	randGraph, _ := getRandomGraph(30)
 	k := r.Intn(5) + 1
 	prevSep := getRandomSep(randGraph, k)
 

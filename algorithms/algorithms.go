@@ -1,6 +1,5 @@
 // This package implements various algorithms to compute Generalized Hypertree Decompositions as well as
-// the more restricted set of Hypertree Deocmpositions.
-
+// the more restricted set of Hypertree Decompositions.
 package algorithms
 
 import "github.com/cem-okulmus/BalancedGo/lib"

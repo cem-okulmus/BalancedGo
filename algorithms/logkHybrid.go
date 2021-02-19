@@ -90,6 +90,8 @@ func (l *LogKHybrid) ETimesKDivAvgEdgePred(H lib.Graph, K int) bool {
 
 // SetWidth sets the current width parameter of the algorithm
 func (l *LogKHybrid) SetWidth(K int) {
+	l.cache.Reset() // reset the cache as the new width might invalidate any old results
+
 	l.K = K
 }
 

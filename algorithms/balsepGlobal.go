@@ -1,7 +1,6 @@
 package algorithms
 
 import (
-	"log"
 	"reflect"
 	"runtime"
 
@@ -93,7 +92,7 @@ func rerooting(H lib.Graph, balsep lib.Edges, subtrees []lib.Decomp) lib.Decomp 
 	for _, s := range subtrees {
 		// fmt.Println("H ", H, "balsep ", balsep, "comp ", s.Graph)
 		s.Root = s.Root.Reroot(rerootNode)
-		log.Printf("Rerooted Decomp: %v\n", s)
+		// log.Printf("Rerooted Decomp: %v\n", s)
 		output.Children = append(output.Children, s.Root.Children...)
 	}
 	// log.Println("H: ", H, "output: ", output)

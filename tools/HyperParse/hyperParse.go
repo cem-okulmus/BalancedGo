@@ -1,6 +1,5 @@
 // This package implements a basic tool to change the formatting of hypergraphs, as well as restore
 // various errors in an input GHD and also compute various statistics for an input hypergraph.
-
 package main
 
 import (
@@ -32,10 +31,9 @@ func pruneTree(n *lib.Node) {
 		if i > len(n.Children) {
 			fmt.Println("Current node", n)
 			fmt.Println("Children: ", n.Children)
-
 			fmt.Println("Index: ", c)
 
-			log.Panicln("the fuck?")
+			log.Panicln("error with pruning?")
 		}
 		pruneTree(&c)
 		if lib.Subset(c.Bag, n.Bag) {
@@ -122,9 +120,7 @@ func main() {
 
 		// Performing GYÖ reduction
 		reducedGraph, _ = reducedGraph.GYÖReduct()
-
 		hinget := lib.GetHingeTree(reducedGraph)
-
 		reducedGraph = hinget.GetLargestGraph()
 
 		sumEdgeSizes := 0
@@ -152,7 +148,6 @@ func main() {
 	}
 
 	if *decompPath != "" {
-
 		dis, err2 := ioutil.ReadFile(*decompPath)
 		if err2 != nil {
 			panic(err)
@@ -164,7 +159,6 @@ func main() {
 		}
 
 		defer f.Close()
-
 		decomp := lib.GetDecompGML(string(dis), parsedGraph, parseGraph.Encoding)
 
 		if decomp.Correct(parsedGraph) {
@@ -181,8 +175,6 @@ func main() {
 			os.Exit(0)
 		}
 
-		// fmt.Println("parsed Decomp ", decomp)
-
 		var removalMap map[int][]int
 		// Performing Type Collapse
 		reducedGraph, removalMap, _ = parsedGraph.TypeCollapse()
@@ -192,14 +184,7 @@ func main() {
 		// Performing GYÖ reduction
 
 		reducedGraph, ops = reducedGraph.GYÖReduct()
-
 		decomp.Graph = reducedGraph
-
-		// parsedGraph = reducedGraph
-		// fmt.Println("Graph after GYÖ:")
-		// fmt.Println(reducedGraph)
-		// fmt.Println("Reductions:")
-		// fmt.Print(ops, "\n\n")
 
 		if !decomp.Correct(reducedGraph) {
 			log.Panicln("decomp isn't correct decomp of reduced graph")

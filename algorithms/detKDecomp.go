@@ -18,6 +18,8 @@ type DetKDecomp struct {
 
 // SetWidth sets the current width parameter of the algorithm
 func (d *DetKDecomp) SetWidth(K int) {
+	d.cache.Reset() // reset the cache as the new width might invalidate any old results
+
 	d.K = K
 }
 
@@ -181,9 +183,9 @@ OUTER:
 
 							d.cache.AddNegative(sepActual, comps[i])
 							// log.Printf("detK REJECTING %v: couldn't decompose %v  \n",
-							// 	Graph{Edges: sepActual}, comps[i])
-							// log.Printf("\n\nCurrent oldSep: %v\n", PrintVertices(oldSep))
-							// log.Printf("Current SubGraph: %v ( %v edges)\n", H, H.Edges.Len(), H.Edges.Hash())
+							// 	lib.Graph{Edges: sepActual}, comps[i])
+							// log.Printf("\n\nCurrent oldSep: %v\n", lib.PrintVertices(oldSep))
+							// log.Printf("Current SubGraph: %v ( %v edges) %v\n", H, H.Edges.Len(), H.Edges.Hash())
 
 							if d.SubEdge {
 								if sepSub == nil {
@@ -209,8 +211,8 @@ OUTER:
 										}
 									}
 								}
-								// log.Printf("Sub Sep chosen: %vof %v \n", Graph{Edges: sepActual},
-								// 	Graph{Edges: sepActualOrigin})
+								// log.Printf("Sub Sep chosen: %vof %v \n", lib.Graph{Edges: sepActual},
+								// 	lib.Graph{Edges: sepActualOrigin})
 								continue subEdges
 							}
 

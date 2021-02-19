@@ -27,6 +27,8 @@ type decompInt struct {
 
 // SetWidth sets the current width parameter of the algorithm
 func (l *LogKDecomp) SetWidth(K int) {
+	l.cache.Reset() // reset the cache as the new width might invalidate any old results
+
 	l.K = K
 }
 

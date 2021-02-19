@@ -111,13 +111,15 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 
 						// Base case handling
 						//stop if there are at most two special edges left
-						if comps[i].Len() <= 2 {
+						if comps[i].Len() <= 1 {
+							comps[i].Special = append(comps[i].Special, SepSpecial)
 							ch <- baseCaseSmart(b.Graph, comps[i])
 							return
 						}
 
 						//Early termination
-						if comps[i].Edges.Len() <= b.K && len(comps[i].Special) == 1 {
+						if comps[i].Edges.Len() <= b.K && len(comps[i].Special) == 0 {
+							comps[i].Special = append(comps[i].Special, SepSpecial)
 							ch <- earlyTermination(comps[i])
 							return
 						}
@@ -126,12 +128,12 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 						det.cache.Init()
 
 						result := det.findDecomp(comps[i], balsep.Vertices())
-						if !reflect.DeepEqual(result, lib.Decomp{}) && currentDepth == 0 {
+						if !reflect.DeepEqual(result, lib.Decomp{}) {
 							result.SkipRerooting = true
 						} else {
 							// comps[i].Special = append(comps[i].Special, SepSpecial)
-							// res2 := b.findDecompBalSep(1000, comps[i])
-							// if !reflect.DeepEqual(res2, Decomp{}) {
+							// res2 := b.findDecomp(1000, comps[i])
+							// if !reflect.DeepEqual(res2, lib.Decomp{}) {
 							// 	fmt.Println("Result, ", res2)
 							// 	fmt.Println("H: ", comps[i], "balsep ", balsep)
 							// 	log.Panicln("Something is rotten in the state of this program")

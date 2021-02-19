@@ -132,7 +132,7 @@ type parseEdgePACE struct {
 }
 
 type parseGraphPACEInfo struct {
-	Vertices int `"p htd":Begin @(Number) `
+	Vertices int `"p htd" @(Number) `
 	Edges    int `@(Number) "\n"`
 }
 
@@ -149,7 +149,7 @@ func GetGraphPACE(s string) Graph {
     Comment = ("c" | "//") { "\u0000"…"\uffff"-"\n" } Newline.
     Begin = "p htd" .
     Number = ("." | digit | "_"){"." | digit | stuff } .
-    Whitespace = " " | "\t" | "\n" | "\r" .
+    Whitespace = " " | "\t" | "\r" .
     stuff = ":" | "@" | ";" | "-" | "_" .
     Punct = "!"…"/"  .
     Newline = "\n" .

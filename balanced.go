@@ -12,7 +12,6 @@
 // In addition to this, there is also a tool subdirectory in the repository which is intended to support functionality
 // not directly related to the computation of decompositions, such as changing the formatting of hypergraphs, or fixing
 // a faulty decomposition.
-
 package main
 
 import (
@@ -412,7 +411,8 @@ func main() {
 
 	if *globalBal {
 		global := &algo.BalSepGlobal{
-			K: *width, Graph: parsedGraph,
+			K:         *width,
+			Graph:     parsedGraph,
 			BalFactor: BalFactor,
 		}
 		solver = global

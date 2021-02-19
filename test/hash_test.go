@@ -1,5 +1,4 @@
 // This package implements various black box unit tests
-
 package tests
 
 import (
