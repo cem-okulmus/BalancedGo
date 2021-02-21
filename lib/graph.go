@@ -304,7 +304,9 @@ func (g Graph) GetBIP() int {
 	return output
 }
 
-//ToHyperBench format transforms the graph structure to a string in HyperBench Format. This is only relevant for generated instances with no existing string representation. Using this with a parsed graph is not the target use case, only used for internal testing
+//ToHyberBenchFormat transforms the graph structure to a string in HyperBench Format. This is only relevant for
+// generated instances with no existing string representation. Using this with a parsed graph is not the target use
+// case, only used for internal testing
 func (g Graph) ToHyberBenchFormat() string {
 	var buffer bytes.Buffer
 

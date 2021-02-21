@@ -1,4 +1,4 @@
-// This package implements various algorithms to compute Generalized Hypertree Decompositions as well as
+// Package algorithms implements various algorithms to compute Generalized Hypertree Decompositions as well as
 // the more restricted set of Hypertree Decompositions.
 package algorithms
 

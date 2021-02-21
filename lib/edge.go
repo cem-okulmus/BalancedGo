@@ -297,7 +297,7 @@ func (e *Edges) Diff(other Edges) Edges {
 	return NewEdges(output)
 }
 
-// FullString always prints the list of vertices of an edge, even if the edge is named
+// FullStringInt always prints the list of vertices of an edge, even if the edge is named
 func (e Edge) FullStringInt() string {
 	var buffer bytes.Buffer
 	mutex.RLock()

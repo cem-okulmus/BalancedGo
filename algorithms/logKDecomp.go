@@ -118,7 +118,7 @@ func (l *LogKDecomp) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges) 
 	// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 
 	if !lib.Subset(Conn, H.Vertices()) {
-		log.Panicln("You done fucked up. ")
+		log.Panicln("Conn invariant violated.")
 	}
 
 	// Base Case
@@ -142,7 +142,7 @@ CHILD:
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
 
 		childλ := lib.GetSubset(allowed, parallelSearch.Result)
-		comps_c, _, _ := H.GetComponents(childλ)
+		compsε, _, _ := H.GetComponents(childλ)
 
 		// log.Println("Balanced Child found, ", childλ, "of H ", H)
 
@@ -154,23 +154,23 @@ CHILD:
 			childχ := lib.Inter(childλ.Vertices(), VerticesH)
 
 			// check cache for previous encounters
-			if l.cache.CheckNegative(childλ, comps_c) {
+			if l.cache.CheckNegative(childλ, compsε) {
 				// log.Println("Skipping a child sep", childχ)
 				continue CHILD
 			}
 
 			var subtrees []lib.Node
-			for y := range comps_c {
-				V_comp_c := comps_c[y].Vertices()
-				Conn_y := lib.Inter(V_comp_c, childχ)
+			for y := range compsε {
+				VCompε := compsε[y].Vertices()
+				Connγ := lib.Inter(VCompε, childχ)
 
-				decomp := l.findDecomp(comps_c[y], Conn_y, allowedFull)
+				decomp := l.findDecomp(compsε[y], Connγ, allowedFull)
 				if reflect.DeepEqual(decomp, lib.Decomp{}) {
 					// log.Println("Rejecting child-root")
 					// log.Printf("\nCurrent SubGraph: %v\n", H)
 					// log.Printf("Current Allowed Edges: %v\n", allowed)
 					// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
-					l.cache.AddNegative(childλ, comps_c[y])
+					l.cache.AddNegative(childλ, compsε[y])
 					continue CHILD
 				}
 
@@ -193,11 +193,8 @@ CHILD:
 		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
 
 			parentλ := lib.GetSubset(allowedParent, parentalSearch.Result)
-
 			// log.Println("Looking at parent ", parentλ)
-
-			comps_p, _, isolatedEdges := H.GetComponents(parentλ)
-
+			compsπ, _, isolatedEdges := H.GetComponents(parentλ)
 			// log.Println("Parent components ", comps_p)
 
 			foundLow := false
@@ -207,11 +204,11 @@ CHILD:
 			balancednessLimit := (((H.Len()) * (l.BalFactor - 1)) / l.BalFactor)
 
 			// Check if parent is un-balanced
-			for i := range comps_p {
-				if comps_p[i].Len() > balancednessLimit {
+			for i := range compsπ {
+				if compsπ[i].Len() > balancednessLimit {
 					foundLow = true
 					compLowIndex = i //keep track of the index for composing comp_up later
-					compLow = comps_p[i]
+					compLow = compsπ[i]
 				}
 			}
 			if !foundLow {
@@ -222,12 +219,12 @@ CHILD:
 				fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 				fmt.Println("Child ", childλ)
-				fmt.Println("Comps of child ", comps_c)
+				fmt.Println("Comps of child ", compsε)
 				fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ")")
 
 				fmt.Println("Comps of p: ")
-				for i := range comps_p {
-					fmt.Println("Component: ", comps_p[i], " Len: ", comps_p[i].Len())
+				for i := range compsπ {
+					fmt.Println("Component: ", compsπ[i], " Len: ", compsπ[i].Len())
 
 				}
 
@@ -238,14 +235,12 @@ CHILD:
 			childχ := lib.Inter(childλ.Vertices(), vertCompLow)
 
 			// determine which componenents of child are inside comp_low
-
-			//CHECK IF THIS ACTUALLY MAKES A DIFFERENCE
-			comps_c, _, _ := compLow.GetComponents(childλ)
+			compsε, _, _ := compLow.GetComponents(childλ)
 
 			//omitting the check for balancedness as it's guaranteed to still be conserved at this point
 
 			// check chache for previous encounters
-			if l.cache.CheckNegative(childλ, comps_c) {
+			if l.cache.CheckNegative(childλ, compsε) {
 				// log.Println("Skipping a child sep", childχ)
 				continue PARENT
 			}
@@ -272,10 +267,10 @@ CHILD:
 			tempSpecialSlice := []lib.Edges{}
 
 			tempEdgeSlice = append(tempEdgeSlice, isolatedEdges...)
-			for i := range comps_p {
+			for i := range compsπ {
 				if i != compLowIndex {
-					tempEdgeSlice = append(tempEdgeSlice, comps_p[i].Edges.Slice()...)
-					tempSpecialSlice = append(tempSpecialSlice, comps_p[i].Special...)
+					tempEdgeSlice = append(tempEdgeSlice, compsπ[i].Edges.Slice()...)
+					tempSpecialSlice = append(tempSpecialSlice, compsπ[i].Special...)
 				}
 			}
 
@@ -283,7 +278,7 @@ CHILD:
 			specialChild = lib.NewEdges([]lib.Edge{{Vertices: childχ}})
 
 			// if no comps_p, other than comp_low, just use parent as is
-			if len(comps_p) == 1 {
+			if len(compsπ) == 1 {
 				compUp.Edges = parentλ
 
 				// adding new Special Edge to connect Child to comp_up
@@ -320,28 +315,28 @@ CHILD:
 			ch := make(chan decompInt)
 			var subtrees []lib.Node
 
-			for x := range comps_c {
-				Conn_x := lib.Inter(comps_c[x].Vertices(), childχ)
+			for x := range compsε {
+				Connχ := lib.Inter(compsε[x].Vertices(), childχ)
 
 				go func(x int, comps_c []lib.Graph, Conn_x []int, allowedFull lib.Edges) {
 					var out decompInt
 					out.Decomp = l.findDecomp(comps_c[x], Conn_x, allowedFull)
 					out.Int = x
 					ch <- out
-				}(x, comps_c, Conn_x, allowedFull)
+				}(x, compsε, Connχ, allowedFull)
 
 			}
 
 			// 2. WAIT ON GOROUTINES TO FINISH
 			// ---------------------
 
-			for i := 0; i < len(comps_c)+1; i++ {
+			for i := 0; i < len(compsε)+1; i++ {
 				select {
 				case decompInt := <-ch:
 
 					if reflect.DeepEqual(decompInt.Decomp, lib.Decomp{}) {
 
-						l.cache.AddNegative(childλ, comps_c[decompInt.Int])
+						l.cache.AddNegative(childλ, compsε[decompInt.Int])
 						// log.Println("Rejecting child")
 						continue PARENT
 					}
@@ -367,14 +362,14 @@ CHILD:
 						fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 						fmt.Println("Child ", childλ, "  ", lib.PrintVertices(childχ))
-						fmt.Println("Comps of child ", comps_c)
+						fmt.Println("Comps of child ", compsε)
 						fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ") Vertices(parent) ", lib.PrintVertices(parentλ.Vertices()))
 
 						fmt.Println("comp_up ", compUp, " V(comp_up) ", lib.PrintVertices(compUp.Vertices()))
 
 						fmt.Println("Decomp up:  ", decompUpChan)
 
-						fmt.Println("Comps of p", comps_p)
+						fmt.Println("Comps of p", compsπ)
 
 						fmt.Println("Compare against PredSearch: ")
 
@@ -402,7 +397,6 @@ CHILD:
 
 			// log.Printf("Produced Decomp: %v\n", finalRoot)
 			return lib.Decomp{Graph: H, Root: finalRoot}
-
 		}
 		// if parentFound {
 		// 	log.Println("Rejecting child ", childλ, " for H ", H)
