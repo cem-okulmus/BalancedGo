@@ -23,7 +23,7 @@ func binomial(n, k int) int {
 		panic("combin: negative input")
 	}
 	if n < k {
-		panic("combin: n < k")
+		return 0
 	}
 
 	if k > n/2 {
@@ -65,6 +65,7 @@ func getCombin(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
+
 	return CombinationIterator{n: n, oldK: k, k: k, stepSize: 1, extended: true, confirmed: true}
 }
 
@@ -164,11 +165,11 @@ func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterato
 	}
 	var output []*CombinationIterator
 
-	initial := CombinationIterator{n: n, k: k, stepSize: split, extended: !unextended, confirmed: true}
+	initial := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
 	output = append(output, &initial)
 
 	for i := 1; i < split; i++ {
-		tempIter := CombinationIterator{n: n, k: k, stepSize: split, extended: !unextended, confirmed: true}
+		tempIter := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
 		tempIter.hasNext()
 		nextCombinationStep(tempIter.combination, n, k, i)
 		output = append(output, &tempIter)
@@ -191,14 +192,24 @@ func combinatorialOrder(combination []int) int {
 // GetPercentage returns the current progress as a percentage,
 // with 100% representing that all combinations have been visited
 func (c CombinationIterator) GetPercentage() float32 {
-	if !c.hasNext() {
-		return 1.0
-	}
+	nomin, denom := c.getPercentageFull()
+
+	return float32(nomin) / float32(denom)
+}
+
+// GetPercentage returns the current progress as a percentage,
+// with 100% representing that all combinations have been visited
+func (c CombinationIterator) getPercentageFull() (int, int) {
 
 	progressPresent := combinatorialOrder(c.combination) * 1.0
 
 	if !c.extended {
-		return float32(progressPresent) / float32(binomial(c.n, c.k))
+
+		if !c.hasNext() {
+			return binomial(c.n, c.k), binomial(c.n, c.k)
+		}
+
+		return progressPresent, binomial(c.n, c.k)
 	}
 
 	allCombinations := 0
@@ -206,6 +217,7 @@ func (c CombinationIterator) GetPercentage() float32 {
 	k := c.oldK
 
 	for k >= 1 {
+
 		allCombinations = allCombinations + binomial(c.n, k)
 		k = k - 1
 		if k > c.k {
@@ -213,5 +225,24 @@ func (c CombinationIterator) GetPercentage() float32 {
 		}
 	}
 
-	return (float32(progressPresent) + float32(progressPast)) / float32(allCombinations)
+	if !c.hasNext() {
+		return allCombinations, allCombinations
+	}
+
+	return progressPresent + progressPast, allCombinations
+}
+
+// GetPercentagesSlice calculates a total percentage from a slice of CombinationIterators
+func GetPercentagesSlice(cs []*CombinationIterator) float32 {
+	var nominTotal int
+	var denomTotal int
+
+	for i := range cs {
+		nomin, denom := cs[i].getPercentageFull()
+		nominTotal = nominTotal + nomin
+		denomTotal = denomTotal + denom
+	}
+
+	return float32(nominTotal) / float32(denomTotal)
+
 }

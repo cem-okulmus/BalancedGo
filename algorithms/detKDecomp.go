@@ -14,6 +14,7 @@ type DetKDecomp struct {
 	BalFactor int
 	SubEdge   bool
 	cache     lib.Cache
+	counters  *Counters
 }
 
 // SetWidth sets the current width parameter of the algorithm
@@ -25,7 +26,7 @@ func (d *DetKDecomp) SetWidth(K int) {
 
 func (d *DetKDecomp) findHD(currentGraph lib.Graph) lib.Decomp {
 	d.cache.Init()
-	return d.findDecomp(currentGraph, []int{})
+	return d.findDecomp(currentGraph, []int{}, 0)
 }
 
 // FindDecomp finds a decomp
@@ -78,7 +79,9 @@ func baseCaseDetK(H lib.Graph) lib.Decomp {
 	return lib.Decomp{Graph: H, Root: lib.Node{Bag: H.Vertices(), Cover: H.Edges, Children: []lib.Node{children}}}
 }
 
-func (d *DetKDecomp) findDecomp(H lib.Graph, oldSep []int) lib.Decomp {
+func (d *DetKDecomp) findDecomp(H lib.Graph, oldSep []int, recDepth int) lib.Decomp {
+	recDepth = recDepth + 1 // increase the recursive depth
+
 	verticesCurrent := append(H.Vertices())
 	verticesExtended := append(verticesCurrent, oldSep...)
 	conn := lib.Inter(oldSep, verticesCurrent)
@@ -178,8 +181,11 @@ OUTER:
 					bag := lib.Inter(sepActual.Vertices(), verticesExtended)
 
 					for i := range comps {
-						decomp := d.findDecomp(comps[i], bag)
+						decomp := d.findDecomp(comps[i], bag, recDepth)
 						if reflect.DeepEqual(decomp, lib.Decomp{}) {
+							if d.counters != nil {
+								d.counters.AddBacktrack(recDepth)
+							}
 
 							d.cache.AddNegative(sepActual, comps[i])
 							// log.Printf("detK REJECTING %v: couldn't decompose %v  \n",

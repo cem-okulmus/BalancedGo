@@ -127,7 +127,7 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 						det := DetKDecomp{K: b.K, Graph: b.Graph, BalFactor: b.BalFactor, SubEdge: true}
 						det.cache.Init()
 
-						result := det.findDecomp(comps[i], balsep.Vertices())
+						result := det.findDecomp(comps[i], balsep.Vertices(), 0)
 						if !reflect.DeepEqual(result, lib.Decomp{}) {
 							result.SkipRerooting = true
 						} else {

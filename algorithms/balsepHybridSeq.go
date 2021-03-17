@@ -124,7 +124,7 @@ func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 
 						// det.cache = make(map[uint64]*CompCache)
 						det.cache.Init()
-						result := det.findDecomp(comps[i], balsep.Vertices())
+						result := det.findDecomp(comps[i], balsep.Vertices(), 0)
 						if !reflect.DeepEqual(result, lib.Decomp{}) && currentDepth == 0 {
 							result.SkipRerooting = true
 						}

@@ -21,9 +21,11 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/signal"
 	"reflect"
 	"runtime"
 	"runtime/pprof"
+	"syscall"
 	"time"
 
 	algo "github.com/cem-okulmus/BalancedGo/algorithms"
@@ -160,7 +162,7 @@ func main() {
 		fmt.Print("Parse Error:\n", parseError.Error(), "\n\n")
 	}
 
-	// Outpt usage message if graph and width not specified
+	// Output usage message if graph and width not specified
 	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
 		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/",
 			Build, ", ", Date, ")")
@@ -435,6 +437,21 @@ func main() {
 	}
 
 	if solver != nil {
+
+		if *logKHybrid > 0 {
+			cancelChan := make(chan os.Signal, 1)
+			signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
+
+			go func(c chan os.Signal, a algo.AlgorithmDebug) {
+
+				select {
+				case <-c:
+					algoDebug := a.GetCounters()
+					fmt.Println("Counters: \n", algoDebug.String())
+				}
+			}(cancelChan, solver.(algo.AlgorithmDebug)) // this is risky (maybe add a check if the right flag is set?)
+		}
+
 		var decomp Decomp
 		start := time.Now()
 

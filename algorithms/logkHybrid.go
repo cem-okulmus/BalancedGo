@@ -14,7 +14,7 @@ import (
 // HybridPredicate is used to determine when to switch from LogKDecomp to using DetKDecomp
 type HybridPredicate = func(H lib.Graph, K int) bool
 
-type recursiveCall = func(H lib.Graph, Conn []int, allwowed lib.Edges) lib.Decomp
+type recursiveCall = func(H lib.Graph, Conn []int, allwowed lib.Edges, recDepth int) lib.Decomp
 
 // LogKHybrid implements a hybridised algorithm, using LogKDecomp and DetKDecomp in tandem
 type LogKHybrid struct {
@@ -24,6 +24,8 @@ type LogKHybrid struct {
 	BalFactor int
 	Predicate HybridPredicate // used to determine when to switch to DetK
 	Size      int
+	counters  *Counters
+	level     int // keep track of
 }
 
 // OneRoundPred will match the behaviour of BalDetK, with Depth 1
@@ -103,7 +105,10 @@ func (l *LogKHybrid) Name() string {
 // FindDecomp finds a decomp
 func (l *LogKHybrid) FindDecomp() lib.Decomp {
 	l.cache.Init()
-	return l.findDecomp(l.Graph, []int{}, l.Graph.Edges)
+	var counter Counters
+	l.counters = &counter
+	l.counters.Init()
+	return l.findDecomp(l.Graph, []int{}, l.Graph.Edges, 0)
 }
 
 // FindDecompGraph finds a decomp, for an explicit graph
@@ -112,12 +117,18 @@ func (l *LogKHybrid) FindDecompGraph(Graph lib.Graph) lib.Decomp {
 	return l.FindDecomp()
 }
 
-func (l *LogKHybrid) detKWrapper(H lib.Graph, Conn []int, allwowed lib.Edges) lib.Decomp {
+// GetCounters returns the counters collected during a run
+func (l *LogKHybrid) GetCounters() Counters {
+	return *l.counters
+}
+
+func (l *LogKHybrid) detKWrapper(H lib.Graph, Conn []int, allwowed lib.Edges, recDepth int) lib.Decomp {
 	det := DetKDecomp{K: l.K, Graph: lib.Graph{Edges: allwowed}, BalFactor: l.BalFactor, SubEdge: false}
 
+	l.counters.CopyRef(det.counters)
 	l.cache.CopyRef(&det.cache) // reuse the same cache as log-k
 
-	return det.findDecomp(H, Conn)
+	return det.findDecomp(H, Conn, recDepth)
 }
 
 // determine whether we have reached a (positive or negative) base case
@@ -165,7 +176,8 @@ func (l *LogKHybrid) baseCase(H lib.Graph, lenAE int) lib.Decomp {
 	return output
 }
 
-func (l *LogKHybrid) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges) lib.Decomp {
+func (l *LogKHybrid) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges, recDepth int) lib.Decomp {
+	recDepth = recDepth + 1 // increase the recursive depth
 
 	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
 	// log.Printf("Current Allowed Edges: %v\n", allowedFull)
@@ -201,6 +213,10 @@ func (l *LogKHybrid) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges) 
 	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
+	if recDepth == 1 {
+		l.counters.topLevelCompletion = genChild // copy the toplevel generator for Counters
+	}
+
 	// checks all possibles nodes in H, together with PARENT loops, it covers all parent-child pairings
 CHILD:
 	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
@@ -229,13 +245,14 @@ CHILD:
 				VCompε := compsε[y].Vertices()
 				Connγ := lib.Inter(VCompε, childχ)
 
-				decomp := recCall(compsε[y], Connγ, allowedFull)
+				decomp := recCall(compsε[y], Connγ, allowedFull, recDepth)
 				if reflect.DeepEqual(decomp, lib.Decomp{}) {
 					// log.Println("Rejecting child-root")
 					// log.Printf("\nCurrent SubGraph: %v\n", H)
 					// log.Printf("Current Allowed Edges: %v\n", allowed)
 					// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
 					l.cache.AddNegative(childλ, compsε[y])
+					l.counters.AddBacktrack(recDepth)
 					continue CHILD
 				}
 
@@ -363,7 +380,7 @@ CHILD:
 				allowedReduced := allowedFull.Diff(compLow.Edges)
 
 				go func(comp_up lib.Graph, Conn []int, allowedReduced lib.Edges) {
-					chanUp <- recCall(comp_up, Conn, allowedReduced)
+					chanUp <- recCall(comp_up, Conn, allowedReduced, recDepth)
 				}(compUp, Conn, allowedReduced)
 			}
 
@@ -376,7 +393,7 @@ CHILD:
 
 				go func(x int, comps_c []lib.Graph, Conn_x []int, allowedFull lib.Edges) {
 					var out decompInt
-					out.Decomp = recCall(comps_c[x], Conn_x, allowedFull)
+					out.Decomp = recCall(comps_c[x], Conn_x, allowedFull, recDepth)
 					out.Int = x
 					ch <- out
 				}(x, compsε, Connχ, allowedFull)
@@ -446,6 +463,7 @@ CHILD:
 			// log.Printf("Produced Decomp: %v\n", finalRoot)
 			return lib.Decomp{Graph: H, Root: finalRoot}
 		}
+		l.counters.AddBacktrack(recDepth)
 		// if parentFound {
 		// log.Println("Rejecting child ", childλ, " for H ", H)
 		// log.Printf("\nCurrent SubGraph: %v\n", H)
