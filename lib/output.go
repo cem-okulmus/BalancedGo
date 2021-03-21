@@ -17,11 +17,26 @@ func (g Graph) ToPACE() string {
 
 	buffer.WriteString(initialLine)
 
+	// generate vertex encodings (using the order of appearance in the graph)
+	vertexEncoding := make(map[int]int)
+	counter := 1
 	for _, e := range g.Edges.Slice() {
-		var line = fmt.Sprint(e.Name, " ")
+		for _, v := range e.Vertices {
+
+			_, ok := vertexEncoding[v]
+
+			if !ok {
+				vertexEncoding[v] = counter
+				counter++
+			}
+		}
+	}
+
+	for i, e := range g.Edges.Slice() {
+		var line = fmt.Sprint(i+1, " ")
 
 		for _, v := range e.Vertices {
-			line = line + fmt.Sprint(" ", v)
+			line = line + fmt.Sprint(" ", vertexEncoding[v])
 		}
 
 		line = line + "\n"

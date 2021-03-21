@@ -192,14 +192,14 @@ func combinatorialOrder(combination []int) int {
 // GetPercentage returns the current progress as a percentage,
 // with 100% representing that all combinations have been visited
 func (c CombinationIterator) GetPercentage() float32 {
-	nomin, denom := c.getPercentageFull()
+	nomin, denom := c.GetPercentageFull()
 
 	return float32(nomin) / float32(denom)
 }
 
 // GetPercentage returns the current progress as a percentage,
 // with 100% representing that all combinations have been visited
-func (c CombinationIterator) getPercentageFull() (int, int) {
+func (c CombinationIterator) GetPercentageFull() (int, int) {
 
 	progressPresent := combinatorialOrder(c.combination) * 1.0
 
@@ -233,16 +233,16 @@ func (c CombinationIterator) getPercentageFull() (int, int) {
 }
 
 // GetPercentagesSlice calculates a total percentage from a slice of CombinationIterators
-func GetPercentagesSlice(cs []*CombinationIterator) float32 {
+func GetPercentagesSlice(cs []*CombinationIterator) (int, int) {
 	var nominTotal int
 	var denomTotal int
 
 	for i := range cs {
-		nomin, denom := cs[i].getPercentageFull()
+		nomin, denom := cs[i].GetPercentageFull()
 		nominTotal = nominTotal + nomin
 		denomTotal = denomTotal + denom
 	}
 
-	return float32(nominTotal) / float32(denomTotal)
+	return nominTotal, denomTotal
 
 }

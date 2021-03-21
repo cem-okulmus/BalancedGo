@@ -90,6 +90,10 @@ func TestCache(t *testing.T) {
 
 	comps, _, _ := randomGraph.GetComponents(randomSep)
 
+	if len(comps) == 0 { // randomSep covers the entire hypergraph. Nothing you can do
+		return
+	}
+
 	cache.AddNegative(randomSep, comps[0])
 	cache.AddPositive(randomSep2, comps[0])
 

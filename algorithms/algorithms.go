@@ -69,8 +69,8 @@ func (c *Counters) String() string {
 		buffer.WriteString(fmt.Sprintln("Found ", v, " backtracks at level ", k))
 	}
 
-	percentage := lib.GetPercentagesSlice(c.topLevelCompletion) * 100
-	buffer.WriteString(fmt.Sprintln("Toplevel completion of was ", percentage, "%"))
+	nominTotal, denomTotal := lib.GetPercentagesSlice(c.topLevelCompletion)
+	buffer.WriteString(fmt.Sprintln("Toplevel completion of was ", nominTotal, denomTotal, float32(nominTotal)/float32(denomTotal), "%"))
 
 	return buffer.String()
 }
