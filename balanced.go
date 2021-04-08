@@ -236,7 +236,11 @@ func main() {
 	}
 
 	originalGraph := parsedGraph
-	log.Println("BIP: ", parsedGraph.GetBIP())
+
+	if !*bench { // skip any output if bench flag is set
+		log.Println("BIP: ", parsedGraph.GetBIP())
+	}
+
 	var reducedGraph Graph
 
 	var times []labelTime
