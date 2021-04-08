@@ -11,6 +11,3 @@ bin/
 # ignore project files
 *.sublime-workspace
 *.sublime-project
-
-# ignore vscode debug files
-.vscode/
