@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"os/signal"
 	"reflect"
@@ -476,9 +477,12 @@ func main() {
 		} else if *approx > 0 {
 			ch := make(chan int, 1)
 			go func() {
+				m := parsedGraph.Edges.Len()
+				k := int(math.Ceil(float64(m) / 2))
 				firstApprox := algo.SplitDecomp{Graph: parsedGraph}
+				firstApprox.SetWidth(k)
 				decomp = firstApprox.FindDecomp()
-				k := decomp.CheckWidth()
+				k = decomp.CheckWidth()
 				solved := false
 
 				var newDecomp Decomp
