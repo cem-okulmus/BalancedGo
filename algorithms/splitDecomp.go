@@ -29,11 +29,18 @@ func (d *SplitDecomp) SetWidth(K int) {
 
 // FindDecompGraph finds a decomp, for an explicit lib.Graph
 func (d *SplitDecomp) FindDecompGraph(G lib.Graph) lib.Decomp {
-	childCover, childBag := split(G.Edges.Slice()[:d.K])
-	child := lib.Node{Bag: childBag, Cover: childCover}
+	if G.Edges.Len() < d.K {
+		d.K = G.Edges.Len()
+	}
 
-	rootCover, rootBag := split(G.Edges.Slice()[d.K:])
-	root := lib.Node{Bag: rootBag, Cover: rootCover, Children: []lib.Node{child}}
+	rootCover, rootBag := split(G.Edges.Slice()[:d.K])
+	root := lib.Node{Bag: rootBag, Cover: rootCover}
+
+	if G.Edges.Len() > d.K {
+		childCover, childBag := split(G.Edges.Slice()[d.K:])
+		child := lib.Node{Bag: childBag, Cover: childCover}
+		root.Children = []lib.Node{child}
+	}
 
 	return lib.Decomp{Graph: G, Root: root}
 }
