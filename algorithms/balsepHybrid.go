@@ -17,6 +17,12 @@ type BalSepHybrid struct {
 	Graph     lib.Graph
 	BalFactor int
 	Depth     int // how many rounds of balSep are used
+	Generator lib.SearchGenerator
+}
+
+// SetGenerator defines the type of Search to use
+func (b *BalSepHybrid) SetGenerator(Gen lib.SearchGenerator) {
+	b.Generator = Gen
 }
 
 // SetWidth sets the current width parameter of the algorithm
@@ -71,7 +77,7 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 	//find a balanced separator
 	edges := lib.CutEdges(b.Graph.Edges, append(H.Vertices()))
 	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
-	parallelSearch := lib.Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+	parallelSearch := b.Generator.GetSearch(&H, &edges, b.BalFactor, generators)
 	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
@@ -79,8 +85,8 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 	cache = make(map[uint32]struct{})
 
 	// OUTER:
-	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
-		balsep = lib.GetSubset(edges, parallelSearch.Result)
+	for ; !parallelSearch.SearchEnded(); parallelSearch.FindNext(pred) {
+		balsep = lib.GetSubset(edges, parallelSearch.GetResult())
 
 		//  balsepOrig := balsep
 		var sepSub *lib.SepSub

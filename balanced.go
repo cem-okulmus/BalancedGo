@@ -442,6 +442,8 @@ func main() {
 
 	if solver != nil {
 
+		solver.SetGenerator(lib.ParallelSearchGen{})
+
 		if *logKHybrid > 0 {
 			cancelChan := make(chan os.Signal, 1)
 			signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)

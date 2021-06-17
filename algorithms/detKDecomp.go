@@ -17,6 +17,11 @@ type DetKDecomp struct {
 	counters  *Counters
 }
 
+// SetGenerator defines the type of Search to use
+func (d *DetKDecomp) SetGenerator(Gen lib.SearchGenerator) {
+	// detkdecomp doesn't use parallel search, this stub is needed to fit the general interface
+}
+
 // SetWidth sets the current width parameter of the algorithm
 func (d *DetKDecomp) SetWidth(K int) {
 	d.cache.Reset() // reset the cache as the new width might invalidate any old results

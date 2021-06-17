@@ -13,6 +13,7 @@ import (
 // Algorithm serves as the common interface of all hypergraph decomposition algorithms
 type Algorithm interface {
 	// A Name is useful to identify the individual algorithms in the result
+	SetGenerator(S lib.SearchGenerator)
 	Name() string
 	FindDecomp() lib.Decomp
 	FindDecompGraph(G lib.Graph) lib.Decomp
@@ -24,7 +25,7 @@ type Algorithm interface {
 type Counters struct {
 	backtrack          map[int]int
 	cacheMux           *sync.RWMutex
-	topLevelCompletion []*lib.CombinationIterator
+	topLevelCompletion []lib.Generator
 }
 
 // CopyRef allows for safe copying of a cache by reference, not value
@@ -69,8 +70,8 @@ func (c *Counters) String() string {
 		buffer.WriteString(fmt.Sprintln("Found ", v, " backtracks at level ", k))
 	}
 
-	nominTotal, denomTotal := lib.GetPercentagesSlice(c.topLevelCompletion)
-	buffer.WriteString(fmt.Sprintln("Toplevel completion of was ", nominTotal, denomTotal, float32(nominTotal)/float32(denomTotal), "%"))
+	// nominTotal, denomTotal := lib.GetPercentagesSlice(c.topLevelCompletion)
+	// buffer.WriteString(fmt.Sprintln("Toplevel completion of was ", nominTotal, denomTotal, float32(nominTotal)/float32(denomTotal), "%"))
 
 	return buffer.String()
 }

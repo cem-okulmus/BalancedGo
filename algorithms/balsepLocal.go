@@ -13,6 +13,12 @@ type BalSepLocal struct {
 	K         int
 	Graph     lib.Graph
 	BalFactor int
+	Generator lib.SearchGenerator
+}
+
+// SetGenerator defines the type of Search to use
+func (b *BalSepLocal) SetGenerator(Gen lib.SearchGenerator) {
+	b.Generator = Gen
 }
 
 // SetWidth sets the current width parameter of the algorithm
@@ -83,16 +89,16 @@ func (b BalSepLocal) findDecomp(H lib.Graph) lib.Decomp {
 
 	edges := lib.CutEdges(b.Graph.Edges, append(H.Vertices()))
 	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
-	parallelSearch := lib.Search{H: &H, Edges: &edges, BalFactor: b.BalFactor, Generators: generators}
+	parallelSearch := b.Generator.GetSearch(&H, &edges, b.BalFactor, generators)
 	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
 	cache = make(map[uint32]struct{})
 
-	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
+	for ; !parallelSearch.SearchEnded(); parallelSearch.FindNext(pred) {
 
-		balsep = lib.GetSubset(edges, parallelSearch.Result)
+		balsep = lib.GetSubset(edges, parallelSearch.GetResult())
 
 		var sepSub *lib.SepSub
 		// balsepOrig := balsep

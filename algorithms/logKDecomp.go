@@ -17,6 +17,12 @@ type LogKDecomp struct {
 	K         int
 	cache     lib.Cache
 	BalFactor int
+	Generator lib.SearchGenerator
+}
+
+// SetGenerator defines the type of Search to use
+func (l *LogKDecomp) SetGenerator(Gen lib.SearchGenerator) {
+	l.Generator = Gen
 }
 
 // decompInt is used to keep track of returned decompositions during concurrent search
@@ -133,15 +139,15 @@ func (l *LogKDecomp) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges) 
 	// Set up iterator for child
 
 	genChild := lib.SplitCombin(allowed.Len(), l.K, runtime.GOMAXPROCS(-1), false)
-	parallelSearch := lib.Search{H: &H, Edges: &allowed, BalFactor: l.BalFactor, Generators: genChild}
+	parallelSearch := l.Generator.GetSearch(&H, &allowed, l.BalFactor, genChild)
 	pred := lib.BalancedCheck{}
 	parallelSearch.FindNext(pred) // initial Search
 
 	// checks all possibles nodes in H, together with PARENT loops, it covers all parent-child pairings
 CHILD:
-	for ; !parallelSearch.ExhaustedSearch; parallelSearch.FindNext(pred) {
+	for ; !parallelSearch.SearchEnded(); parallelSearch.FindNext(pred) {
 
-		childλ := lib.GetSubset(allowed, parallelSearch.Result)
+		childλ := lib.GetSubset(allowed, parallelSearch.GetResult())
 		compsε, _, _ := H.GetComponents(childλ)
 
 		// log.Println("Balanced Child found, ", childλ, "of H ", H)
@@ -185,14 +191,14 @@ CHILD:
 		// Set up iterator for parent
 		allowedParent := lib.FilterVertices(allowed, append(Conn, childλ.Vertices()...))
 		genParent := lib.SplitCombin(allowedParent.Len(), l.K, runtime.GOMAXPROCS(-1), false)
-		parentalSearch := lib.Search{H: &H, Edges: &allowedParent, BalFactor: l.BalFactor, Generators: genParent}
+		parentalSearch := l.Generator.GetSearch(&H, &allowedParent, l.BalFactor, genParent)
 		predPar := lib.ParentCheck{Conn: Conn, Child: childλ.Vertices()}
 		parentalSearch.FindNext(predPar)
 		// parentFound := false
 	PARENT:
-		for ; !parentalSearch.ExhaustedSearch; parentalSearch.FindNext(predPar) {
+		for ; !parentalSearch.SearchEnded(); parentalSearch.FindNext(predPar) {
 
-			parentλ := lib.GetSubset(allowedParent, parentalSearch.Result)
+			parentλ := lib.GetSubset(allowedParent, parentalSearch.GetResult())
 			// log.Println("Looking at parent ", parentλ)
 			compsπ, _, isolatedEdges := H.GetComponents(parentλ)
 			// log.Println("Parent components ", comps_p)
@@ -216,11 +222,11 @@ CHILD:
 				fmt.Println("Conn ", lib.PrintVertices(Conn))
 
 				fmt.Printf("Current Allowed Edges: %v\n", allowed)
-				fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+				// fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 				fmt.Println("Child ", childλ)
 				fmt.Println("Comps of child ", compsε)
-				fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ")")
+				// fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ")")
 
 				fmt.Println("Comps of p: ")
 				for i := range compsπ {
@@ -359,11 +365,11 @@ CHILD:
 						fmt.Println("Conn ", lib.PrintVertices(Conn))
 
 						fmt.Printf("Current Allowed Edges: %v\n", allowed)
-						fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
+						// fmt.Printf("Current Allowed Edges in Parent Search: %v\n", parentalSearch.Edges)
 
 						fmt.Println("Child ", childλ, "  ", lib.PrintVertices(childχ))
 						fmt.Println("Comps of child ", compsε)
-						fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ") Vertices(parent) ", lib.PrintVertices(parentλ.Vertices()))
+						// fmt.Println("parent ", parentλ, " ( ", parentalSearch.Result, ") Vertices(parent) ", lib.PrintVertices(parentλ.Vertices()))
 
 						fmt.Println("comp_up ", compUp, " V(comp_up) ", lib.PrintVertices(compUp.Vertices()))
 

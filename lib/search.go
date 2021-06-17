@@ -8,13 +8,56 @@ import (
 )
 
 // A Search implements a parallel search for separators fulfilling some given predicate
-type Search struct {
+type Search interface {
+	FindNext(pred Predicate)
+	SearchEnded() bool // return true if every element has been returned once
+	GetResult() []int  // get the last found result
+}
+
+// A SearchGenerator sets up a Search interface
+type SearchGenerator interface {
+	GetSearch(H *Graph, Edges *Edges, BalFactor int, Generators []Generator) Search
+}
+
+// A Generator is black-box view for any kind of generation of items to look at in linear order, and it provides some helpful methods for the search
+type Generator interface {
+	HasNext() bool    // check if generator still has new elements
+	GetNext() []int   // the slice of int represents some choice of edges, with an underlying order
+	Confirm()         // confirm that the current selection has been checked *and* sent to central goroutine
+	Found()           // used to cache the check result
+	CheckFound() bool // used by search to see if previous run already performed the check
+}
+
+type ParallelSearch struct {
 	H               *Graph
 	Edges           *Edges
 	BalFactor       int
 	Result          []int
-	Generators      []*CombinationIterator
+	Generators      []Generator
 	ExhaustedSearch bool
+}
+
+type ParallelSearchGen struct{}
+
+func (p ParallelSearchGen) GetSearch(H *Graph, Edges *Edges, BalFactor int, Gens []Generator) Search {
+	return &ParallelSearch{
+		H:               H,
+		Edges:           Edges,
+		BalFactor:       BalFactor,
+		Result:          []int{},
+		Generators:      Gens,
+		ExhaustedSearch: false,
+	}
+}
+
+// SearchEnded returns true if search is completed
+func (s *ParallelSearch) SearchEnded() bool {
+	return s.ExhaustedSearch
+}
+
+// GetResult returns the last found result
+func (s *ParallelSearch) GetResult() []int {
+	return s.Result
 }
 
 // A Predicate checks if for some subgraph and a separator, some condition holds
@@ -24,7 +67,7 @@ type Predicate interface {
 
 // FindNext starts the search and stops if some separator which satisfies the predicate
 // is found, or if the entire search space has been exhausted
-func (s *Search) FindNext(pred Predicate) {
+func (s *ParallelSearch) FindNext(pred Predicate) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -61,7 +104,7 @@ func (s *Search) FindNext(pred Predicate) {
 }
 
 // a worker that actually runs the search within a single goroutine
-func (s Search) worker(workernum int, found chan []int, wg *sync.WaitGroup, finished *bool, pred Predicate) {
+func (s ParallelSearch) worker(workernum int, found chan []int, wg *sync.WaitGroup, finished *bool, pred Predicate) {
 	defer func() {
 		if r := recover(); r != nil {
 			// log.Printf("Worker %d 'forced' to quit, reason: %v", workernum, r)
@@ -72,25 +115,25 @@ func (s Search) worker(workernum int, found chan []int, wg *sync.WaitGroup, fini
 
 	gen := s.Generators[workernum]
 
-	for gen.hasNext() {
+	for gen.HasNext() {
 		if *finished {
 			// log.Printf("Worker %d told to quit", workernum)
 			return
 		}
 		// j := make([]int, len(gen.Combination))
 		// copy(gen.Combination, j)
-		j := gen.combination
+		j := gen.GetNext()
 
 		sep := GetSubset(*s.Edges, j)
 		if pred.Check(s.H, &sep, s.BalFactor) {
-			gen.balSep = true // cache result
+			gen.Found() // cache result
 			found <- j
 			// log.Printf("Worker %d \" won \"", workernum)
-			gen.confirm()
+			gen.Confirm()
 			*finished = true
 			return
 		}
-		gen.confirm()
+		gen.Confirm()
 	}
 }
 

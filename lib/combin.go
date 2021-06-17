@@ -130,8 +130,24 @@ func (c *CombinationIterator) advance(step int) (bool, int) {
 	return true, step
 }
 
-// hasNext checks if the iterator still has new elements and advances the iterator if so
-func (c *CombinationIterator) hasNext() bool {
+// CheckFound returns the current value of the cached result
+func (c *CombinationIterator) CheckFound() bool {
+
+	return c.balSep
+}
+
+// Found is used by the search to cache the previous check result
+func (c *CombinationIterator) Found() {
+	c.balSep = true
+}
+
+// GetNext returns the currently selected combination
+func (c *CombinationIterator) GetNext() []int {
+	return c.combination
+}
+
+// HasNext checks if the iterator still has new elements and advances the iterator if so
+func (c *CombinationIterator) HasNext() bool {
 	if !c.confirmed {
 		return true
 	}
@@ -152,25 +168,25 @@ func (c *CombinationIterator) hasNext() bool {
 	return true
 }
 
-// confirm is used to double check the last element has been used. Useful only for concurrent searching
-func (c *CombinationIterator) confirm() {
+// Confirm is used to double check the last element has been used. Useful only for concurrent searching
+func (c *CombinationIterator) Confirm() {
 	c.balSep = false
 	c.confirmed = true
 }
 
 //SplitCombin generates multiple iterators, splitting the search space into multiple "splits"
-func SplitCombin(n int, k int, split int, unextended bool) []*CombinationIterator {
+func SplitCombin(n int, k int, split int, unextended bool) []Generator {
 	if k > n {
 		k = n
 	}
-	var output []*CombinationIterator
+	var output []Generator
 
 	initial := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
 	output = append(output, &initial)
 
 	for i := 1; i < split; i++ {
 		tempIter := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
-		tempIter.hasNext()
+		tempIter.HasNext()
 		nextCombinationStep(tempIter.combination, n, k, i)
 		output = append(output, &tempIter)
 	}
@@ -205,7 +221,7 @@ func (c CombinationIterator) getPercentageFull() (int, int) {
 
 	if !c.extended {
 
-		if !c.hasNext() {
+		if !c.HasNext() {
 			return binomial(c.n, c.k), binomial(c.n, c.k)
 		}
 
@@ -225,7 +241,7 @@ func (c CombinationIterator) getPercentageFull() (int, int) {
 		}
 	}
 
-	if !c.hasNext() {
+	if !c.HasNext() {
 		return allCombinations, allCombinations
 	}
 

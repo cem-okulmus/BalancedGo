@@ -17,7 +17,7 @@ func getSubsetIterator(vertices []int) *subSet {
 }
 
 func (s *subSet) hasNext() bool {
-	return s.current.hasNext()
+	return s.current.HasNext()
 }
 
 func getEdge(vertices []int, s []int) Edge {
@@ -31,7 +31,7 @@ func getEdge(vertices []int, s []int) Edge {
 }
 
 func (s *subSet) getCurrent() Edge {
-	s.current.confirm()
+	s.current.Confirm()
 
 	return getEdge(s.source, s.current.combination)
 }
@@ -93,10 +93,10 @@ func (s *subEdges) reset() {
 // and create a new vertex set
 func (s *subEdges) hasNextCombination() bool {
 
-	if !s.gen.hasNext() {
+	if !s.gen.HasNext() {
 		return false
 	}
-	s.gen.confirm()
+	s.gen.Confirm()
 	copy(s.combination, s.gen.combination)
 
 	return true

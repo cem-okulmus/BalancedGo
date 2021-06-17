@@ -23,13 +23,13 @@ func TestSearchBal(t *testing.T) {
 	combinParallel := lib.SplitCombin(randGraph.Edges.Len(), k, runtime.GOMAXPROCS(-1), false)
 	combinSeq := lib.SplitCombin(randGraph.Edges.Len(), k, 1, false)
 
-	parallelSearch := lib.Search{
+	parallelSearch := lib.ParallelSearch{
 		H:          &randGraph,
 		Edges:      &randGraph.Edges,
 		BalFactor:  2,
 		Generators: combinParallel,
 	}
-	seqSearch := lib.Search{
+	seqSearch := lib.ParallelSearch{
 		H:          &randGraph,
 		Edges:      &randGraph.Edges,
 		BalFactor:  2,
@@ -80,13 +80,13 @@ func TestSearchPar(t *testing.T) {
 	combinParallel := lib.SplitCombin(allowedParent.Len(), k, runtime.GOMAXPROCS(-1), false)
 	combinSeq := lib.SplitCombin(allowedParent.Len(), k, 1, false)
 
-	parallelSearch := lib.Search{
+	parallelSearch := lib.ParallelSearch{
 		H:          &randGraph,
 		Edges:      &allowedParent,
 		BalFactor:  2,
 		Generators: combinParallel,
 	}
-	seqSearch := lib.Search{
+	seqSearch := lib.ParallelSearch{
 		H:          &randGraph,
 		Edges:      &allowedParent,
 		BalFactor:  2,
