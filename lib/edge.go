@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math"
 	"reflect"
@@ -73,6 +74,32 @@ type Edges struct {
 	hash          *uint64
 	hashMux       *sync.Mutex
 	duplicateFree bool
+}
+
+func (e *Edges) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	if err := encoder.Encode(e.slice); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+
+}
+
+func (e *Edges) GobDecode(b []byte) error {
+	buf := bytes.NewBuffer(b)
+
+	decoder := gob.NewDecoder(buf)
+	if err := decoder.Decode(&e.slice); err != nil {
+		return err
+	}
+
+	var hashMux sync.Mutex
+	e.hashMux = &hashMux
+
+	return nil
+
 }
 
 // NewEdges is a constructor for Edges
