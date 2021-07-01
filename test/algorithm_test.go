@@ -170,6 +170,8 @@ func TestAlgo(t *testing.T) {
 
 	for _, algorithm := range algoTestsHD {
 
+		algorithm.SetGenerator(lib.ParallelSearchGen{})
+
 		out = solve(algorithm, graph, &hinget)
 
 		if !reflect.DeepEqual(out, lib.Decomp{}) || (len(ops) > 0 && graph.Edges.Len() == 0) {
@@ -220,6 +222,8 @@ func TestAlgo(t *testing.T) {
 	prevDecomp = lib.Decomp{}
 
 	for _, algorithm := range algoTestsGHD {
+
+		algorithm.SetGenerator(lib.ParallelSearchGen{})
 
 		out = solve(algorithm, graph, &hinget)
 

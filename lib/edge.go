@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"log"
 	"math"
 	"reflect"
 	"sort"
@@ -76,12 +77,15 @@ type Edges struct {
 	duplicateFree bool
 }
 
-func (e *Edges) GobEncode() ([]byte, error) {
+func (e Edges) GobEncode() ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
+	log.Println("starting to encode slice")
 	if err := encoder.Encode(e.slice); err != nil {
 		return nil, err
 	}
+
+	log.Println("Encoding of slice worked")
 
 	return buf.Bytes(), nil
 
