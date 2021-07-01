@@ -118,6 +118,6 @@ OUTER:
 			}
 		}
 
-		t.Errorf("Mismatch in returned seps between sequential and parallel Search")
+		t.Errorf("Mismatch in returned seps between sequential and parallel Search, numSepsSeq %v, numSepsPar %v", len(allSepsSeq), len(allSepsPar))
 	}
 }

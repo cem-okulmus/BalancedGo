@@ -5,7 +5,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"reflect"
 	"testing"
+
+	"github.com/cem-okulmus/BalancedGo/lib"
 )
 
 func TestEncoding(t *testing.T) {
@@ -14,13 +17,24 @@ func TestEncoding(t *testing.T) {
 
 	// attempt to encode edges of graph
 
-	var Encodebuffer bytes.Buffer
-	enc := gob.NewEncoder(&Encodebuffer)
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
 
 	err := enc.Encode(graphInitial)
 	if err != nil {
 		log.Fatal("encode error", err)
 	}
 	fmt.Println("Output from encoding:")
-	fmt.Println(Encodebuffer.Bytes())
+	fmt.Println(buffer.Bytes())
+
+	dec := gob.NewDecoder(&buffer)
+
+	var decodedGraph lib.Graph
+
+	dec.Decode(&decodedGraph)
+
+	if !reflect.DeepEqual(decodedGraph, graphInitial) {
+		t.Errorf("Graphs not equal: %v, %v ", graphInitial, decodedGraph)
+	}
+
 }
