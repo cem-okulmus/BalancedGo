@@ -49,15 +49,15 @@ func extendedBinom(n int, k int) int {
 
 // A CombinationIterator generates combinations iteratively.
 type CombinationIterator struct {
-	n           int
-	k           int
-	oldK        int // needed to compute current progress
-	combination []int
-	empty       bool
-	stepSize    int
-	extended    bool
-	confirmed   bool
-	balSep      bool // cache the result of balSep check
+	N           int
+	K           int
+	OldK        int // needed to compute current progress
+	Combination []int
+	Empty       bool
+	StepSize    int
+	Extended    bool
+	Confirmed   bool
+	BalSep      bool // cache the result of balSep check
 }
 
 // getCombin produces a CombinationIterator
@@ -66,7 +66,7 @@ func getCombin(n int, k int) CombinationIterator {
 		k = n
 	}
 
-	return CombinationIterator{n: n, oldK: k, k: k, stepSize: 1, extended: true, confirmed: true}
+	return CombinationIterator{N: n, OldK: k, K: k, StepSize: 1, Extended: true, Confirmed: true}
 }
 
 // getCombinUnextend produces a CombinationIterator, with the flag extended set to false
@@ -74,7 +74,7 @@ func getCombinUnextend(n int, k int) CombinationIterator {
 	if k > n {
 		k = n
 	}
-	return CombinationIterator{n: n, oldK: k, k: k, stepSize: 1, extended: false, confirmed: true}
+	return CombinationIterator{N: n, OldK: k, K: k, StepSize: 1, Extended: false, Confirmed: true}
 }
 
 // nextCombination generates the combination after s, overwriting s
@@ -114,17 +114,17 @@ func nextCombinationStep(s []int, n, k, step int) (bool, int) {
 // Step simply advances the iterator multiple steps at a time
 // Returns the number of steps performed
 func (c *CombinationIterator) advance(step int) (bool, int) {
-	if c.empty {
+	if c.Empty {
 		return false, 0
 	}
-	if c.combination == nil {
-		c.combination = make([]int, c.k)
-		for i := range c.combination {
-			c.combination[i] = i
+	if c.Combination == nil {
+		c.Combination = make([]int, c.K)
+		for i := range c.Combination {
+			c.Combination[i] = i
 		}
 	} else {
-		res, steps := nextCombinationStep(c.combination, c.n, c.k, step)
-		c.empty = !res
+		res, steps := nextCombinationStep(c.Combination, c.N, c.K, step)
+		c.Empty = !res
 		return res, steps
 	}
 	return true, step
@@ -133,45 +133,45 @@ func (c *CombinationIterator) advance(step int) (bool, int) {
 // CheckFound returns the current value of the cached result
 func (c *CombinationIterator) CheckFound() bool {
 
-	return c.balSep
+	return c.BalSep
 }
 
 // Found is used by the search to cache the previous check result
 func (c *CombinationIterator) Found() {
-	c.balSep = true
+	c.BalSep = true
 }
 
 // GetNext returns the currently selected combination
 func (c *CombinationIterator) GetNext() []int {
-	return c.combination
+	return c.Combination
 }
 
 // HasNext checks if the iterator still has new elements and advances the iterator if so
 func (c *CombinationIterator) HasNext() bool {
-	if !c.confirmed {
+	if !c.Confirmed {
 		return true
 	}
 
-	hasNext, stepsDone := c.advance(c.stepSize)
+	hasNext, stepsDone := c.advance(c.StepSize)
 	if !hasNext {
-		if c.k <= 1 || !c.extended {
+		if c.K <= 1 || !c.Extended {
 			return false
 		}
 
-		c.k--
-		c.combination, c.empty = nil, false   // discard old slice, reset flag
+		c.K--
+		c.Combination, c.Empty = nil, false   // discard old slice, reset flag
 		c.advance(0)                          // initialize the iterator
-		c.advance(c.stepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
+		c.advance(c.StepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
 	}
 
-	c.confirmed = false
+	c.Confirmed = false
 	return true
 }
 
 // Confirm is used to double check the last element has been used. Useful only for concurrent searching
 func (c *CombinationIterator) Confirm() {
-	c.balSep = false
-	c.confirmed = true
+	c.BalSep = false
+	c.Confirmed = true
 }
 
 //SplitCombin generates multiple iterators, splitting the search space into multiple "splits"
@@ -181,13 +181,13 @@ func SplitCombin(n int, k int, split int, unextended bool) []Generator {
 	}
 	var output []Generator
 
-	initial := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
+	initial := CombinationIterator{N: n, OldK: k, K: k, StepSize: split, Extended: !unextended, Confirmed: true}
 	output = append(output, &initial)
 
 	for i := 1; i < split; i++ {
-		tempIter := CombinationIterator{n: n, oldK: k, k: k, stepSize: split, extended: !unextended, confirmed: true}
+		tempIter := CombinationIterator{N: n, OldK: k, K: k, StepSize: split, Extended: !unextended, Confirmed: true}
 		tempIter.HasNext()
-		nextCombinationStep(tempIter.combination, n, k, i)
+		nextCombinationStep(tempIter.Combination, n, k, i)
 		output = append(output, &tempIter)
 	}
 
@@ -217,27 +217,27 @@ func (c CombinationIterator) GetPercentage() float32 {
 // with 100% representing that all combinations have been visited
 func (c CombinationIterator) getPercentageFull() (int, int) {
 
-	progressPresent := combinatorialOrder(c.combination) * 1.0
+	progressPresent := combinatorialOrder(c.Combination) * 1.0
 
-	if !c.extended {
+	if !c.Extended {
 
 		if !c.HasNext() {
-			return binomial(c.n, c.k), binomial(c.n, c.k)
+			return binomial(c.N, c.K), binomial(c.N, c.K)
 		}
 
-		return progressPresent, binomial(c.n, c.k)
+		return progressPresent, binomial(c.N, c.K)
 	}
 
 	allCombinations := 0
 	progressPast := 0
-	k := c.oldK
+	k := c.OldK
 
 	for k >= 1 {
 
-		allCombinations = allCombinations + binomial(c.n, k)
+		allCombinations = allCombinations + binomial(c.N, k)
 		k = k - 1
-		if k > c.k {
-			progressPast = progressPast + binomial(c.n, k)
+		if k > c.K {
+			progressPast = progressPast + binomial(c.N, k)
 		}
 	}
 

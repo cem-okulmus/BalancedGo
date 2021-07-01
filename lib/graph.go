@@ -273,7 +273,7 @@ func (g Graph) ComputeSubEdges(K int) Graph {
 		edgesWihoutE := diffEdges(g.Edges, e)
 		gen := getCombin(edgesWihoutE.Len(), K)
 		for gen.HasNext() {
-			subset := GetSubset(edgesWihoutE, gen.combination)
+			subset := GetSubset(edgesWihoutE, gen.Combination)
 			var tuple = subset.Vertices()
 			output = append(output, Edge{Vertices: Inter(e.Vertices, tuple)}.subedges()...)
 			gen.Confirm()

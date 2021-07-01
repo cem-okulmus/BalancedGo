@@ -33,7 +33,7 @@ func getEdge(vertices []int, s []int) Edge {
 func (s *subSet) getCurrent() Edge {
 	s.current.Confirm()
 
-	return getEdge(s.source, s.current.combination)
+	return getEdge(s.source, s.current.Combination)
 }
 
 type subEdges struct {
@@ -97,7 +97,7 @@ func (s *subEdges) hasNextCombination() bool {
 		return false
 	}
 	s.gen.Confirm()
-	copy(s.combination, s.gen.combination)
+	copy(s.combination, s.gen.Combination)
 
 	return true
 }
