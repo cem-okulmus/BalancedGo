@@ -185,9 +185,9 @@ func (l *LogKHybrid) baseCase(H lib.Graph, lenAE int) lib.Decomp {
 func (l *LogKHybrid) findDecomp(H lib.Graph, Conn []int, allowedFull lib.Edges, recDepth int) lib.Decomp {
 	recDepth = recDepth + 1 // increase the recursive depth
 
-	// log.Printf("\n\nCurrent SubGraph: %v\n", H)
-	// log.Printf("Current Allowed Edges: %v\n", allowedFull)
-	// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+	log.Printf("\n\nCurrent SubGraph: %v\n", H)
+	log.Printf("Current Allowed Edges: %v\n", allowedFull)
+	log.Println("Conn: ", lib.PrintVertices(Conn), "\n\n")
 
 	if !lib.Subset(Conn, H.Vertices()) {
 		log.Panicln("Conn invariant violated.")
@@ -235,8 +235,8 @@ CHILD:
 		// Check if child is possible root
 		if lib.Subset(Conn, childλ.Vertices()) {
 
-			// log.Printf("Child-Root cover chosen: %v\n", Graph{Edges: childλ})
-			// log.Printf("Comps of Child-Root: %v\n", comps_c)
+			log.Printf("Child-Root cover chosen: %v\n", childλ)
+			log.Printf("Comps of Child-Root: %v\n", compsε)
 
 			childχ := lib.Inter(childλ.Vertices(), verticesH)
 
@@ -253,16 +253,16 @@ CHILD:
 
 				decomp := recCall(compsε[y], Connγ, allowedFull, recDepth)
 				if reflect.DeepEqual(decomp, lib.Decomp{}) {
-					// log.Println("Rejecting child-root")
-					// log.Printf("\nCurrent SubGraph: %v\n", H)
-					// log.Printf("Current Allowed Edges: %v\n", allowed)
-					// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
+					log.Println("Rejecting child-root")
+					log.Printf("\nCurrent SubGraph: %v\n", H)
+					log.Printf("Current Allowed Edges: %v\n", allowed)
+					log.Println("Conn: ", lib.PrintVertices(Conn), "\n\n")
 					l.cache.AddNegative(childλ, compsε[y])
 					l.counters.AddBacktrack(recDepth)
 					continue CHILD
 				}
 
-				// log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
+				log.Printf("Produced Decomp w Child-Root: %+v\n", decomp)
 				subtrees = append(subtrees, decomp.Root)
 			}
 
@@ -275,7 +275,7 @@ CHILD:
 		parentalSearch := l.Generator.GetSearch(&H, &allowedParent, l.BalFactor, genParent)
 		predPar := lib.ParentCheck{Conn: Conn, Child: childλ.Vertices()}
 		parentalSearch.FindNext(predPar)
-		// parentFound := false
+		parentFound := false
 	PARENT:
 		for ; !parentalSearch.SearchEnded(); parentalSearch.FindNext(predPar) {
 
@@ -327,11 +327,11 @@ CHILD:
 				continue PARENT
 			}
 
-			// log.Printf("Parent Found: %v (%s) \n", parentλ, PrintVertices(parentλ.Vertices()))
-			// parentFound = true
-			// log.Println("Comp low: ", comp_low, "Vertices of comp_low", PrintVertices(vertCompLow))
-			// log.Printf("Child chosen: %v (%s) for H %v \n", childλ, PrintVertices(childχ), H)
-			// log.Printf("Comps of Child: %v\n", comps_c)
+			log.Printf("Parent Found: %v (%s) \n", parentλ, lib.PrintVertices(parentλ.Vertices()))
+			parentFound = true
+			log.Println("Comp low: ", compLow, "Vertices of comp_low", lib.PrintVertices(vertCompLow))
+			log.Printf("Child chosen: %v (%s) for H %v \n", childλ, lib.PrintVertices(childχ), H)
+			log.Printf("Comps of Child: %v\n", compsε)
 
 			//Computing subcomponents of Child
 
@@ -380,7 +380,7 @@ CHILD:
 				// adding new Special Edge to connect Child to comp_up
 				compUp.Special = append(compUp.Special, specialChild)
 
-				// log.Println("Upper component:", comp_up)
+				log.Println("Upper component:", compUp)
 
 				//Reducing the allowed edges
 				allowedReduced := allowedFull.Diff(compLow.Edges)
@@ -415,8 +415,8 @@ CHILD:
 
 					if reflect.DeepEqual(decompInt.Decomp, lib.Decomp{}) {
 
-						// l.cache.AddNegative(childλ, comps_c[x])
-						// log.Println("Rejecting child")
+						l.cache.AddNegative(childλ, compsε[decompInt.Int])
+						log.Println("Rejecting child")
 						continue PARENT
 					}
 
@@ -466,16 +466,16 @@ CHILD:
 				finalRoot = rootChild
 			}
 
-			// log.Printf("Produced Decomp: %v\n", finalRoot)
+			log.Printf("Produced Decomp: %v\n", finalRoot)
 			return lib.Decomp{Graph: H, Root: finalRoot}
 		}
 		l.counters.AddBacktrack(recDepth)
-		// if parentFound {
-		// log.Println("Rejecting child ", childλ, " for H ", H)
-		// log.Printf("\nCurrent SubGraph: %v\n", H)
-		// log.Printf("Current Allowed Edges: %v\n", allowed)
-		// log.Println("Conn: ", PrintVertices(Conn), "\n\n")
-		// }
+		if parentFound {
+			log.Println("Rejecting child ", childλ, " for H ", H)
+			log.Printf("\nCurrent SubGraph: %v\n", H)
+			log.Printf("Current Allowed Edges: %v\n", allowed)
+			log.Println("Conn: ", lib.PrintVertices(Conn), "\n\n")
+		}
 	}
 
 	// exhausted search space

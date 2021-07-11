@@ -33,6 +33,10 @@ func TestEncoding(t *testing.T) {
 
 	dec.Decode(&decodedGraph)
 
+	if !reflect.DeepEqual(decodedGraph.Edges.Len(), graphInitial.Edges.Len()) {
+		t.Errorf("Graphs not equal: %v, %v ", graphInitial, decodedGraph)
+	}
+
 	if !reflect.DeepEqual(decodedGraph, graphInitial) {
 		t.Errorf("Graphs not equal: %v, %v ", graphInitial, decodedGraph)
 	}
