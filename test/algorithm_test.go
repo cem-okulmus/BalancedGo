@@ -2,8 +2,10 @@ package tests
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -29,7 +31,20 @@ type solverDecomp struct {
 	decomp lib.Decomp
 }
 
+func logActive(b bool) {
+	if b {
+		log.SetOutput(os.Stderr)
+
+		log.SetFlags(0)
+	} else {
+
+		log.SetOutput(ioutil.Discard)
+	}
+}
+
 func TestAlgo(t *testing.T) {
+
+	// logActive(false)
 
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)

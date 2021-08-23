@@ -15,6 +15,16 @@ type Graph struct {
 	vertices []int
 }
 
+//  A DSD (short for Disjoint-Set-Datastructure) collects the information on the connected components of a graph
+// relative to seperator
+type DSD struct {
+	Graph       *Graph
+	SepVertices map[int]bool
+	Vertices    map[int]*disjoint.Element
+	Comps       map[*disjoint.Element][]Edge
+	CompsSp     map[*disjoint.Element][]Edges
+}
+
 func (g Graph) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("{")
@@ -113,7 +123,7 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 				}
 
 				disjoint.Union(vertices[g.Edges.Slice()[k].Vertices[i]], vertices[g.Edges.Slice()[k].Vertices[j]])
-				// j = i-1
+				i = j - 1
 				break
 			}
 		}
@@ -129,7 +139,7 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 					continue
 				}
 				disjoint.Union(vertices[g.Special[k].Vertices()[i]], vertices[g.Special[k].Vertices()[j]])
-				// j = i-1
+				i = j - 1
 				break
 			}
 		}
@@ -218,6 +228,25 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 	}
 
 	return outputG, edgeToComp, isolatedEdges
+}
+
+func (d *DSD) Update(e Edge) {
+
+	for i := 0; i < len(e.Vertices); i++ {
+		if d.SepVertices[e.Vertices[i]] {
+			continue
+		}
+		for j := i + 1; j < len(e.Vertices); j++ {
+			if d.SepVertices[e.Vertices[j]] {
+				continue
+			}
+
+			disjoint.Union(d.Vertices[e.Vertices[i]], d.Vertices[e.Vertices[j]])
+			// j = i-1
+			break
+		}
+	}
+
 }
 
 // FilterVertices filters an Edges slice for a given set of vertices.

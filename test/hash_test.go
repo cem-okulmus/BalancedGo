@@ -171,12 +171,15 @@ func TestEdgeHash(t *testing.T) {
 			temp2 = append(temp2, r.Intn(100))
 		}
 
+		temp1 = lib.RemoveDuplicates(temp1)
+		temp2 = lib.RemoveDuplicates(temp2)
+
 		if cmp.Equal(temp1, temp2) {
 			continue
 		}
 
-		edge := lib.Edge{Name: 0, Vertices: lib.RemoveDuplicates(temp1)}
-		edge2 := lib.Edge{Name: 0, Vertices: lib.RemoveDuplicates(temp2)}
+		edge := lib.Edge{Name: 0, Vertices: temp1}
+		edge2 := lib.Edge{Name: 0, Vertices: temp2}
 
 		hash1 := edge.Hash()
 		hash2 := edge2.Hash()

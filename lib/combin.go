@@ -99,8 +99,10 @@ func nextCombination(s []int, n, k int) bool {
 func nextCombinationStep(s []int, n, k, step int) (bool, int) {
 	for i := 0; i < step; i++ {
 		if !nextCombination(s, n, k) {
+			// fmt.Println("Ende erreicht")
 			return false, i
 		}
+		// fmt.Println("Current combin: ", s)
 	}
 
 	return true, step
@@ -157,11 +159,36 @@ func (c *CombinationIterator) HasNext() bool {
 		if c.K <= 1 || !c.Extended {
 			return false
 		}
+		// fmt.Println("StepsDone", stepsDone)
+		// fmt.Println("Extending")
+
+		oldStepSize := c.StepSize
 
 		c.K--
-		c.Combination, c.Empty = nil, false   // discard old slice, reset flag
-		c.advance(0)                          // initialize the iterator
-		c.advance(c.StepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
+		c.StepSize = c.StepSize - stepsDone - 1
+		c.Combination, c.Empty = nil, false // discard old slice, reset flag
+
+		c.advance(0) // init
+		// fmt.Println("Combin after init: ", c.Combination)
+
+		if oldStepSize-stepsDone > 1 {
+			// fmt.Println("Go into next")
+			c.HasNext()
+		}
+		//restore stepsize
+		c.StepSize = oldStepSize
+
+		// fmt.Println("Last combin: ", c.Combination)
+		if c.Empty {
+			return false
+		}
+
+		//
+		// fmt.Println("Initialise")
+		// c.advance(0) // initialize the iterator
+
+		// fmt.Println("advancing ", c.StepSize-stepsDone-1, "steps")
+		// c.advance(c.StepSize - stepsDone - 1) // actually advance the iterator (-1 to count starting a new iterator)
 	}
 
 	c.Confirmed = false
@@ -184,11 +211,39 @@ func SplitCombin(n int, k int, split int, unextended bool) []Generator {
 	initial := CombinationIterator{N: n, OldK: k, K: k, StepSize: split, Extended: !unextended, Confirmed: true}
 	output = append(output, &initial)
 
+	tempIter := CombinationIterator{N: n, OldK: k, K: k, StepSize: 1, Extended: !unextended, Confirmed: true}
+	tempIter.HasNext()
+	tempIter.Confirm()
+
 	for i := 1; i < split; i++ {
-		tempIter := CombinationIterator{N: n, OldK: k, K: k, StepSize: split, Extended: !unextended, Confirmed: true}
-		tempIter.HasNext()
-		nextCombinationStep(tempIter.Combination, n, k, i)
-		output = append(output, &tempIter)
+		if !tempIter.HasNext() { // no point in creating more splits if number of splits larger than search space
+			break
+		}
+
+		currComb := make([]int, len(tempIter.Combination), len(tempIter.Combination))
+
+		copy(currComb, tempIter.Combination)
+		currK := len(currComb)
+
+		if currK == 0 {
+			// fmt.Println("currComb ", currComb)
+			// fmt.Println("iter ", tempIter.Combination)
+			panic("something is foul in the state of this program")
+		}
+
+		next := CombinationIterator{
+			N:           n,
+			K:           currK,
+			OldK:        currK,
+			Combination: currComb,
+			StepSize:    split,
+			Extended:    !unextended,
+			Confirmed:   false,
+		}
+
+		output = append(output, &next)
+
+		tempIter.Confirm()
 	}
 
 	return output

@@ -75,7 +75,12 @@ func (s *ParallelSearch) FindNext(pred Predicate) {
 	}()
 
 	s.Result = []int{} // reset result
-	var numProc = runtime.GOMAXPROCS(-1)
+	var numProc int
+	if runtime.GOMAXPROCS(-1) > len(s.Generators) {
+		numProc = len(s.Generators)
+	} else {
+		numProc = runtime.GOMAXPROCS(-1)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(numProc)
@@ -128,7 +133,7 @@ func (s ParallelSearch) worker(workernum int, found chan []int, wg *sync.WaitGro
 		if pred.Check(s.H, &sep, s.BalFactor) {
 			gen.Found() // cache result
 			found <- j
-			// log.Printf("Worker %d \" won \"", workernum)
+			// log.Println("Worker", workernum, "won, found: ", j)
 			gen.Confirm()
 			*finished = true
 			return
