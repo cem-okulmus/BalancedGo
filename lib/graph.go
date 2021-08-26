@@ -19,10 +19,17 @@ type Graph struct {
 // relative to seperator
 type DSD struct {
 	Graph       *Graph
-	SepVertices map[int]bool
+	SepVertices map[int]bool //cached vertices of the seperator
 	Vertices    map[int]*disjoint.Element
 	Comps       map[*disjoint.Element][]Edge
 	CompsSp     map[*disjoint.Element][]Edges
+}
+
+// AddSepVertices adds new map bindings to SepVertices
+func (d *DSD) AddSepVertices(e Edge) {
+	for _, v := range e.Vertices {
+		d.SepVertices[v] = true
+	}
 }
 
 func (g Graph) String() string {
@@ -348,4 +355,45 @@ func (g Graph) ToHyberBenchFormat() string {
 
 	buffer.WriteString(".")
 	return buffer.String()
+}
+
+// func (b big.Int) CountOnes() int {
+// 	tmp := 0
+// 	for i := 0; i < b.BitLen(); i++ {
+// 		if b.Bit(i) == 1 {
+// 			tmp++
+// 		}
+// 	}
+// 	return tmp
+// }
+
+func (g *Graph) MakeEdgesDistinct() []int {
+	// TODO: check if edges already distinct, skip this if so
+
+	tmp := []int{}
+	for _, e := range g.Edges.Slice() {
+		e.Vertices = append(e.Vertices, encode)
+		tmp = append(tmp, encode)
+		encode++
+	}
+
+	return tmp
+}
+
+func (n *Node) RemoveVertices(vertices []int) {
+	n.Bag = Diff(n.Bag, vertices)
+
+	nuEdges := []Edge{}
+
+	for _, e := range n.Cover.Slice() {
+		e.Vertices = Diff(e.Vertices, vertices)
+		nuEdges = append(nuEdges, e)
+	}
+
+	n.Cover = NewEdges(nuEdges)
+
+	for i := range n.Children {
+		n.Children[i].RemoveVertices(vertices)
+	}
+
 }

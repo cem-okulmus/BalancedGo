@@ -156,6 +156,7 @@ func main() {
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
 	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
+	complete := flagSet.Bool("complete", false, "Forces the computation of complete decompositions.")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -312,6 +313,12 @@ func main() {
 			fmt.Print(ops, "\n\n")
 		}
 
+	}
+
+	// Complete Decomp preprocessing
+	var addedVertices []int
+	if *complete {
+		addedVertices = reducedGraph.MakeEdgesDistinct()
 	}
 
 	// Add all subedges to graph
@@ -524,6 +531,11 @@ func main() {
 		d := time.Now().Sub(start)
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec, label: "Decomposition"})
+
+		// complete Decomposition post-processing
+		if *complete {
+			decomp.Root.RemoveVertices(addedVertices)
+		}
 
 		if !reflect.DeepEqual(decomp, Decomp{}) || (len(ops) > 0 && parsedGraph.Edges.Len() == 0) {
 			var result bool
