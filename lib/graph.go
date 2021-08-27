@@ -371,11 +371,16 @@ func (g *Graph) MakeEdgesDistinct() []int {
 	// TODO: check if edges already distinct, skip this if so
 
 	tmp := []int{}
+	newEdges := []Edge{}
+
 	for _, e := range g.Edges.Slice() {
 		e.Vertices = append(e.Vertices, encode)
 		tmp = append(tmp, encode)
+		newEdges = append(newEdges, e)
 		encode++
 	}
+
+	g.Edges = NewEdges(newEdges)
 
 	return tmp
 }

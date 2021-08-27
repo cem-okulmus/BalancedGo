@@ -318,7 +318,7 @@ func main() {
 	// Complete Decomp preprocessing
 	var addedVertices []int
 	if *complete {
-		addedVertices = reducedGraph.MakeEdgesDistinct()
+		addedVertices = parsedGraph.MakeEdgesDistinct()
 	}
 
 	// Add all subedges to graph
