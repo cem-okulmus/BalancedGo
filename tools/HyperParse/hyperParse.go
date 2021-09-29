@@ -68,24 +68,44 @@ func getDegree(edges lib.Edges, e lib.Edge) int {
 
 func main() {
 	graphPath := flag.String("graph", "", "the file path to a hypergraph in HyperBench Format")
+
+	graphPathPACE := flag.String("graphPACE", "", "the file path to a hypergraph in HyperBench Format")
 	decompPath := flag.String("decomp", "", "the file path to a decomposition in GML format")
 	outPath := flag.String("out", "", "the path for outputting the graph in PACE 2019 format")
+	outPathPACE := flag.String("outPACE", "", "the path for outputting the graph in PACE 2019 format")
 	statFlag := flag.Bool("stats", false, "output stats of the hypergraph")
 	starRedlag := flag.Bool("statsReduced", false, "output stats of the reduced hypergraph")
 
 	flag.Parse()
 
-	if *graphPath == "" {
+	if *graphPath == "" && *graphPathPACE == "" {
 		flag.Usage()
 		return
 	}
 
-	dat, err := ioutil.ReadFile(*graphPath)
+	var dat []byte
+	var err error
+
+	if *graphPath != "" {
+		dat, err = ioutil.ReadFile(*graphPath)
+
+	} else {
+		dat, err = ioutil.ReadFile(*graphPathPACE)
+	}
+
 	if err != nil {
 		panic(err)
 	}
 
-	parsedGraph, parseGraph := lib.GetGraph(string(dat))
+	var parsedGraph lib.Graph
+	var parseGraph lib.ParseGraph
+
+	if *graphPath != "" {
+		parsedGraph, parseGraph = lib.GetGraph(string(dat))
+
+	} else {
+		parsedGraph = lib.GetGraphPACE(string(dat))
+	}
 
 	if *statFlag {
 		sumEdgeSizes := 0
@@ -221,12 +241,30 @@ func main() {
 
 	}
 
-	f, err := os.Create(*outPath)
-	if err != nil {
-		panic(err)
+	if *outPath != "" {
+		f, err := os.Create(*outPath)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		f.WriteString(parsedGraph.ToPACE())
+
+		f.Sync()
+
+	} else {
+		f, err := os.Create(*outPathPACE)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		f.WriteString(parsedGraph.ToHyberBenchFormat())
+
+		f.Sync()
+
 	}
 
-	defer f.Close()
-	f.WriteString(parsedGraph.ToPACE())
-	f.Sync()
 }
