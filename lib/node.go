@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"reflect"
 	"strconv"
@@ -13,6 +14,7 @@ type Node struct {
 	num        int
 	Bag        []int
 	Cover      Edges
+	Cost       float64
 	Children   []Node
 	parPointer *Node
 	vertices   []int
@@ -55,6 +57,9 @@ func (n Node) stringIdent(i int) string {
 		}
 	}
 	buffer.WriteString("}\n")
+	if n.Cost != 0 {
+		buffer.WriteString(indent(i) + "Cost: " + fmt.Sprintf("%.2f", n.Cost) + "\n")
+	}
 	if len(n.Children) > 0 {
 		buffer.WriteString(indent(i) + "Children: " + strconv.Itoa(len(n.Children)) + "\n" + indent(i) + "[")
 		for _, c := range n.Children {
@@ -271,7 +276,7 @@ OUTER:
 		nuChildern = append(nuChildern, n.Children[i].restoreEdges(edges))
 	}
 
-	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Children: nuChildern}
+	return Node{Bag: n.Bag, Cover: NewEdges(nuCover), Cost: n.Cost, Children: nuChildern}
 }
 
 // CombineNodes attaches subtree to n, via the connecting special edge

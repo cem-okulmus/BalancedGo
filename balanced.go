@@ -15,8 +15,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -25,6 +27,8 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/pprof"
+	"sort"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -157,6 +161,7 @@ func main() {
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
 	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 	complete := flagSet.Bool("complete", false, "Forces the computation of complete decompositions.")
+	jCostPath := flagSet.String("joinCost", "", "The file path to a join cost function.")
 
 	parseError := flagSet.Parse(os.Args[1:])
 	if parseError != nil {
@@ -229,9 +234,10 @@ func main() {
 	check(err)
 
 	var parsedGraph Graph
+	var parseGraph lib.ParseGraph
 
 	if !*pace {
-		parsedGraph, _ = lib.GetGraph(string(dat))
+		parsedGraph, parseGraph = lib.GetGraph(string(dat))
 	} else {
 		parsedGraph = lib.GetGraphPACE(string(dat))
 	}
@@ -445,6 +451,80 @@ func main() {
 	if chosen > 1 {
 		fmt.Println("Only one algorithm may be chosen at a time. Make up your mind.")
 		return
+	}
+
+	if *jCostPath != "" {
+		if !*localBal && *balDetFlag == 0 {
+			fmt.Println("Join cost can be used only in combination with: local, balDet.")
+			return
+		}
+		if *pace {
+			fmt.Println("Join cost cannot be used with PACE input format.")
+			return
+		}
+
+		// load cost function
+		// 1. read the csv file
+		csvfile, err := os.Open(*jCostPath)
+		if err != nil {
+			fmt.Println("Can't open jCost", *jCostPath, err)
+			return
+		}
+
+		// 2. init map
+		var w lib.EdgesCostMap
+		w.Init()
+
+		r := csv.NewReader(csvfile)
+		r.FieldsPerRecord = -1
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			// 3. put the record into the map
+			last := len(record) - 1
+			cost, _ := strconv.ParseFloat(record[last], 64)
+			rec := record[:last]
+			comb := make([]int, len(rec))
+			for p, s := range rec {
+				comb[p] = parseGraph.Encoding[s]
+			}
+			sort.Ints(comb)
+			w.Put(comb, cost)
+		}
+
+		//fmt.Println("Printing w:")
+		//wComb, wCost := w.Records()
+		//for i := 0; i < len(wComb); i++ {
+		//	fmt.Println(i, wComb[i], wCost[i])
+		//}
+		fmt.Println()
+
+		// initialize solver
+		if *localBal {
+			local := &algo.JCostBalSepLocal{
+				K:         *width,
+				Graph:     parsedGraph,
+				BalFactor: BalFactor,
+				JCosts:    w,
+			}
+			solver = local
+			//} else if *globalBal {
+			//jGlobal := JCostBalSepGlobal{Graph: parsedGraph, BalFactor: BalancedFactor, JCosts: w}
+			//solver = jGlobal
+		} else if *balDetFlag != 0 {
+			//jBalDet := &algo.JCostBalDetKDecomp{Graph: parsedGraph, BalFactor: BalFactor, Depth: *balDetFlag - 1, JCosts: w}
+			//solver = jBalDet
+		} else {
+			fmt.Println("Weird solver chosen.")
+			return
+		}
 	}
 
 	if solver != nil {
