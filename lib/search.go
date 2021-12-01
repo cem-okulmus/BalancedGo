@@ -170,27 +170,27 @@ func (b BalancedCheck) Check(H *Graph, sep *Edges, balFactor int) bool {
 }
 
 // CheckOut does the same as Check, except it also passes on the components found, if output is true
-func (b BalancedCheck) CheckOut(H *Graph, sep *Edges, balFactor int) (bool, []Graph) {
+func (b BalancedCheck) CheckOut(H *Graph, sep *Edges, balFactor int) (bool, []Graph, []Edge) {
 
 	//balancedness condition
-	comps, _, _ := H.GetComponents(*sep)
+	comps, _, isolated := H.GetComponents(*sep)
 
 	balancednessLimit := (((H.Len()) * (balFactor - 1)) / balFactor)
 
 	for i := range comps {
 		if comps[i].Len() > balancednessLimit {
-			return false, []Graph{}
+			return false, []Graph{}, []Edge{}
 		}
 	}
 
 	// Make sure that "special seps can never be used as separators"
 	for i := range H.Special {
 		if IntHash(H.Special[i].Vertices()) == IntHash(sep.Vertices()) {
-			return false, []Graph{}
+			return false, []Graph{}, []Edge{}
 		}
 	}
 
-	return true, comps
+	return true, comps, isolated
 }
 
 // ParentCheck looks a separator that could function as the direct ancestor (or "parent")
