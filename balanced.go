@@ -23,13 +23,11 @@ import (
 	"log"
 	"math"
 	"os"
-	"os/signal"
 	"reflect"
 	"runtime"
 	"runtime/pprof"
 	"sort"
 	"strconv"
-	"syscall"
 	"time"
 
 	algo "github.com/cem-okulmus/BalancedGo/algorithms"
@@ -136,8 +134,6 @@ func main() {
 	// algorithms  flags
 	localBal := flagSet.Bool("local", false, "Use local BalSep algorithm")
 	globalBal := flagSet.Bool("global", false, "Use global BalSep algorithm")
-	logK := flagSet.Bool("logk", false, "Use LogKDecomp algorithm")
-	logKHybrid := flagSet.Int("logkHybrid", 0, "Use DetK - LogK Hybrid algorithm. Choose which predicate to use")
 	detKFlag := flagSet.Bool("det", false, "Use DetKDecomp algorithm")
 	localBIP := flagSet.Bool("localbip", false, "Used in combination with \"det\": turns on local subedge handling")
 	balDetFlag := flagSet.Int("balDet", 0, "Use the Hybrid BalSep-DetK algorithm. Number indicates depth, must be ≥ 1")
@@ -159,7 +155,6 @@ func main() {
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
-	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 	complete := flagSet.Bool("complete", false, "Forces the computation of complete decompositions.")
 	jCostPath := flagSet.String("joinCost", "", "The file path to a join cost function.")
 
@@ -390,44 +385,6 @@ func main() {
 		chosen++
 	}
 
-	if *logK {
-		logK := &algo.LogKDecomp{
-			Graph:     parsedGraph,
-			K:         *width,
-			BalFactor: BalFactor,
-		}
-		solver = logK
-		chosen++
-	}
-
-	if *logKHybrid > 0 {
-		logKHyb := &algo.LogKHybrid{
-			Graph:     parsedGraph,
-			K:         *width,
-			BalFactor: BalFactor,
-		}
-		logKHyb.Size = *meta
-
-		var pred algo.HybridPredicate
-
-		switch *logKHybrid {
-		case 1:
-			pred = logKHyb.NumberEdgesPred
-		case 2:
-			pred = logKHyb.SumEdgesPred
-		case 3:
-			pred = logKHyb.ETimesKDivAvgEdgePred
-		case 4:
-			pred = logKHyb.OneRoundPred
-
-		}
-
-		logKHyb.Predicate = pred // set the predicate to use
-
-		solver = logKHyb
-		chosen++
-	}
-
 	if *globalBal {
 		global := &algo.BalSepGlobal{
 			K:         *width,
@@ -530,20 +487,6 @@ func main() {
 	if solver != nil {
 
 		solver.SetGenerator(lib.ParallelSearchGen{})
-
-		if *logKHybrid > 0 {
-			cancelChan := make(chan os.Signal, 1)
-			signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-
-			go func(c chan os.Signal, a algo.AlgorithmDebug) {
-
-				select {
-				case <-c:
-					algoDebug := a.GetCounters()
-					fmt.Println("Counters: \n", algoDebug.String())
-				}
-			}(cancelChan, solver.(algo.AlgorithmDebug)) // this is risky (maybe add a check if the right flag is set?)
-		}
 
 		var decomp Decomp
 		start := time.Now()
