@@ -124,41 +124,6 @@ func TestAlgo(t *testing.T) {
 
 	algoTestsGHD = append(algoTestsGHD, localBIP)
 
-	logK := &algo.LogKDecomp{
-		Graph:     graph,
-		K:         width,
-		BalFactor: BalFactor,
-	}
-
-	algoTestsHD = append(algoTestsHD, logK)
-
-	meta := r.Intn(300)
-	logkHybridChoice := r.Intn(4)
-
-	logKHyb := &algo.LogKHybrid{
-		Graph:     graph,
-		K:         width,
-		BalFactor: BalFactor,
-	}
-	logKHyb.Size = meta
-
-	var pred algo.HybridPredicate
-
-	switch logkHybridChoice {
-	case 0:
-		pred = logKHyb.NumberEdgesPred
-	case 1:
-		pred = logKHyb.SumEdgesPred
-	case 2:
-		pred = logKHyb.ETimesKDivAvgEdgePred
-	case 3:
-		pred = logKHyb.OneRoundPred
-
-	}
-	logKHyb.Predicate = pred // set the predicate to use
-
-	algoTestsHD = append(algoTestsHD, logKHyb)
-
 	global := &algo.BalSepGlobal{
 		K:         width,
 		Graph:     graph,
