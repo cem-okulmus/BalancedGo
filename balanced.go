@@ -1,3 +1,4 @@
+
 // BalancedGo - A research prototype to compute structural decompositions of Conjunctive Queries and CSPs
 // via the use of Balanced Separators with a focus on parallelism using the programming language Go.
 //
@@ -32,6 +33,8 @@ import (
 	"syscall"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
+	
 	algo "github.com/cem-okulmus/BalancedGo/algorithms"
 	"github.com/cem-okulmus/BalancedGo/lib"
 )
@@ -44,6 +47,8 @@ type Edge = lib.Edge
 
 // Graph used to improve readability
 type Graph = lib.Graph
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func logActive(b bool) {
 	if b {
@@ -81,7 +86,7 @@ func (l labelTime) String() string {
 	return fmt.Sprintf("%s : %.5f ms", l.label, l.time)
 }
 
-func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, K int, skipCheck bool) {
+func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Graph, gml string, json string, K int, skipCheck bool) {
 	decomp.RestoreSubedges()
 
 	fmt.Println("Used algorithm: " + algorithm + " @" + Version)
@@ -117,7 +122,16 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 		f.WriteString(decomp.ToGML())
 		f.Sync()
 	}
+	if correct && len(json) > 0 {
+		f, err := os.Create(json)
+		check(err)
+
+		defer f.Close()
+		f.Write(lib.WriteDecomp(decomp))
+		f.Sync()
+	}
 }
+
 
 func main() {
 
@@ -158,6 +172,7 @@ func main() {
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
+	jsonFlag := flagSet.String("json", "", "Output the produced decomposition into the specified json file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
 	meta := flagSet.Int("meta", 0, "meta parameter for LogKHybrid")
 	complete := flagSet.Bool("complete", false, "Forces the computation of complete decompositions.")
@@ -634,7 +649,7 @@ func main() {
 		if !reflect.DeepEqual(decomp, Decomp{}) {
 			decomp.Graph = originalGraph
 		}
-		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *width, false)
+		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *jsonFlag, *width, false)
 
 		return
 	}
