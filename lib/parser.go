@@ -9,10 +9,14 @@ import (
 	"strings"
 	"sync"
 
+	jsoniter "github.com/json-iterator/go"
+	
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var m map[int]string // stores the encoding of vertices for last file parsed (bit of a hack)
 var mutex = sync.RWMutex{}
@@ -228,6 +232,99 @@ func (n Node) attachChild(target int, child Node) Node {
 	}
 
 	return Node{}
+}
+
+type DecompJson struct {
+	Root NodeJson
+}
+
+type NodeJson struct {
+	Bag      []string
+	Cover    []string
+	Children []NodeJson
+}
+
+func (d Decomp) IntoJson() DecompJson {
+	var output DecompJson
+
+	output.Root = d.Root.IntoJson()
+
+	return output
+}
+
+func (n Node) IntoJson() NodeJson {
+	var output NodeJson
+
+	for _, i := range n.Bag {
+		output.Bag = append(output.Bag, m[i])
+	}
+
+	for i := range n.Cover.Slice() {
+		output.Cover = append(output.Cover, m[n.Cover.Slice()[i].Name])
+	}
+
+	for i := range n.Children {
+		output.Children = append(output.Children, n.Children[i].IntoJson())
+	}
+
+
+	return output
+}
+
+func (d DecompJson) IntoDecomp(graph Graph, encoding map[string]int) Decomp {
+
+	var output Decomp
+
+	output.Graph = graph
+
+	output.Root = d.Root.IntoNode(graph, encoding)
+
+	return output
+}
+
+func (n NodeJson) IntoNode(graph Graph, encoding map[string]int) Node {
+	var output Node
+	var cover []Edge
+
+	for i := range n.Bag {
+		output.Bag = append(output.Bag, encoding[n.Bag[i]])
+	}
+
+	for i := range n.Cover {
+		cover = append(cover, extractEdge(graph.Edges.Slice(), encoding[n.Cover[i]]))
+	}
+	output.Cover = NewEdges(cover)
+
+
+	for i := range n.Children {
+		output.Children = append(output.Children, n.Children[i].IntoNode(graph, encoding))
+	}
+
+	return output
+}
+
+func GetDecomp(input []byte, graph Graph, encoding map[string]int) Decomp {
+
+	var jason DecompJson
+
+	err := json.Unmarshal(input, &jason)
+	if err != nil {
+		fmt.Println("error:", err)
+		log.Panicln("decomp couldn't be parased")
+	}
+
+	return jason.IntoDecomp(graph, encoding)
+}
+
+func WriteDecomp(input Decomp) []byte {
+	out, err := json.Marshal(input.IntoJson())
+
+	if err != nil {
+		fmt.Println("error:", err)
+		log.Panicln("decomp couldn't be marshalled")
+	}
+
+	return out
 }
 
 type arc struct {
