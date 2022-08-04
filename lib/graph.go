@@ -103,7 +103,7 @@ func (g Graph) GetSubset(s []int) Edges {
 func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 	var outputG []Graph
 
-	var vertices = make(map[int]*disjoint.Element)
+	var vertices = make(map[int]*disjoint.Element, len(g.Vertices()))
 	var comps = make(map[*disjoint.Element][]Edge)
 	var compsSp = make(map[*disjoint.Element][]Edges)
 
