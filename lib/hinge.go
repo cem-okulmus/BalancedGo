@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"log"
 	"reflect"
+
+	"github.com/cem-okulmus/disjoint"
 )
 
 type hingeEdge struct {
@@ -109,8 +111,9 @@ func (h Hingetree) expandHingeTree(isUsed map[int]bool, parentE int) Hingetree {
 			continue
 		}
 
+		var Vertices = make(map[int]*disjoint.Element)
 		sepEdge := NewEdges([]Edge{*e})
-		hinges, gamma, _ := h.hinge.GetComponents(sepEdge)
+		hinges, gamma, _ := h.hinge.GetComponents(sepEdge, Vertices)
 
 		// Skip reordering step if only single component
 		if len(hinges) <= 1 {

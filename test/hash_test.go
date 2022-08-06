@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -105,6 +106,7 @@ func BenchmarkSeparator(b *testing.B) {
 
 	parsedGraph, _ := lib.GetGraph(buf.String())
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 
 	for i := 0; i < b.N; i++ {
 		var edges []int
@@ -115,7 +117,7 @@ func BenchmarkSeparator(b *testing.B) {
 		}
 
 		sep := lib.GetSubset(parsedGraph.Edges, edges)
-		pred.Check(&parsedGraph, &sep, 1)
+		pred.Check(&parsedGraph, &sep, 1, Vertices)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 var EDGE int
@@ -86,9 +87,10 @@ func TestCache(t *testing.T) {
 	var cache lib.Cache
 	var cacheCopy lib.Cache
 
+	var Vertices = make(map[int]*disjoint.Element)
 	cache.CopyRef(&cacheCopy)
 
-	comps, _, _ := randomGraph.GetComponents(randomSep)
+	comps, _, _ := randomGraph.GetComponents(randomSep, Vertices)
 
 	if len(comps) == 0 { // randomSep covers the entire hypergraph. Nothing you can do
 		return

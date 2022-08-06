@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 // BalSepGlobal implements the global Balanced Separator algorithm.
@@ -124,6 +125,7 @@ func (b BalSepGlobal) findDecomp(H lib.Graph) lib.Decomp {
 	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), false)
 	parallelSearch := b.Generator.GetSearch(&H, &edges, b.BalFactor, generators)
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 	parallelSearch.FindNext(pred) // initial Search
 
 OUTER:
@@ -132,7 +134,7 @@ OUTER:
 
 		// log.Printf("Balanced Sep chosen: %+v\n", Graph{Edges: balsep})
 
-		comps, _, _ := H.GetComponents(balsep)
+		comps, _, _ := H.GetComponents(balsep, Vertices)
 
 		// log.Printf("Comps of Sep: %+v\n", comps)
 

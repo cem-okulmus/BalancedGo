@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 // BalSepLocal implements the local Balanced Separator algorithm for computing GHDs.
@@ -56,13 +57,14 @@ func searchSubEdge(g *BalSepLocal, H *lib.Graph, balsepOrig lib.Edges, sepSub *l
 	}
 	nextBalsepFound := false
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 
 	for !nextBalsepFound {
 		if sepSub.HasNext() {
 			balsep = sepSub.GetCurrent()
 			// log.Printf("Testing SSSep: %v of %v , Special Edges %v \n", Graph{Edges: balsep},
 			//        Graph{Edges: balsepOrig}, Sp)
-			if pred.Check(H, &balsep, g.BalFactor) {
+			if pred.Check(H, &balsep, g.BalFactor, Vertices) {
 				nextBalsepFound = true
 			}
 		} else {
@@ -91,6 +93,7 @@ func (b BalSepLocal) findDecomp(H lib.Graph) lib.Decomp {
 	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
 	parallelSearch := b.Generator.GetSearch(&H, &edges, b.BalFactor, generators)
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
@@ -108,7 +111,7 @@ func (b BalSepLocal) findDecomp(H lib.Graph) lib.Decomp {
 
 	INNER:
 		for !exhaustedSubedges {
-			comps, _, _ := H.GetComponents(balsep)
+			comps, _, _ := H.GetComponents(balsep, Vertices)
 
 			// log.Printf("Comps of Sep: %v for H %v \n", comps, H)
 
@@ -143,7 +146,7 @@ func (b BalSepLocal) findDecomp(H lib.Graph) lib.Decomp {
 							if ok { //skip since already seen
 								continue thisLoop
 							}
-							if pred.Check(&H, &balsep, b.BalFactor) {
+							if pred.Check(&H, &balsep, b.BalFactor, Vertices) {
 								cache[lib.IntHash(balsep.Vertices())] = lib.Empty
 								nextBalsepFound = true
 							}

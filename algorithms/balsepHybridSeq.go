@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 // BalSepHybridSeq is a purely sequential version of BalSepHybrid
@@ -67,6 +68,7 @@ func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 	generators := lib.SplitCombin(edges.Len(), s.K, 1, true) // create just one goroutine, making this sequential
 	parallelSearch := s.Generator.GetSearch(&H, &edges, s.BalFactor, generators)
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
@@ -85,7 +87,7 @@ func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 
 	INNER:
 		for !exhaustedSubedges {
-			comps, _, _ := H.GetComponents(balsep)
+			comps, _, _ := H.GetComponents(balsep, Vertices)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -165,7 +167,7 @@ func (s BalSepHybridSeq) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 								continue thisLoop
 							}
 
-							if pred.Check(&H, &balsep, s.BalFactor) {
+							if pred.Check(&H, &balsep, s.BalFactor, Vertices) {
 								cache[lib.IntHash(balsep.Vertices())] = lib.Empty
 								nextBalsepFound = true
 							}

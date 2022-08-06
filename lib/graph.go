@@ -3,9 +3,9 @@ package lib
 import (
 	"bytes"
 
+	"github.com/cem-okulmus/disjoint"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/spakin/disjoint"
 )
 
 // A Graph is a collection of (special) edges
@@ -100,10 +100,10 @@ func (g Graph) GetSubset(s []int) Edges {
 }
 
 // GetComponents uses Disjoint Set data structure to compute connected components
-func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
+func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]Graph, map[int]int, []Edge) {
 	var outputG []Graph
 
-	var vertices = make(map[int]*disjoint.Element, len(g.Vertices()))
+	// var vertices = make(map[int]*disjoint.Element, len(g.Vertices()))
 	var comps = make(map[*disjoint.Element][]Edge)
 	var compsSp = make(map[*disjoint.Element][]Edges)
 
@@ -115,7 +115,11 @@ func (g Graph) GetComponents(sep Edges) ([]Graph, map[int]int, []Edge) {
 
 	//  Set up the disjoint sets for each node
 	for _, i := range g.Vertices() {
-		vertices[i] = disjoint.NewElement()
+		if e, ok := vertices[i]; ok {
+			e.Reset()
+		} else {
+			vertices[i] = disjoint.NewElement()
+		}
 	}
 
 	// Merge together the connected components

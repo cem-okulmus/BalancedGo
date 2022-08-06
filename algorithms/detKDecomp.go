@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 // DetKDecomp computes for a graph and some width K a HD of width K if it exists
@@ -106,6 +107,8 @@ func (d *DetKDecomp) findDecomp(H lib.Graph, oldSep []int, recDepth int) lib.Dec
 
 	gen := lib.NewCover(d.K, conn, bound, H.Edges.Vertices())
 
+	var Vertices = make(map[int]*disjoint.Element)
+
 OUTER:
 	for gen.HasNext {
 		out := gen.NextSubset()
@@ -167,7 +170,7 @@ OUTER:
 				for true {
 
 					// log.Println("Sep chosen ", sepActual, " out ", out)
-					comps, _, _ := H.GetComponents(sepActual)
+					comps, _, _ := H.GetComponents(sepActual, Vertices)
 
 					//check cache for previous encounters
 					if d.cache.CheckNegative(sepActual, comps) {

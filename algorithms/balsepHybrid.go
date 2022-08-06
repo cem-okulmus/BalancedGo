@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
+	"github.com/cem-okulmus/disjoint"
 )
 
 // BalSepHybrid implements a hybridised algorithm, using BalSep Local and DetKDecomp in tandem
@@ -79,6 +80,7 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 	generators := lib.SplitCombin(edges.Len(), b.K, runtime.GOMAXPROCS(-1), true)
 	parallelSearch := b.Generator.GetSearch(&H, &edges, b.BalFactor, generators)
 	pred := lib.BalancedCheck{}
+	var Vertices = make(map[int]*disjoint.Element)
 	parallelSearch.FindNext(pred) // initial Search
 
 	var cache map[uint32]struct{}
@@ -96,7 +98,7 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 
 	INNER:
 		for !exhaustedSubedges {
-			comps, _, _ := H.GetComponents(balsep)
+			comps, _, _ := H.GetComponents(balsep, Vertices)
 
 			// log.Printf("Comps of Sep: %+v\n", comps)
 
@@ -175,7 +177,7 @@ func (b BalSepHybrid) findDecomp(currentDepth int, H lib.Graph) lib.Decomp {
 								continue thisLoop
 							}
 
-							if pred.Check(&H, &balsep, b.BalFactor) {
+							if pred.Check(&H, &balsep, b.BalFactor, Vertices) {
 								cache[lib.IntHash(balsep.Vertices())] = lib.Empty
 								nextBalsepFound = true
 							}

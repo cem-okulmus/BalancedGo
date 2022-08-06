@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/cem-okulmus/BalancedGo/lib"
-	"github.com/spakin/disjoint"
+	"github.com/cem-okulmus/disjoint"
 )
 
 func connected(g lib.Graph) bool {
@@ -57,10 +57,10 @@ func TestComponents(t *testing.T) {
 
 	width := r.Intn(6) + 1
 	sep := getRandomSep(graphInitial, width)
+	var Vertices = make(map[int]*disjoint.Element)
 
 	// get components
-
-	comps, _, _ := graphInitial.GetComponents(sep)
+	comps, _, _ := graphInitial.GetComponents(sep, Vertices)
 
 	// number of components must be >1
 
