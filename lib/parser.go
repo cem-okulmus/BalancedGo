@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	jsoniter "github.com/json-iterator/go"
-	
+
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
@@ -31,6 +31,14 @@ type parseEdge struct {
 type ParseGraph struct {
 	Edges    []parseEdge `( @@ ","?)* (".")?`
 	Encoding map[string]int
+}
+
+// TransparentEncoding will overwrite the encoding map in order to print out the exact underlying integer encoding.
+// Needs to be called after GetGraph to be effective.
+func TransparentEncoding() {
+	for i := 0; i < encode; i++ {
+		m[i] = strconv.Itoa(i)
+	}
 }
 
 // GetGraph parses a string in HyperBench format into a graph
@@ -61,34 +69,47 @@ func GetGraph(s string) (Graph, ParseGraph) {
 	}
 	encoding := make(map[int]string)
 	encode = 1 // initialize to 1
-
 	pgraph.Encoding = make(map[string]int)
-	//fix first numbers for edge names
+
+	// first fix the encoding, starting with vertices
+	for _, e := range pgraph.Edges {
+		for _, n := range e.Vertices {
+			_, ok := pgraph.Encoding[n]
+			if !ok {
+				pgraph.Encoding[n] = encode
+				encoding[encode] = n
+				encode++
+			}
+		}
+
+	}
 	for _, e := range pgraph.Edges {
 		_, ok := pgraph.Encoding[e.Name]
 		if ok {
-			log.Panicln("Edge names not unique, not a vald hypergraph!")
+			log.Panicln("Edge names not unique, not a valid hypergraph!")
 		}
 
 		pgraph.Encoding[e.Name] = encode
 		encoding[encode] = e.Name
 		encode++
 	}
+
+	// now create the edges
 	for _, e := range pgraph.Edges {
 		var outputEdges []int
 		for _, n := range e.Vertices {
 			i, ok := pgraph.Encoding[n]
-			if ok {
-				outputEdges = append(outputEdges, i)
-			} else {
-				pgraph.Encoding[n] = encode
-				encoding[encode] = n
-				outputEdges = append(outputEdges, encode)
-				encode++
+			if !ok {
+				log.Panicln("Vertex not properly encoded, something went wrong with the parsing process!")
 			}
+			outputEdges = append(outputEdges, i)
+
 		}
 		edges = append(edges, Edge{Name: pgraph.Encoding[e.Name], Vertices: outputEdges})
 	}
+
+	encode = encode + len(pgraph.Edges)
+
 	output.Edges = NewEdges(edges)
 	m = encoding
 	return output, pgraph
@@ -267,7 +288,6 @@ func (n Node) IntoJson() NodeJson {
 		output.Children = append(output.Children, n.Children[i].IntoJson())
 	}
 
-
 	return output
 }
 
@@ -294,7 +314,6 @@ func (n NodeJson) IntoNode(graph Graph, encoding map[string]int) Node {
 		cover = append(cover, extractEdge(graph.Edges.Slice(), encoding[n.Cover[i]]))
 	}
 	output.Cover = NewEdges(cover)
-
 
 	for i := range n.Children {
 		output.Children = append(output.Children, n.Children[i].IntoNode(graph, encoding))

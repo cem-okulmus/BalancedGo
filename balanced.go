@@ -1,4 +1,3 @@
-
 // BalancedGo - A research prototype to compute structural decompositions of Conjunctive Queries and CSPs
 // via the use of Balanced Separators with a focus on parallelism using the programming language Go.
 //
@@ -32,7 +31,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	
+
 	algo "github.com/cem-okulmus/BalancedGo/algorithms"
 	"github.com/cem-okulmus/BalancedGo/lib"
 )
@@ -129,7 +128,6 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 		f.Sync()
 	}
 }
-
 
 func main() {
 

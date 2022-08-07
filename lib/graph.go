@@ -108,9 +108,11 @@ func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]G
 	var compsSp = make(map[*disjoint.Element][]Edges)
 
 	balsepVert := sep.Vertices()
-	balSepCache := make(map[int]bool, len(balsepVert))
+	// var balSepCache
+
+	balSepCache := make([]bool, encode)
 	for _, v := range balsepVert {
-		balSepCache[v] = true
+		balSepCache[v-1] = true
 	}
 
 	//  Set up the disjoint sets for each node
@@ -125,11 +127,11 @@ func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]G
 	// Merge together the connected components
 	for k := range g.Edges.Slice() {
 		for i := 0; i < len(g.Edges.Slice()[k].Vertices); i++ {
-			if balSepCache[g.Edges.Slice()[k].Vertices[i]] {
+			if balSepCache[g.Edges.Slice()[k].Vertices[i]-1] {
 				continue
 			}
 			for j := i + 1; j < len(g.Edges.Slice()[k].Vertices); j++ {
-				if balSepCache[g.Edges.Slice()[k].Vertices[j]] {
+				if balSepCache[g.Edges.Slice()[k].Vertices[j]-1] {
 					continue
 				}
 
@@ -142,11 +144,11 @@ func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]G
 
 	for k := range g.Special {
 		for i := 0; i < len(g.Special[k].Vertices())-1; i++ {
-			if balSepCache[g.Special[k].Vertices()[i]] {
+			if balSepCache[g.Special[k].Vertices()[i]-1] {
 				continue
 			}
 			for j := i + 1; j < len(g.Special[k].Vertices()); j++ {
-				if balSepCache[g.Special[k].Vertices()[j]] {
+				if balSepCache[g.Special[k].Vertices()[j]-1] {
 					continue
 				}
 				disjoint.Union(vertices[g.Special[k].Vertices()[i]], vertices[g.Special[k].Vertices()[j]])
@@ -163,7 +165,7 @@ func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]G
 		var vertexRep int
 		found := false
 		for _, v := range g.Edges.Slice()[i].Vertices {
-			if balSepCache[v] {
+			if balSepCache[v-1] {
 				continue
 			}
 			vertexRep = v
@@ -190,7 +192,7 @@ func (g Graph) GetComponents(sep Edges, vertices map[int]*disjoint.Element) ([]G
 		var vertexRep int
 		found := false
 		for _, v := range g.Special[i].Vertices() {
-			if balSepCache[v] {
+			if balSepCache[v-1] {
 				continue
 			}
 			vertexRep = v
