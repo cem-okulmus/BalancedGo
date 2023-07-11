@@ -129,6 +129,11 @@ func outputStanza(algorithm string, decomp Decomp, times []labelTime, graph Grap
 	}
 }
 
+func outputShellio(decomp Decomp) {
+	decomp.RestoreSubedges()
+	os.Stdout.Write(lib.WriteDecomp(decomp))
+}
+
 func main() {
 
 	// ==============================================
@@ -166,6 +171,7 @@ func main() {
 	numCPUs := flagSet.Int("cpu", -1, "Set number of CPUs to use")
 	bench := flagSet.Bool("bench", false, "Benchmark mode, reduces unneeded output (incompatible with -log flag)")
 	gml := flagSet.String("gml", "", "Output the produced decomposition into the specified gml file ")
+	shellio := flagSet.Bool("shellio", false, "Output the produced decomposition into the specified gml file ")
 	jsonFlag := flagSet.String("json", "", "Output the produced decomposition into the specified json file ")
 	pace := flagSet.Bool("pace", false, "Use PACE 2019 format for graphs (see pacechallenge.org/2019/htd/htd_format/)")
 	complete := flagSet.Bool("complete", false, "Forces the computation of complete decompositions.")
@@ -177,7 +183,7 @@ func main() {
 	}
 
 	// Output usage message if graph and width not specified
-	if parseError != nil || *graphPath == "" || (*width <= 0 && !*exact && *approx == 0) {
+	if parseError != nil || (*graphPath == "" && !*shellio) || (*width <= 0 && !*exact && *approx == 0) {
 		out := fmt.Sprint("Usage of BalancedGo (", Version, ", https://github.com/cem-okulmus/BalancedGo/commit/",
 			Build, ", ", Date, ")")
 		fmt.Fprintln(os.Stderr, out)
@@ -219,6 +225,11 @@ func main() {
 		return
 	}
 
+	if *shellio && (*jsonFlag != "" || *gml != "" || *graphPath != "" ) {
+		fmt.Println("Output and input files are not supported in Shell I/O mode")
+		return
+	}
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
@@ -238,7 +249,14 @@ func main() {
 
 	runtime.GOMAXPROCS(*numCPUs)
 
-	dat, err := ioutil.ReadFile(*graphPath)
+	var dat []byte
+	var err error
+
+	if *shellio {
+		dat, err = ioutil.ReadAll(os.Stdin)
+	} else {
+		dat, err = ioutil.ReadFile(*graphPath)
+	}
 	check(err)
 
 	var parsedGraph Graph
@@ -287,7 +305,7 @@ func main() {
 		msec := d.Seconds() * float64(time.Second/time.Millisecond)
 		times = append(times, labelTime{time: msec, label: "Heuristic"})
 
-		if !*bench {
+		if !*bench && !*shellio {
 			fmt.Println(heuristicMessage)
 			fmt.Printf("Time for heuristic: %.5f ms\n", msec)
 			fmt.Printf("Ordering: %v\n", parsedGraph.String())
@@ -590,7 +608,12 @@ func main() {
 		if !reflect.DeepEqual(decomp, Decomp{}) {
 			decomp.Graph = originalGraph
 		}
-		outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *jsonFlag, *width, false)
+
+		if *shellio {
+			outputShellio(decomp)
+		} else {
+			outputStanza(solver.Name(), decomp, times, originalGraph, *gml, *jsonFlag, *width, false)
+		}
 
 		return
 	}
